@@ -1,0 +1,47 @@
+# .gitignore – lists files & folders Git should NOT track so the repo stays clean and light.
+# Every pattern below is explained in plain English so even non-developers can see why it matters.
+
+# 1) Node.js dependencies – this folder can be recreated at any time with `npm install`.
+node_modules/
+
+# 2) Python virtual-environment – large compiled packages; rebuilt with `python -m venv`.
+venv/
+*.egg-info/
+
+# 3) Operating-system clutter – files macOS drops automatically.
+.DS_Store
+
+# 4) Python bytecode & caches – auto-generated when scripts run; not source.
+__pycache__/
+*.py[cod]
+
+# 5) Test & coverage artefacts – produced by pytest or coverage tools.
+.pytest_cache/
+coverage/
+htmlcov/
+
+# 6) Editor / IDE metadata – keeps personal settings out of the repo.
+.vscode/
+.idea/
+
+# 7) Cursor & other AI assistant working dirs – local only, not useful for others.
+.cursor/
+
+# 8) Environment variable files – contain secrets that should never leave your machine.
+.env
+.env.*
+
+# 9) Logs – transient debug output.
+*.log
+
+# 10) Build artefacts – created by bundlers or compilers.
+dist/
+build/
+
+# 11) Cypress artefacts – local test recordings.
+cypress/videos/
+cypress/screenshots/
+
+# 12) Yarn & pnpm lock files if not in use – uncomment the one you don't need.
+# yarn.lock
+# pnpm-lock.yaml 

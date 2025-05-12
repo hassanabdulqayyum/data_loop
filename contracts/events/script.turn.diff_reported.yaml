@@ -1,0 +1,19 @@
+# Schema for the Redis Stream event that is published when the Python Diff Worker finishes computing an HTML diff for a newly edited Turn.
+# Fields are deliberately string-typed to keep the contract language-agnostic; each consumer is free to cast to richer types.
+name: script.turn.diff_reported
+fields:
+  id:              # UUID of the Turn whose diff was assessed
+    type: string
+    example: "550e8400-e29b-41d4-a716-446655440000"
+  parent_id:       # UUID of the parent Turn this one was compared against
+    type: string
+    example: "4"
+  persona_id:      # ID of the Persona owning the script – handy for routing in dashboards
+    type: string
+    example: "1"
+  diff_html:       # Pre-rendered HTML snippet showing the before-vs-after diff
+    type: string
+    example: "<div class='diff'>…</div>"
+  grade:           # Quick quality assessment from the worker (e.g. A, B, C or 0-100)
+    type: string
+    example: "A" 

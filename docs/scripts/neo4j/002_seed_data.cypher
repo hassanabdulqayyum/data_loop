@@ -1,0 +1,14 @@
+MERGE (mindfulness101:Program {id: 1});
+MERGE (defusion:Module {id: 1, seq: 1});
+MERGE (day_1:Day {id: 1, seq: 1});
+MATCH (d:Day), (m:Module) CREATE (m)-[:HAS_DAY]->(d);
+MERGE (persona_1:Persona {id: 1, seq: 1});
+MATCH (d:Day), (per:Persona) CREATE (d)-[:HAS_PERSONA]->(per);
+MERGE (root_turn:Turn {id: 1, role:'root'});
+MATCH (t:Turn {role: 'root'}), (per:Persona) CREATE (per)-[:ROOTS]->(t);
+MERGE (system_turn:Turn {id:2, role:'system', accepted:true});
+MATCH (t1:Turn {role: 'root'}), (t2:Turn {role: 'system'}) CREATE (t1)<-[:CHILD_OF]-(t2);
+MERGE (user_turn_1:Turn {id:3, role:'user', accepted:true});
+MATCH (t2:Turn {role: 'system'}), (t3:Turn {role: 'user'}) CREATE (t2)<-[:CHILD_OF]-(t3);
+MERGE (assistant_turn_1:Turn {id:4, role:'assistant', accepted:true});
+MATCH (t3:Turn {role: 'user'}), (t4:Turn {role: 'assistant'}) CREATE (t3)<-[:CHILD_OF]-(t4);

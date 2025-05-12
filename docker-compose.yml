@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  # Neo4j database dedicated to the automated test suite.
+  # -----------------------------------------------------
+  # We expose the Bolt port (7687) so the Node.js test runner
+  # can connect via the official neo4j-driver. The HTTP port (7474)
+  # is also published purely for developer convenience – you can
+  # visit http://localhost:7474 in your browser to visually inspect
+  # the graph while debugging a failing CI run.
+  neo4j:
+    image: neo4j:5.18.0
+    container_name: neo4j_test
+    ports:
+      - '7687:7687'   # Bolt protocol – used by the driver
+      - '7474:7474'   # Neo4j Browser – optional but handy
+    environment:
+      # The tests expect these credentials – see apps/api-server/tests/setupEnv.js
+      - NEO4J_AUTH=neo4j/test12345
+    # The default Neo4j image stores data inside /data. Mounting a
+    # named volume means the database files live outside the container
+    # layer, so the image can be re-pulled on CI without losing state.
+    volumes:
+      - neo4j_data:/data
+    # Health-check makes CI wait until Neo4j is ready before running the tests.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cypher-shell -u neo4j -p test12345 'RETURN 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  neo4j_data: 

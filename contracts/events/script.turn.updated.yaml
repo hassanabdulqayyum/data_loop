@@ -1,0 +1,27 @@
+# Schema for the Redis Stream event emitted whenever a new script turn is saved.
+# All fields are string-ified so downstream consumers (Python, Node) can cast as they like.
+# This YAML lives here mainly for documentation and open-contract testing – the app itself
+# does not parse it at runtime.
+name: script.turn.updated
+fields:
+  id:              # The UUID of the newly created Turn node
+    type: string
+    example: "550e8400-e29b-41d4-a716-446655440000"
+  parent_id:       # ID of the Turn this one is a version/child of
+    type: string
+    example: "4"
+  persona_id:
+    type: string   # Persona the script belongs to so workers can look up context fast
+    example: "1"
+  editor:
+    type: string   # Email or user-id of the human who made the change
+    example: "demo@acme.test"
+  ts:
+    type: integer  # Unix time in milliseconds issued by the API server
+    example: 1715613012345
+  text:
+    type: string   # Full Markdown content of the new turn
+    example: "Hello, how can I help you today?"
+  commit_message:
+    type: string   # Optional one-line summary entered by the editor
+    example: "Polish greeting" 

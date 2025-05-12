@@ -1,0 +1,649 @@
+1. tests/test_schema.py
+   - from neo4j import GraphDatabase  # Initialize Neo4j driver class import for connectivity.
+   - import os  # Access environment variables without hard-coding secrets.
+   - import pathlib  # Provides file-system helpers to read the Cypher migration file from disk.
+   - def test_program_id_constraint():  # Unit test: verifies the `Program` node has a uniqueness constraint on `id`.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")  # Default to local instance; overridable via env.
+   - AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test"))  # Credentials sourced from env with sensible defaults for local dev.
+   - driver = GraphDatabase.driver(URI, auth=AUTH)  # Creates a Neo4j Driver instance for the test.
+   - driver.verify_connectivity()  # Confirms Neo4j is reachable before running assertions.
+   - session = driver.session()  # Opens a Neo4j session to execute Cypher statements in the test.
+   - test_path = "docs/scripts/neo4j/001_init_schema.cypher"  # Relative path to the schema migration.
+   - test_file = pathlib.Path(test_path).read_text()  # Loads the migration file.
+   - test_file = test_file.split(";")[0]  # Extracts the statement that defines the Program constraint only.
+   - mig = session.run(test_file)  # Executes the migration inside the test setup.
+   - mig.consume()  # Forces the transaction to complete so subsequent queries see the changes.
+   - constraints = session.run("""
+    SHOW CONSTRAINTS
+    YIELD name
+    WHERE name = 'program_id'
+    RETURN name
+    """)  # Retrieves the specific constraint.
+   - record = constraints.single()  # Safely obtains the first (and only) record.
+   - assert record is not None and record["name"] == "program_id"  # Asserts the constraint exists.
+   - session.close()  # Explicitly frees the session resource to avoid warnings.
+   - driver.close()  # Closes the driver connection cleanly.
+   - def test_module_id_constraint():  # Verifies the `Module` node uniqueness constraint.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
+   - AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test"))
+   - driver = GraphDatabase.driver(URI, auth=AUTH)
+   - driver.verify_connectivity()
+   - session = driver.session()
+   - test_path = "docs/scripts/neo4j/001_init_schema.cypher"
+   - test_file = pathlib.Path(test_path).read_text()
+   - test_file = test_file.split(";")[1]  # Second statement – Module constraint.
+   - mig = session.run(test_file)
+   - mig.consume()
+   - constraints = session.run("""
+    SHOW CONSTRAINTS
+    YIELD name
+    WHERE name = 'module_id'
+    RETURN name
+    """)
+   - record = constraints.single()
+   - assert record is not None and record["name"] == "module_id"
+   - session.close()
+   - driver.close()
+   - def test_day_id_constraint():  # Verifies the `Day` node uniqueness constraint.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
+   - AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test"))
+   - driver = GraphDatabase.driver(URI, auth=AUTH)
+   - driver.verify_connectivity()
+   - session = driver.session()
+   - test_path = "docs/scripts/neo4j/001_init_schema.cypher"
+   - test_file = pathlib.Path(test_path).read_text()
+   - test_file = test_file.split(";")[2]  # Third statement – Day constraint.
+   - mig = session.run(test_file)
+   - mig.consume()
+   - constraints = session.run("""
+    SHOW CONSTRAINTS
+    YIELD name
+    WHERE name = 'day_id'
+    RETURN name
+    """)
+   - record = constraints.single()
+   - assert record is not None and record["name"] == "day_id"
+   - session.close()
+   - driver.close()
+   - def test_persona_id_constraint():  # Verifies the `Persona` node uniqueness constraint.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
+   - AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test"))
+   - driver = GraphDatabase.driver(URI, auth=AUTH)
+   - driver.verify_connectivity()
+   - session = driver.session()
+   - test_path = "docs/scripts/neo4j/001_init_schema.cypher"
+   - test_file = pathlib.Path(test_path).read_text()
+   - test_file = test_file.split(";")[3]  # Fourth statement – Persona constraint.
+   - mig = session.run(test_file)
+   - mig.consume()
+   - constraints = session.run("""
+    SHOW CONSTRAINTS
+    YIELD name
+    WHERE name = 'persona_id'
+    RETURN name
+    """)
+   - record = constraints.single()
+   - assert record is not None and record["name"] == "persona_id"
+   - session.close()
+   - driver.close()
+   - def test_turn_id_constraint():  # Verifies the `Turn` node uniqueness constraint.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
+   - AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test"))  # Uses same env-driven credentials pattern.
+   - driver = GraphDatabase.driver(URI, auth=AUTH)  # Opens a new Neo4j driver for this specific test case.
+   - driver.verify_connectivity()  # Ensures database is reachable before executing migrations.
+   - session = driver.session()  # Starts a fresh session context.
+   - test_path = "docs/scripts/neo4j/001_init_schema.cypher"  # Path remains identical – we only slice a different statement.
+   - test_file = pathlib.Path(test_path).read_text()  # Reads the entire migration file into memory.
+   - test_file = test_file.split(";")[4]  # Fifth statement – selects the `Turn` uniqueness constraint.
+   - mig = session.run(test_file)  # Executes the constraint creation inside the session.
+   - mig.consume()  # Forces the transaction to finish so the constraint becomes visible to `SHOW CONSTRAINTS`.
+   - constraints = session.run("""
+    SHOW CONSTRAINTS
+    YIELD name
+    WHERE name = 'turn_id'
+    RETURN name
+    """)  # Queries the catalog for the newly created constraint by name.
+   - record = constraints.single()  # Retrieves the first (and only) matching row.
+   - assert record is not None and record["name"] == "turn_id"  # Asserts presence and correct naming.
+   - session.close()  # Cleans up the session to prevent resource leaks.
+   - driver.close()  # Closes the driver connection gracefully.
+   - def test_candidate_by_parent_ts_index():  # Ensures composite index exists for (parent_id, ts) on Turn nodes.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")  # Fetches the database URI from environment with fallback.
+   - AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test"))  # Same credential pattern.
+   - driver = GraphDatabase.driver(URI, auth=AUTH)  # New driver instance for this test.
+   - driver.verify_connectivity()  # Quick connectivity check before running Cypher.
+   - session = driver.session()  # Opens a new session.
+   - test_path = "docs/scripts/neo4j/001_init_schema.cypher"  # Migration file path.
+   - test_file = pathlib.Path(test_path).read_text()  # Reads whole migration file.
+   - test_file = test_file.split(";")[5]  # Sixth statement – candidate_by_parent_ts index.
+   - mig = session.run(test_file)  # Executes the index creation.
+   - mig.consume()  # Commits so index becomes visible.
+   - result = session.run("""
+    SHOW INDEXES WHERE name = 'candidate_by_parent_ts'
+    RETURN name
+    """)  # Checks if index exists by name.
+   - record = result.single()  # Retrieves single row if present.
+   - assert record is not None and record["name"] == "candidate_by_parent_ts"  # Asserts index presence.
+   - session.close()  # Closes session.
+   - driver.close()  # Closes driver.
+   - def test_module_has_prog_index():  # Verifies the `module_by_prog` index exists for ordering modules by `seq`.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")  # Default to local instance; overridable via env.
+   - AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test"))  # Credentials pattern.
+   - driver = GraphDatabase.driver(URI, auth=AUTH)  # Creates a Neo4j Driver instance for the test.
+   - driver.verify_connectivity()  # Ensures database is reachable before assertions.
+   - session = driver.session()  # Opens a session to run Cypher.
+   - test_path = "docs/scripts/neo4j/001_init_schema.cypher"  # Points to the migration script.
+   - test_file = pathlib.Path(test_path).read_text()  # Reads the file into memory.
+   - test_file = test_file.split(";")[6]  # Seventh statement – `module_by_prog` index.
+   - mig = session.run(test_file)  # Executes the index creation statement.
+   - mig.consume()  # Commits so the index is visible in catalog.
+   - result = session.run("""
+    SHOW INDEXES WHERE name = 'module_by_prog'
+    RETURN name
+    """)  # Checks index existence by name.
+   - record = result.single()  # Retrieves the single row, if present.
+   - assert record is not None and record["name"] == "module_by_prog"  # Asserts presence and correct naming.
+   - session.close()  # Closes the session.
+   - driver.close()  # Closes the driver connection.
+   - CREATE INDEX day_by_module IF NOT EXISTS FOR (d:Day) ON (d.seq);  # Index enabling ordered Day retrieval.
+   - CREATE VECTOR INDEX turnEmbedding IF NOT EXISTS FOR (t:Turn) ON (t.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 384, `vector.similarity_function`: 'cosine' } };  # Vector index supporting semantic search queries.
+
+2. docs/scripts/neo4j/001_init_schema.cypher
+   - CREATE CONSTRAINT program_id IF NOT EXISTS FOR (p:Program) REQUIRE p.id IS UNIQUE;  # Renamed to match canonical identifier specified in neo4j_catalog_schema.md.
+   - CREATE CONSTRAINT module_id IF NOT EXISTS FOR (m:Module) REQUIRE m.id IS UNIQUE;  # Constraint name aligned with spec.
+   - CREATE CONSTRAINT day_id IF NOT EXISTS FOR (d:Day) REQUIRE d.id IS UNIQUE;  # Ensures each Day node has unique ID using canonical name.
+   - CREATE CONSTRAINT persona_id IF NOT EXISTS FOR (per:Persona) REQUIRE per.id IS UNIQUE;  # Canonical identifier for Persona uniqueness.
+   - CREATE CONSTRAINT turn_id IF NOT EXISTS FOR (t:Turn) REQUIRE t.id IS UNIQUE;  # Guarantees global uniqueness for every Turn node.
+   - CREATE INDEX candidate_by_parent_ts IF NOT EXISTS FOR (t:Turn) ON (t.parent_id, t.ts);  # Composite index speeding child-fetch queries.
+   - CREATE INDEX module_by_prog IF NOT EXISTS FOR (m:Module) ON (m.seq);  # Index enabling ordered module retrieval.
+   - MATCH (t:Turn {role: 'root'}), (per:Persona) CREATE (per)-[:ROOTS]->(t);  # Connects the Persona to its root Turn, forming the head of the gold-path conversation.
+   - MATCH (t1:Turn {role: 'root'}), (t2:Turn {role: 'system'}) CREATE (t1)<-[:CHILD_OF]-(t2);  # Links the system Turn beneath the root to continue the gold-path hierarchy.
+   - MERGE (user_turn_1:Turn {id:3, role:'user'});  # Adds the initial user Turn node, continuing the ID sequence and specifying its role.
+   - MATCH (t2:Turn {role: 'system'}), (t3:Turn {role: 'user'}) CREATE (t2)<-[:CHILD_OF]-(t3);  # Attaches the user Turn beneath the system Turn in the conversation chain.
+
+3. tests/test_seed.py
+   - from neo4j import GraphDatabase  # Initializes Neo4j driver import for seed tests.
+   - import os  # Accesses environment variables so the test is environment-agnostic.
+   - import pathlib  # Reads the seed Cypher file from disk.
+   - def start_neo4j_session():  # Helper reused across seed-data tests; opens driver + session and loads seed script text.
+   - URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")  # Defaults to local Neo4j if env vars absent.
+   - AUTH = os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test")  # Credentials pattern.
+   - driver = GraphDatabase.driver(URI, auth=AUTH)  # Instantiates driver.
+   - driver.verify_connectivity()  # Quick connectivity check before running Cypher.
+   - session = driver.session()  # Opens a session context.
+   - test_path = "docs/scripts/neo4j/002_seed_data.cypher"  # Path to seed script.
+   - test_file = pathlib.Path(test_path).read_text()  # Reads entire seed script content.
+   - return driver, session, test_file  # Convention: driver & session must be closed by caller.
+   - def test_seed_program_node_exists():  # Verifies that seeding inserts at least one `Program` node.
+   - driver, session, test_file = start_neo4j_session()  # Starts db session & loads script.
+   - test_file = test_file.split(";")[0]  # Executes only the first statement that creates the Program.
+   - mig = session.run(test_file)  # Runs seed Cypher.
+   - mig.consume()  # Forces transaction commit.
+   - result = session.run("""
+    MATCH (p:Program)
+    RETURN p
+    """)  # Queries for Program node.
+   - record = result.single()  # Retrieves single row.
+   - assert record is not None  # Passes if at least one Program exists.
+   - assert record[0]['id'] is not None  # Strengthens test by confirming Program's primary key is populated.
+   - session.close()  # Cleans up resources.
+   - driver.close()  # Closes driver connection.
+   - def test_seed_module_node_exists():  # Verifies that seeding inserts at least one `Module` node.
+   - driver, session, test_file = start_neo4j_session()  # Opens Neo4j connection and loads seed script.
+   - test_file = test_file.split(";")[1]  # Executes second statement responsible for Module creation.
+   - mig = session.run(test_file)  # Runs seed statement.
+   - mig.consume()  # Commits changes.
+   - result = session.run("""
+    MATCH (m:Module)
+    RETURN m
+    """)  # Queries Module node.
+   - record = result.single()  # First row if present.
+   - assert record is not None  # Confirms at least one Module node.
+   - assert record[0]['id'] is not None  # Verifies Module node carries an `id` property.
+   - session.close()  # Clean up.
+   - driver.close()
+   - def test_seed_day_node_exists():  # Verifies Day node insertion during seeding.
+   - driver, session, test_file = start_neo4j_session()  # Opens Neo4j connection and loads seed script.
+   - test_file = test_file.split(";")[2]  # Executes third statement responsible for Day creation.
+   - mig = session.run(test_file)  # Runs seed statement.
+   - mig.consume()  # Commits changes.
+   - result = session.run("""
+    MATCH (d:Day)
+    RETURN d
+    """)  # Queries Day node.
+   - record = result.single()  # First row if present.
+   - assert record is not None  # Day node exists.
+   - assert record[0]['id'] is not None  # Ensures Day node has valid id.
+   - session.close()  # Clean up.
+   - driver.close()
+   - def test_seed_module_node_has_day_relationship():  # Ensures `Module` properly links to `Day` via HAS_DAY edge.
+   - driver, session, test_file = start_neo4j_session()  # Reloads seed script and opens session.
+   - test_file = test_file.split(";")[3]  # Executes fourth statement establishing relationship.
+   - mig = session.run(test_file)  # Runs relationship creation Cypher.
+   - mig.consume()  # Commits changes.
+   - result = session.run("""
+    MATCH (m:Module)-[:HAS_DAY]->(d:Day)
+    RETURN m
+    """)  # Queries for Module → Day edge.
+   - record = result.single()  # Gets first match.
+   - assert record is not None  # Relationship exists.
+   - assert record[0]['id'] is not None  # Module in relationship has valid id.
+   - session.close()  # Close session.
+   - driver.close()
+   - session.run("""
+    MATCH (n)
+    DETACH DELETE n
+    """)  # Idempotency: clears entire graph before running seed statements.
+   - for i in range(4):  # Executes the first four seed statements (Program, Module, Day, HAS_DAY edge)
+        test_file_output = test_file.split(";")[i]
+        session.run(test_file_output)  # Applies each statement sequentially.
+   - def test_seed_persona_node_exists():  # Verifies Persona node creation by seed script.
+   - driver, session, test_file = start_neo4j_session()
+   - test_file = test_file.split(";")[4]  # Fifth statement – Persona MERGE.
+   - session.run(test_file)  # Executes Persona creation.
+   - result = session.run("""
+    MATCH (per:Persona)
+    RETURN per
+    """)
+   - record = result.single()
+   - assert record is not None and record[0]['id'] is not None  # Persona exists and has id.
+   - session.close(); driver.close()
+   - def test_seed_day_node_has_persona_relationship():  # Ensures Day links to Persona via HAS_PERSONA.
+   - driver, session, test_file = start_neo4j_session()
+   - for i in range(6):  # Executes six statements up to HAS_PERSONA edge.
+        stmt = test_file.split(";")[i]
+        session.run(stmt)
+   - result = session.run("""
+    MATCH (d:Day)-[:HAS_PERSONA]->(per:Persona)
+    RETURN d
+    """)
+   - record = result.single()
+   - assert record is not None and record[0]['id'] is not None  # Relationship present.
+   - session.close(); driver.close()
+   - def test_seed_persona_node_has_roots_relationship():  # Ensures each Persona anchors to its root Turn via the ROOTS edge.
+   - driver, session, test_file = start_neo4j_session()
+   - for i in range(8):  # Executes the first eight seed statements (Program → Persona-ROOTS edge)
+        test_file_output = test_file.split(";")[i]
+        session.run(test_file_output)  # Applies each statement sequentially.
+   - result = session.run("""
+    MATCH (t:Turn {role: 'root'}), (per:Persona) WHERE (per)-[:ROOTS]->(t)
+    RETURN per, t
+    """)  # Queries for the ROOTS relationship, returning both nodes to validate properties.
+   - records = result.single()  # Retrieves the single matching record.
+   - assert records[0] is not None and records[0]['id'] is not None  # Verifies Persona node exists and has an id.
+   - assert records[1] is not None and records[1]['id'] is not None  # Verifies root Turn node exists and has an id.
+   - next_record = result.peek()  # Obtains the next record without advancing; should be None if exactly one match.
+   - assert next_record is None  # Confirms uniqueness: no additional Persona→ROOTS rows returned.
+   - session.close(); driver.close()
+   - def test_seed_system_node_has_child_relationship():  # Validates system→user CHILD_OF link without enforcing uniqueness.
+   - driver, session, test_file = start_neo4j_session()
+   - for i in range(12):  # Executes first 12 seed statements up through user-child-of-system edge.
+        stmt = test_file.split(";")[i]
+        session.run(stmt)
+   - result = session.run("""
+    MATCH (t1:Turn {role: 'system'}), (t2:Turn {role: 'user'}) WHERE (t1)<-[:CHILD_OF]-(t2)
+    RETURN t1, t2
+    """)  # Finds at least one user-child under the system turn.
+   - records = result.single()  # Retrieves a matching pair (many may exist, but one is enough to prove link).
+   - assert records[0] is not None and records[0]['id'] is not None  # System node exists and has id.
+   - assert records[1] is not None and records[1]['id'] is not None  # User child node exists and has id.
+   - session.close(); driver.close()
+   - def test_seed_user_node_has_child_relationship():  # Validates user→assistant CHILD_OF link.
+   - driver, session, test_file = start_neo4j_session()
+   - for i in range(14):  # Executes first 14 seed statements up through assistant-child-of-user edge.
+        stmt = test_file.split(";")[i]
+        session.run(stmt)
+   - result = session.run("""
+    MATCH (t1:Turn {role: 'user'}), (t2:Turn {role: 'assistant'}) WHERE (t1)<-[:CHILD_OF]-(t2)
+    RETURN t1, t2
+    """)  # Finds at least one assistant-child under the user turn.
+   - records = result.single()
+   - assert records[0] is not None and records[0]['id'] is not None  # User node exists and has id.
+   - assert records[1] is not None and records[1]['id'] is not None  # Assistant child node exists and has id.
+   - session.close(); driver.close()
+   - def test_day_by_module_index():  # Validates Day index used for ordered listing in UI.
+   - driver, session, test_file = start_neo4j_session()
+   - test_file = test_file.split(";")[7]  # Eighth statement – creates day_by_module index.
+   - session.run(test_file)
+   - result = session.run("""
+    SHOW INDEXES YIELD name WHERE name = 'day_by_module' RETURN name
+    """)
+   - record = result.single()
+   - assert record is not None and record["name"] == 'day_by_module'
+   - session.close(); driver.close()
+   - def test_turn_embedding_index():  # Confirms vector index exists for Turn.embeddings.
+   - driver, session, test_file = start_neo4j_session()
+   - test_file = test_file.split(";")[8]  # Ninth statement – creates turnEmbedding vector index.
+   - session.run(test_file)
+   - result = session.run("""
+    SHOW INDEXES YIELD name WHERE name = 'turnEmbedding' RETURN name
+    """)
+   - record = result.single()
+   - assert record is not None and record["name"] == 'turnEmbedding'
+   - session.close(); driver.close()
+
+4. docs/scripts/neo4j/002_seed_data.cypher
+   - MERGE (root_turn:Turn {id: 1, role:'root'});  # Establishes the root Turn node of the conversation DAG; this anchor allows subsequent ROOTS and CHILD_OF relationships to attach correctly while keeping the seed id sequence consistent.
+   - MERGE (system_turn:Turn {id:2, role:'system', accepted:true});  # Creates the system Turn node with its acceptance status.
+   - MATCH (t1:Turn {role: 'root'}), (t2:Turn {role: 'system'}) CREATE (t1)<-[:CHILD_OF]-(t2);  # Links the system Turn beneath the root.
+   - MERGE (user_turn_1:Turn {id:3, role:'user', accepted:true});  # Adds the initial user Turn node, flagged as accepted to be part of the initial gold path.
+   - MATCH (t2:Turn {role: 'system'}), (t3:Turn {role: 'user'}) CREATE (t2)<-[:CHILD_OF]-(t3);  # Attaches the user Turn beneath the system Turn.
+   - MERGE (assistant_turn_1:Turn {id:4, role:'assistant', accepted:true});  # Adds the assistant Turn node, also accepted to complete the gold path seed.
+   - MATCH (t3:Turn {role: 'user'}), (t4:Turn {role: 'assistant'}) CREATE (t3)<-[:CHILD_OF]-(t4);  # Links the assistant Turn beneath the user Turn.
+
+5. tests/test_import_google_docs.py
+   - import pydantic  # Brings Pydantic into scope for eventual schema validation of Google-Docs JSON.
+   - import pytest  # Testing framework used for TDD and exception assertions.
+   - import sys; sys.path.insert(0, './')  # Ensures workspace root is on PYTHONPATH so local packages resolve in CI.
+   - from docs.scripts.import_google_docs import import_file  # Imports the CLI helper under test.
+   - def test_cli_gdocs_import():  # Happy-path: validates a minimal 1-turn JSON is accepted and returns a UUID.
+   - sample_json = [{"seq": 1, "role":"system", "text": "this is the system prompt"}, {"seq": 2, "role":"user", "text": "this is the user reply"}, {"seq": 3, "role":"assistant", "text": "this is the assistant response"}]  # Three-turn canonical payload.
+   - job_id = import_file(sample_json)  # Executes helper and captures job identifier.
+   - assert isinstance(job_id, str) and len(job_id) == 36  # Confirms UUID string format.
+   - def test_path_is_valid():  # Negative-path: payload missing required field must raise ValueError.
+   - sample_json = [{"role":"system", "text": "this is the system prompt"}]  # Invalid – no `seq` field.
+   - with pytest.raises(ValueError):  # Asserts validation failure.
+   -     import_file(sample_json)  # Attempt import – should trigger exception.
+   - Updated `test_path_is_valid` to expect successful import when only mandatory fields are present, matching new optional `seq` (lines 20-36).
+
+6. docs/scripts/import_google_docs.py
+   - import uuid  # Standard library for generating unique job identifiers (UUIDv1 here for timestamp ordering).
+   - import pydantic  # Adds Pydantic to perform robust schema validation on incoming Google-Docs JSON turns.
+   - from pydantic import BaseModel  # Imports the Pydantic base class to declare our validation model.
+   - class validJSON(BaseModel):  # Schema model describing a single turn in the script.
+   -     role: str  # Required role (system/user/assistant etc.).
+   -     text: str  # The text content of the turn as written in Google-Docs.
+   -     seq: int  # Sequence number denoting ordering inside the script.
+   - def import_file(json_file_path):  # Public CLI entry; now accepts a file path rather than raw JSON.
+   -     paths_list = pathlib.Path(json_file_path).parts  # Breaks the path into its components so we can grab program/module/day/persona.
+   -     program_name, module_folder, day_folder, file_name = paths_list[-4], paths_list[-3], paths_list[-2], paths_list[-1]  # Four catalog clues: Program, Module##, Day##, persona.json.
+   -     module_seq = int(module_folder[6:])  # Extract numeric portion from "Module01".
+   -     day_seq = int(day_folder[3:])  # Extract numeric portion from "Day03".
+   -     persona_name = file_name[:-5]  # Strip ".json" to get persona identifier.
+   -     persona_seq = int(''.join(ch for ch in persona_name if ch.isdigit()) or 0)  # Derive a numeric ordering for the persona.
+   -     script_contents = json.loads(pathlib.Path(json_file_path).read_text())  # Load the JSON turns for validation.
+   -     for item in script_contents:  # Validate every turn via Pydantic – enforces required keys.
+   -         validJSON(**item)
+   -     session.run("""
+        MERGE (p:Program {id: $program_id});
+        """, {"program_id": program_name})  # Upserts Program by ID.
+   -     session.run("""
+        MERGE (m:Module {id: $module_seq, seq: $module_seq});
+        MERGE (p)-[:HAS_MODULE]->(m)
+        """, {"program_id": program_name, "module_seq": module_seq})  # Ensures Module node and its parent link.
+   -     session.run("""
+        MERGE (d:Day {id: $day_seq, seq: $day_seq});
+        MERGE (m)-[:HAS_DAY]->(d)
+        """, {"module_seq": module_seq, "day_seq": day_seq})  # Day node plus HAS_DAY relationship.
+   -     session.run("""
+        MERGE (per:Persona {id: $persona_id, seq: $persona_seq});
+        MERGE (d)-[:HAS_PERSONA]->(per)
+        """, {"persona_id": persona_name, "persona_seq": persona_seq, "day_seq": day_seq})  # Persona node with mandatory seq, linked to Day.
+
+7. docs/scripts/import_google_docs.py (latest additions)
+   - parent_id = None  # Initializes the cursor that remembers the most recently inserted Turn so we can link CHILD_OF edges correctly.
+   - root_id = uuid.uuid1()  # Generates a UUID for the root Turn node that anchors the Script-DAG.
+   - session.run("""
+    MERGE (root_node:Turn {id: $uuid, role: 'root', ts: timestamp()});
+    MATCH (t:Turn {id: $uuid, role: 'root'}), (per:Persona {id: $persona_id, seq: $persona_seq}) MERGE (per)-[:ROOTS]->(t)
+    """, {"persona_id": persona_name, "persona_seq": persona_seq, "uuid": root_id})  # Persists the root Turn and wires the Persona → ROOTS edge in one transaction.
+   - parent_id = root_id  # Updates the cursor so the very first script turn links back to the root.
+   - for turn_item in script_contents:  # Begins iterating over the validated JSON turns in canonical order.
+   -     new_turn_id = uuid.uuid4()  # Generates a fresh UUIDv4 for the current Turn to guarantee global uniqueness.
+   -     session.run("""
+        MERGE (turn_node:Turn {id: $turn_id, role: $turn_role, seq: $turn_seq, text: $turn_text, accepted:true, parent_id: $parent_turn_id, ts: timestamp()});
+        MATCH (t1:Turn {id: $parent_turn_id}), (t2:Turn {id: $turn_id}) MERGE (t1)<-[:CHILD_OF]-(t2);
+        """, turn_id=new_turn_id, turn_role=turn_item["role"], turn_seq=turn_item["seq"], turn_text=turn_item["text"], parent_turn_id=parent_id)  # Inserts the Turn node, establishes the CHILD_OF edge, and marks it accepted because we're importing the canonical storyline.
+   -     parent_id = new_turn_id  # Advances the cursor so the next turn in the JSON array points to this newly created node.
+
+8. docs/neo4j_catalog_schema.md (clarification)
+   - • Mandatory for `system`, `user`, and `assistant` roles: `accepted` (bool, default **false** **– except when a canonical script is imported via `import_google_docs.py`, in which case each imported turn starts with `accepted:true` to reflect its gold-path status**); optional for the single `root` node.  # Updated the property description to document canonical import behaviour.
+
+9. docs/scripts/import_google_docs.py (CLI wrapper additions)
+   - import argparse  # Standard library helper for building CLI interfaces.
+   - if __name__ == "__main__":  # Standard Python guard to ensure code runs only when script is executed directly.
+   -     parser = argparse.ArgumentParser(description="Import Google-Docs JSON into Neo4j")  # Constructs the CLI parser with a helpful description.
+   -     parser.add_argument("json_path", help="Path to <Program>/<Module##>/<Day##>/<persona##>.json")  # Required positional argument: the script JSON to import.
+   -     args = parser.parse_args()  # Parses command-line inputs into a structured namespace.
+   -     job_id = import_file(args.json_path)  # Executes the import routine and captures the returned Job-ID.
+   -     print(f"Imported script successfully. Job-ID: {job_id}")  # Surface the identifier so callers can track downstream tasks.
+
+10. docs/scripts/import_google_docs.py (path validation + Program.seq)
+   - # ----------------------------  ⚠ Path-structure validation  ⚠ ---------------------------  # Guard ensuring path includes <Program>/<Module##>/<Day##>/<persona>.json
+   - if len(paths_list) < 4: raise ValueError("json_file_path must contain at least four components: <Program>/<Module##>/<Day##>/<persona>.json")
+   - program_seq = int(''.join(ch for ch in program_name if ch.isdigit()) or 0)  # Extract numeric ordering or default to 0.
+   - session.run("""MERGE (p:Program {id: $program_id}) SET p.seq = $program_seq""", {"program_id": program_name, "program_seq": program_seq})  # Upserts Program with seq property.
+
+11. tests/test_import_google_docs.py (invalid path test)
+   - def test_bad_file_path_structure_raises_value_error(tmp_path):  # Verifies malformed path triggers ValueError.
+   - bad_path = tmp_path / "lonely_script.json"  # Path missing required folders.
+   - with pytest.raises(ValueError): import_file(str(bad_path))  # Expect guard to raise.
+
+12. apps/api-server/package.json
+   - "devDependencies": {"nodemon": "^3.1.10"}  # Adds nodemon for automatic reload on file changes during local development.
+   - "dependencies": {"express": "^5.1.0"}  # Introduces Express as the runtime HTTP framework for the API server.
+   - "scripts.dev": "nodemon src/index.js"  # Shortcut to launch the server with hot-reload in development.
+   - "main": "src/index.js"  # Points Node to the application entrypoint living in the src folder.
+   - "scripts.test": "jest --passWithNoTests"  # Switches Jest to pass when no tests are present, keeping CI green before real tests exist.
+   - "scripts.start": "node src/index.js"  # Adds an explicit start command used by production and Vercel builds.
+
+13. apps/api-server/src/index.js
+   - /** This file is the starting point of our API server. It explains—in everyday words—how we load env-vars, create the Express app, parse JSON requests and start listening. */  # Added full layman-friendly docstring per implementation guidelines.
+   - import * as dotenv from 'dotenv'  # Loads variables from .env so configuration lives outside code.
+   - dotenv.config()  # Parses the .env file and populates process.env.
+   - import express from 'express'  # Brings in the Express web-framework to create the HTTP API.
+   - const app = express()  # Instantiates the Express application.
+   - const PORT = process.env.PORT || 4000  # Configurable listening port with a sensible default.
+   - app.get('/health', (req, res) => res.json({ status: 'ok' }))  # Lightweight health-check endpoint for uptime probes.
+   - app.use(express.json());  # Registers the JSON body-parser middleware so every route can read req.body without extra setup.
+   - app.listen(PORT, () => console.log(`API listening on port ${PORT}`))  # Starts the server and logs readiness ✔.
+
+14. apps/api-server/.env.example
+   - NEO4J_URI=bolt://localhost:7687  # Local Neo4j instance endpoint.
+   - NEO4J_USER=neo4j  # Default Neo4j username.
+   - NEO4J_PASSWORD=your_db_password  # Replace with the real password in your private .env.
+   - REDIS_URL=redis://localhost:6379  # Local Redis instance URL.
+   - JWT_SECRET=change_me  # Secret used to sign/verify JWT tokens.
+   - PORT=4000  # API listening port; matches index.js fallback.
+
+15. apps/api-server/README.md
+   - # API Server – Flow 1 Dataset Editing  # Introduces the new README for the Node backend in plain language.
+   - cd apps/api-server          # jump into this folder  # Example command explaining local setup; kept here so future readers can trace when README instructions were added.
+
+16. apps/api-server/libs/node-shared/redis.js
+   - import { createClient } from "redis"  # Pulls in Redis v4 client constructor.
+   - if (!process.env.REDIS_URL) throw new Error("Environment variable REDIS_URL is undefined!")  # Fail-fast guard ensures env var is set.
+   - const redisClient = createClient({ url: process.env.REDIS_URL }); await redisClient.connect();  # Establishes a singleton connection at startup.
+   - export default redisClient;  # Makes the client reusable across route handlers.
+
+17. apps/api-server/libs/node-shared/jwt.js
+   - const sign_jwt = (payload) => jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '12h' });  # Helper signs a JWT with 12-hour expiry.
+   - const verify_jwt = (token) => jwt.verify(token, process.env.JWT_SECRET);  # Verifies a JWT and returns the decoded payload (throws on error).
+   - Fail-fast guard: throws if JWT_SECRET env var is missing. Includes JSDoc example for clarity.
+
+18. apps/api-server/libs/node-shared/db.js
+   - function envRequired(key) { /* Ensures required env vars are set; DRYs look-ups. */ }
+   - const uri = envRequired('NEO4J_URI'); const username = envRequired('NEO4J_USER'); const password = envRequired('NEO4J_PASSWORD');  # Uses helper to fetch credentials once.
+   - async function withSession(callback) { /* Opens session, runs callback, closes */ }  # Convenience wrapper demanded by spec.
+   - async function initNeo4j() { /* Lazily verifies connectivity; app calls at startup */ }
+   - export { driver, withSession, initNeo4j };  # Named exports enabling fine-grained imports in other modules.
+
+19. apps/api-server/src/middleware/error.js
+   - /*** Centralised error-handling middleware for Express with plain-English docstring explaining purpose and usage; always returns JSON with `error` key (status fallback to 500, hides stack trace in production). */
+   - const errorHandler = (err, req, res, next) => { /* logs error, picks status from err.status||500, builds payload, conditionally adds stack, sends JSON */ }  # New global error handler fulfilling spec item 2.3 Express skeleton.
+
+20. apps/api-server/src/index.js (update)
+   - import errorHandler from './middleware/error.js'  # Brings in the new middleware for use.
+   - // Register the global error handler AFTER all routes so Express only reaches it when something goes wrong in the chain above.
+   - app.use(errorHandler)  # Mounts middleware at end of chain ensuring consistent JSON errors.
+
+21. apps/api-server/src/routes/auth.js
+   - /*** Tiny router handling the login endpoint … demo account, JWT signing. Added full layman docstring lines 1-22. */
+   - const DEMO_USER = { email: 'demo@acme.test', password: 'pass123', role: 'editor' };  # New hard-coded credential.
+   - if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password.trim()) {  # Extra guard ensuring both credentials are non-empty strings before proceeding. This fulfils validation-layer spec item 2.3.5.
+   -     return res.status(400).json({ error: 'Email and password must be non-empty strings' });  # Responds with 400 for any malformed types or blank values.
+   - const payload = { email, role: DEMO_USER.role };  # Use role from demo user.
+
+22. apps/api-server/src/index.js (router mount)
+   - import authRouter from './routes/auth.js'  # Brings in the new auth router.
+   - app.use('/auth', authRouter)  # Exposes POST /auth/login (mount path before error handler).
+
+23. apps/api-server/src/app.js
+   - /*** Builds and configures the Express app but does NOT start the server. All routes, middleware, and error handlers are registered here. Exports the app for use in tests or by index.js. */
+   - import express, dotenv, errorHandler, authRouter;  # All setup code moved here.
+   - app.use(express.json()), app.use('/auth', authRouter), app.use(errorHandler)  # All middleware and routes registered here.
+   - export default app;  # Makes the app available for tests and server entrypoint.
+
+24. apps/api-server/src/index.js (refactor)
+   - /*** Entry point: imports the app and starts the server. No route/middleware setup here. */
+   - import app from './app.js'  # Now only imports the pre-built app.
+   - app.listen(port, ...)  # Starts the server for real use only.
+
+25. apps/api-server/tests/auth.test.js (imports fix)
+   - import request from 'supertest';  # corrected module name
+   - import app from '../src/app.js';  # fixed relative path
+
+26. apps/api-server/package.json (Jest ESM)
+   - "test": "NODE_OPTIONS=--experimental-vm-modules jest"  # Allows Jest to run ES-module syntax in tests.
+
+27. apps/api-server/tests/auth.test.js (env secret)
+   - process.env.JWT_SECRET = 'testsecret';  # Set a dummy secret before app import so JWT helper doesn't throw.
+
+28. apps/api-server/jest.config.js
+   - export default { testEnvironment: 'node', setupFilesAfterEnv: ['./tests/setupEnv.js'] };  # Jest config enabling ESM and env setup.
+
+29. apps/api-server/tests/setupEnv.js (update)
+   - Replaced static import with dynamic `await import('../libs/node-shared/db.js')` inside afterAll to avoid env var ordering issue.
+
+30. apps/api-server/tests/auth.test.js (cleanup)
+   - removed process.env.JWT_SECRET line; env is now set in setup file.
+
+31. .cursor/rules/implementation.mdc (tests policy expanded)
+   - Expanded the "ALL MODES – Tests are always AUTO" bullet to specify writing edge-case tests and always executing the full suite after changes.
+
+32. apps/api-server/src/routes/hierarchy.js
+   - /** Defines the /hierarchy endpoint. When a logged-in user calls GET /hierarchy, it returns the full catalog tree (Program → Module → Day → Persona) as a nested JSON object. Example usage: curl -H "Authorization: Bearer <token>" http://localhost:4000/hierarchy */
+   - router.get('/', async (req, res, next) => { ... });  # Handler opens a Neo4j session, runs a Cypher query to fetch the full catalog, and transforms the flat result into a nested array structure. All steps are explained in plain language comments. Responds with { data: tree } or passes errors to the global handler.
+
+33. apps/api-server/src/app.js
+   - Replaced mistaken `app.use('/hierarchy', authRouter, hierarchyRouter)` with `app.use('/hierarchy', authMiddleware, hierarchyRouter)` to ensure the endpoint is protected by JWT verification.
+
+34. apps/api-server/tests/script.test.js
+   - New Jest test file verifying GET /script/:personaId behaviour: ensures auth required, happy path returns gold-path turns for persona id 1 from seed, 404 on missing persona.
+
+35. apps/api-server/src/routes/script.js
+   - Implements GET /script/:personaId endpoint: fetches gold-path turns for a persona, returns as JSON, 404 if not found. Added layman docstring and comments throughout.
+
+35b. apps/api-server/src/routes/script.js
+    - Replaced APOC-based traversal with plain Cypher variable-length path to avoid plugin requirement in CI.
+
+35c. apps/api-server/src/routes/script.js
+    - Added logic to cast numeric personaId path param to integer for Neo4j type-matching.
+
+36. apps/api-server/src/routes/turn.js
+   - /*** Router: /turn … ***/   # New fully documented route handling PATCH /turn/:turnId, creates new Turn, emits Redis event.
+
+37. apps/api-server/src/app.js (addition)
+   - import turnRouter from './routes/turn.js'  # Adds turn router import.
+   - app.use('/turn', authMiddleware, turnRouter);  # Mounts router behind JWT guard.
+
+38. apps/api-server/libs/node-shared/redis.js
+   - Introduced environment-aware wrapper: returns in-memory stub when NODE_ENV==='test'; otherwise connects to Redis and exposes xAdd/quit proxy methods.
+
+39. apps/api-server/tests/turn_patch.test.js
+   - New Jest + Supertest test covering happy path, missing text, and unauthenticated cases. Also spies on Redis xAdd call to verify event emission.
+
+40. contracts/events/script.turn.updated.yaml
+   - Added formal event contract YAML describing field types and examples for the emitted `script.turn.updated` stream entry.
+
+41. apps/api-server/src/routes/export.js
+   - /*** Router: /export … file created with TODO markers. Responds 501 Not Implemented until user fills logic. Lines 1-40 new. */
+
+42. apps/api-server/src/app.js (export router mount)
+   - import exportRouter from './routes/export.js'  # New import to bring in the route file.
+   - app.use('/export', authMiddleware, exportRouter);  # Mounts the route behind the JWT guard.  (lines ~20 and ~40 updated)
+
+43. apps/api-server/tests/export.test.js
+   - New Jest test file verifies /export endpoint requires auth and currently returns 501 with placeholder error. Lines 1-25 new.
+
+44. apps/api-server/src/routes/export.js (update)
+   - Added `import { withSession } from '../../libs/node-shared/db.js'` at top.
+   - Replaced Cypher query with two-step MATCH that includes root turn or accepted turns and removed NULL rows (lines ~30-42 updated).
+
+45. apps/api-server/tests/export.test.js (update)
+   - Changed second test to expect 200 OK and verify returned payload is an array after implementing export logic (lines 13-21 updated).
+
+46. apps/api-server/src/routes/export.js (header addition)
+   - Added `Content-Disposition` header before `res.json` so browsers treat response as downloadable file. Lines ~50-55 updated.
+
+47. Multi-file refactor – fully removed deprecated Turn.seq property and switched ordering to depth+ts.
+   - docs/scripts/import_google_docs.py: class validJSON now treats seq as optional (lines 25-55); Turn creation Cypher no longer writes `seq` (lines 230-250).
+   - apps/api-server/src/routes/script.js: query and response shape updated to depth+ts (lines 20-45).
+   - apps/api-server/src/routes/export.js: same depth+ts ordering and response schema (lines 35-60).
+   - apps/api-server/src/routes/turn.js: new Turn creation no longer copies/bumps seq (lines 60-80).
+   - apps/api-server/tests/script.test.js: expectations updated to depth property and role order assertion (lines 48-65).
+   - docs/scripts/neo4j/003_remove_turn_seq.cypher: new migration file removing `seq` property from existing turns.
+
+48. tests/test_import_google_docs.py – Updated `test_path_is_valid` to expect successful import when only mandatory fields are present, matching new optional `seq` (lines 20-36).
+
+49. contracts/events/script.turn.diff_reported.yaml
+   - name: script.turn.diff_reported  # Declares the event name so queues and dashboards can filter easily.
+   - fields.id.type: string           # Every field is string-typed for maximal language interoperability.
+   - fields.parent_id.type: string    # Parent Turn identifier.
+   - fields.persona_id.type: string   # Persona owning the script.
+   - fields.diff_html.type: string    # Rendered HTML diff payload.
+   - fields.grade.type: string        # Quick score emitted by the Python worker.
+
+50. tests/test_event_contracts.py
+   - def test_diff_reported_contract_shape():  # Ensures YAML contract includes all mandatory keys; fails fast on divergence.
+   - expected = {'id', 'parent_id', 'persona_id', 'diff_html', 'grade'}  # Canonical set of keys as per spec.
+   - assert expected.issubset(contract['fields'].keys())  # Assertion guarding against accidental contract drift.
+
+51. apps/api-server/src/routes/turn.js
+   - Added length validation: if commit_message.length > 120 → 400 Bad Request.    # Ensures server matches front-end cap.
+
+52. apps/api-server/tests/turn_patch.test.js
+   - New test 'returns 400 when commit_message exceeds 120 characters' verifies the guard by sending a 121-char string and expecting HTTP 400.
+
+53. apps/api-server/src/routes/auth.js
+   - if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password.trim()) {  # Extra guard ensuring both credentials are non-empty strings before proceeding. This fulfils validation-layer spec item 2.3.5.
+   -     return res.status(400).json({ error: 'Email and password are required' });  # Responds with 400 for any malformed or blank values while keeping error message consistent.
+
+54. apps/api-server/src/routes/export.js
+   - lines 1-28 replaced: outdated TODO/scaffold docstring removed and replaced with final layman-friendly explanation of implemented export logic, including step-by-step outline, error behaviour, and example curl. This brings documentation in sync with code and finalises validation-layer completeness for 2.3.5.
+
+55. .eslintrc.cjs
+   - module.exports = { root:true, env:{ node:true, jest:true }, extends:["eslint:recommended","plugin:prettier/recommended"], /* plus layman comments */ }
+56. .prettierrc.json
+   - { "semi": true, "singleQuote": true, "trailingComma": "none", "printWidth": 100 }
+57. apps/api-server/package.json
+   - Added scripts: "lint" and "lint:fix".
+   - Added devDependencies: eslint, eslint-plugin-prettier, eslint-config-prettier, prettier.
+
+---
+# Update – C.I. Neo4j & Export 404 Test (2025-05-12)
+
+1. docker-compose.yml
+   - lines 1-31: **New file** – Minimal Compose definition that spins up `neo4j:5.18.0` on ports 7687/7474 with `NEO4J_AUTH=neo4j/test12345`, a named volume, and health-check. Provides a plug-and-play DB for Jest & Github-Actions.
+
+2. apps/api-server/tests/setupEnv.js
+   - Added lines 10-36: `beforeAll` retry-loop that waits for Neo4j to accept Bolt connections (up to 10 attempts with back-off) before the first test runs. Prevents race-conditions on slower CI hosts.
+
+3. apps/api-server/tests/export.test.js
+   - Added lines 18-30: New test case `"respond with 404 for a non-existent persona"` ensuring the route returns a proper JSON error when the requested persona ID is missing.
+
+58. apps/api-server/tests/setupEnv.js
+   - Added Docker Compose auto-start/stop logic with port-open check; avoids race-conditions and multiple starts.
+59. apps/api-server/README.md
+   - Simplified test instructions: container now started automatically; manual docker commands removed.
+
+60. docs/implementation_plan/user_flow_1_implementation_plan.md
+   - Added curl-based endpoint examples under item 2.3.10 Documentation updates, fulfilling the endpoint example requirement (lines ~150-190).
+
+61. .gitignore
+   - # .gitignore – lists folders & files we do NOT want in Git so the repository stays small and free of secrets.
+   - node_modules/  # Node packages can be re-installed any time; no need to version.
+   - venv/          # Python virtual env is machine-specific and bulky.
+   - .env           # Contains private keys and passwords – keep out of source control.
+   - .cursor/       # AI assistant scratch data; meaningless to other devs.
+   - __pycache__/   # Compiled Python byte-code; regenerated automatically.
