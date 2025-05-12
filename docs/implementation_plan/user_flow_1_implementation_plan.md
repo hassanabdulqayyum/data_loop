@@ -199,6 +199,12 @@ id, parent_id, persona_id, editor, ts, text, commit_message?
     - Create a human-friendly `.gitignore` that skips Node modules, Python virtual-envs, OS clutter, secrets and other transient files (see `docs/code_lines/user_flow_1_code_lines.md` entry #61).  
     - Stage the entire workspace and commit: `git add -A && git commit -m "Initial commit: baseline codebase and .gitignore setup"`.  
     - Outcome: every file is versioned from this point onwards, enabling safe collaboration, roll-backs and CI/CD triggers.
+    - **Branch naming convention:** start each task with `git checkout -b feature/<milestone-or-item-slug>` – e.g. `feature/2.3.4-route-handlers`.
+    - **Commit message style:** follow the plain-English flavour of Conventional Commits (`feat: …`, `fix: …`, `docs: …`, `refactor: …`).  Include the relevant implementation-plan item number so reviewers can trace the change.  
+      Example: `feat: 2.3.4 implement PATCH /turn event emission`.
+    - **Micro-task cadence:** make one commit at the end of *every* micro-task so the history mirrors the learning log. If the change touches multiple files, the single commit still suffices provided the message summarises the whole micro-task.
+    - **Push & PRs:** push the branch to the shared remote and open a Pull-Request targeting `main` (or the active milestone branch).  This automatically kicks off CI and Vercel preview deployments.
+    - **Branch model:** keep two long-lived branches – `dev` (integration) and `prod` (stable release).  Merge feature branches into `dev`; once the staging checklist passes, fast-forward `prod` from `dev` so Vercel promotes the build to production.
 
 12. **Vercel integration**
     - Once all 2.3.x tests pass locally, import the repository (or specifically the `feature/flow1-dataset-editing` branch) into Vercel.  

@@ -654,3 +654,9 @@
 
 63. .cursor/rules/implementation.mdc
    - Added **MICRO-TASK STEP 10 – Git Commit Convention**: mandates making a Git commit after each micro-task with a descriptive title and body referencing implementation-plan item number and updated code-lines ranges.
+
+64. docs/implementation_plan/user_flow_1_implementation_plan.md
+   - Added five bullet points under item 11 (Git source control) detailing branch naming convention, commit message style, micro-task cadence, and push/PR workflow.
+
+65. docs/implementation_plan/user_flow_1_implementation_plan.md
+   - Added bullet under item 11 explaining two long-lived branches `dev` and `prod` and promotion flow.

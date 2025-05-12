@@ -48,3 +48,7 @@ cypress/screenshots/
 # 12) Yarn & pnpm lock files if not in use – uncomment the one you don't need.
 # yarn.lock
 # pnpm-lock.yaml 
+
+# 13)
+ideation.md
+ideation_collab.md
