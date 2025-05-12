@@ -1,0 +1,71 @@
+---
+description: 
+globs: user_flow_1_implementation_plan.md
+alwaysApply: false
+---
+Adaptive-Delegation Implementation Rule  
+
+Use these guidelines for **every** user-flow implementation task so we balance learning speed and autonomy.
+
+## Docstring & Comment Style
+• All inline comments and docstrings **must be written in plain, layman's language**. Explain what the code does as if talking to a non-programmer: avoid dense jargon or abbreviation-heavy sentences.
+• As the AI assistant (the *agent*) writing or editing code, **you are responsible for ensuring every new or updated file follows this layman-style commentary rule by default**.
+
+## Glossary
+**Micro-task**: A single micro-task spans a couple of lines of code at max. Not more than 3. 
+
+## **Blueprint**: Do these steps for each MICRO-TASK:
+- MICRO-TASK STEP 1. Look at the `docs/implementation_plan/user_flow_1_implementation_plan.md` and suggest the next micro-task. Explain what it is in layman's language and what item it is from the implementation doc.
+
+- MICRO-TASK STEP 2. **Mode handshake (start of each micro-task)**  
+    – Ask the user which style they prefer:
+        - **DIY** → user codes everything for deeper understanding. I don't provide any actual line of code. They must discover it by themselves. I can give it to them if they explicitly ask for it.
+        - **PAIR** → assistant provides a commented scaffold or partial snippet; user completes it.  
+        - **AUTO** → assistant writes the full code (tests + implementation) end-to-end.  
+    – If the user is silent, default to **DIY**.
+
+    – **Exception – Pure syntax / boiler-plate fixes**
+        When the required change is *only* a syntactic or boiler-plate adjustment (e.g. converting familiar Python `try/except` logic into JavaScript `try/catch`) **and** the user has demonstrated they understand the underlying concept, the assistant should default to **AUTO** even if the chosen mode is DIY or PAIR.  This avoids monotonous keystrokes while keeping learning momentum.
+        - Treat *string-literal key changes* (e.g. switching the JSON response key from `message` to `error`) and other one-token edits as syntax/boiler-plate.  Auto-apply them without another handshake.
+        - Likewise, if a file the assistant touches is missing a layman-style header docstring, auto-insert it.  The same rule applies to in-file function docstrings.
+        - Immediately after such AUTO tweaks, also update `docs/code_lines/user_flow_1_code_lines.md` so the log never lags behind the code.
+
+- MICRO-TASK STEP 3.  **Expertise detection**  
+    When a micro-task is a repeat of skills the user has demonstrably mastered, proactively suggest switching to **AUTO** (user may override).  
+        – Conversely, if the user already understands the concept but struggles with language-specific syntax, lean on the rule above: AUTO the syntax-only edits, keep the core logic DIY/PAIR as appropriate.
+
+- MICRO-TASK STEP 4.  **Behaviour per mode**  
+    - **DIY** – Explain _what_ the next line / block should achieve and _why_, but never reveal the exact code. Review user submissions on request (`check` / `done` / `next`) and nudge until correct. **Still AUTO tiny syntax/boiler-plate fixes**.  
+    - **PAIR** – Supply a runnable scaffold (tests and/or function skeleton) with clear `TODO:` markers, leaving key internals blank for the user to fill. Provide feedback once filled. **Still AUTO small syntax tweaks**.  
+    - **AUTO** – Make direct edits in the repo, including thorough inline comments and updated docstrings. Ensure the test suite passes before handing back a summary.  
+    - **ALL MODES – Tests are always AUTO:** Writing or updating automated tests **and** running the test suite to verify green status is treated as boiler-plate. (Specific commands to run tests are documented in the relevant `README.md` files, such as `apps/api-server/README.md`). The assistant therefore  
+      1. **writes tests that proactively capture all foreseeable edge-cases and regression risks** for the code being edited (true TDD spirit, not just the happy path).  
+      2. **executes the full test suite** after every change to prove the repository still passes.  
+      This applies even when the user chooses DIY or PAIR, removing the manual burden while keeping quality high.  
+    - **ALL MODES** – *If the assistant actually changes a file (including syntax-only AUTO tweaks), it **must append the relevant snippet(s) to `docs/code_lines/user_flow_1_code_lines.md _before replying_`.* This keeps the log in sync even in quick iterations.
+
+- MICRO-TASK STEP 5.  **Test-Driven Development**  
+    All modes still follow TDD: write or update failing tests _first_, then add code until green. It's okay if the current micro-task doesn't have a test if it's too small a task.
+
+- MICRO-TASK STEP 6.  **Logging completed lines**  
+    After code is verified correct (tests passing), append the new line(s) with context to `docs/code_lines/user_flow_1_code_lines.md`.  
+    • For large contiguous edits you may summarise with a range (e.g. "lines 12-25 replaced") instead of logging every single line to avoid bloat.  
+    • If a later change removes lines that were previously logged, delete or strike-through the corresponding entry in the doc **in the same commit** so the log never points at non-existent code.  
+    Keep this doc in sync with `docs/implementation_plan/user_flow_1_implementation_plan.md`. If micro-task doesn't include a test yet, still make the change to `docs/code_lines/user_flow_1_code_lines.md` if the micro-task is successfully completed. Also, when a single item from `docs/implementation_plan/user_flow_1_implementation_plan.md` is complete, make it completed for clarity.
+
+- MICRO-TASK STEP 7.  **Spec enforcement**  
+    Flag any divergence from the implementation plan immediately and guide the user back on track.
+
+- MICRO-TASK STEP 8.  **Direct edit permission**  
+    When the user explicitly asks for a direct edit or selects **AUTO**, perform the edit without further confirmation.
+
+- MICRO-TASK STEP 9.  **Continuous rule improvement**  
+    If, during a micro-task, the assistant spots a simple tweak or addition to these rules that would noticeably improve learning efficiency or delivery speed in upcoming micro-tasks, it should:  
+    1. Proactively propose the change to the user in chat.  
+    2. Upon user approval, immediately patch this `implementation.mdc` file with the agreed wording before proceeding.
+
+## Quick Exit Checklist (assistant ticks mentally before sending a reply)
+- [ ] Code edits applied
+- [ ] New or updated docstrings written in layman style
+- [ ] `docs/code_lines/user_flow_1_code_lines.md` updated (including removals)
+- [ ] Implementation-plan progress updated if item finished

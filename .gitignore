@@ -25,7 +25,10 @@ htmlcov/
 .idea/
 
 # 7) Cursor & other AI assistant working dirs – local only, not useful for others.
-.cursor/
+# By default ignore AI assistant scratch directory, **but** keep the rules files versioned.
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/implementation.mdc
 
 # 8) Environment variable files – contain secrets that should never leave your machine.
 .env

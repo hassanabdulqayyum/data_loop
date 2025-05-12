@@ -651,3 +651,6 @@
 62. docs/implementation_plan/user_flow_1_implementation_plan.md
    - Renamed item 11 to **Git source control** and marked COMPLETE ✅.
    - Inserted new item 12 **Vercel integration** (moved down unchanged).  # Keeps plan numbering accurate after repository versioning work.
+
+63. .cursor/rules/implementation.mdc
+   - Added **MICRO-TASK STEP 10 – Git Commit Convention**: mandates making a Git commit after each micro-task with a descriptive title and body referencing implementation-plan item number and updated code-lines ranges.
