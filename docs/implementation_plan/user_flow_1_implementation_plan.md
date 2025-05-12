@@ -159,7 +159,7 @@ id, parent_id, persona_id, editor, ts, text, commit_message?
    - `test` (jest)
    - `start` (node src/index.js)
 
-10. **Documentation updates**
+10. **Documentation updates** – **Status: COMPLETE ✅**
     - Update this implementation plan's progress table and **endpoint examples** (done ✅ – see below).
     - Ensure every file & function contains explanatory comments & docstrings as per the repository's custom instructions.
 
@@ -194,7 +194,13 @@ id, parent_id, persona_id, editor, ts, text, commit_message?
          -L http://localhost:4000/export/1 --output script_1.json
     ```
 
-11. **Vercel integration**
+11. **Git source control** – **Status: COMPLETE ✅**
+    - Initialise a new Git repository with `main` as the default branch (`git init -b main`).  
+    - Create a human-friendly `.gitignore` that skips Node modules, Python virtual-envs, OS clutter, secrets and other transient files (see `docs/code_lines/user_flow_1_code_lines.md` entry #61).  
+    - Stage the entire workspace and commit: `git add -A && git commit -m "Initial commit: baseline codebase and .gitignore setup"`.  
+    - Outcome: every file is versioned from this point onwards, enabling safe collaboration, roll-backs and CI/CD triggers.
+
+12. **Vercel integration**
     - Once all 2.3.x tests pass locally, import the repository (or specifically the `feature/flow1-dataset-editing` branch) into Vercel.  
     - Add the environment variables from `.env.example` in the Vercel dashboard (`NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `REDIS_URL`, `JWT_SECRET`, `PORT`).  
     - Vercel automatically runs `npm run build` and `npm run start`, producing a preview URL that redeploys on every push—use this for QA before merging.

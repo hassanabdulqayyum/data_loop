@@ -647,3 +647,7 @@
    - .env           # Contains private keys and passwords – keep out of source control.
    - .cursor/       # AI assistant scratch data; meaningless to other devs.
    - __pycache__/   # Compiled Python byte-code; regenerated automatically.
+
+62. docs/implementation_plan/user_flow_1_implementation_plan.md
+   - Renamed item 11 to **Git source control** and marked COMPLETE ✅.
+   - Inserted new item 12 **Vercel integration** (moved down unchanged).  # Keeps plan numbering accurate after repository versioning work.
