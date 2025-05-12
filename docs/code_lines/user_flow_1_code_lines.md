@@ -660,3 +660,6 @@
 
 65. docs/implementation_plan/user_flow_1_implementation_plan.md
    - Added bullet under item 11 explaining two long-lived branches `dev` and `prod` and promotion flow.
+
+66. .cursor/rules/implementation.mdc
+   - Added MICRO-TASK STEP 11 Branching Model: outlines dev → prod two-lane flow and feature branch naming.
