@@ -663,3 +663,31 @@
 
 66. .cursor/rules/implementation.mdc
    - Added MICRO-TASK STEP 11 Branching Model: outlines dev → prod two-lane flow and feature branch naming.
+
+67. vercel.json (new file)
+   - { "version": 2, "builds": [{ "src": "api/index.mjs", "use": "@vercel/node" }], "routes": [{ "src": "/(.*)", "dest": "api/index.mjs" }], "env": {…} }  # Declarative config telling Vercel how to build and route every request to our Express app, plus env-variable passthrough.
+
+68. api/index.mjs (new file)
+   - /** Vercel serverless entrypoint that simply exports the Express app so every request is handled exactly the same as in local dev. */
+   - import app from '../apps/api-server/src/app.js';
+   - export default app;  # One-liner proxy; Vercel injects req/res so no port listening needed.
+
+69. apps/api-server/env.example (new file)
+   - NEO4J_URI=bolt://localhost:7687
+   - NEO4J_USER=neo4j
+   - NEO4J_PASSWORD=your-db-password
+   - REDIS_URL=redis://localhost:6379
+   - JWT_SECRET=change-me-in-production
+   - PORT=4000  # Sample var list developers copy to .env and to the Vercel dashboard.
+
+70. tests/test_event_contracts.py
+   - def test_updated_contract_shape():  # New unit test that ensures the `script.turn.updated` event contract always contains the agreed mandatory fields so future edits cannot silently remove them.
+   - contract = _load_contract('contracts/events/script.turn.updated.yaml')  # Loads the YAML file under test.
+   - assert contract['name'] == 'script.turn.updated'  # Quick top-level check that the event name never changes.
+   - expected = {'id', 'parent_id', 'persona_id', 'editor', 'ts', 'text', 'commit_message'}  # Canonical list of required keys.
+   - assert expected.issubset(contract['fields'].keys())  # Passes if YAML lists all keys; fails CI otherwise.
+
+71. docs/implementation_plan/user_flow_1_implementation_plan.md
+   - Milestones section (lines ~25-40): updated M4 to "Python diff-worker plus Docker-Compose integration" and added new M7 "Post-MVP infra migration – GPU workstation".
+   - Section 2.5 (lines ~140-190) completely rewritten: removed immediate infra-switch, detailed Docker-Compose additions (`redis`, `diff_worker`), memory limits, profile usage, and clarified worker behaviour & tests.
+   - Section 2.8 (lines ~250-300) **newly added**: step-by-step guide for migrating Neo4j, Redis, and Python workers to the shared GPU workstation after staging passes, including env-var flips, health checks, and rollback plan.
