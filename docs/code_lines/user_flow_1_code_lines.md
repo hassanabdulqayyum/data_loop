@@ -797,10 +797,15 @@
    - Added "CORS hardening – Status: COMPLETE ✅" subsection under 2.3 API-Server.
 
 97. apps/frontend/index.html
-   - lines 6-18: **Added Inter font import** (`<link href="https://fonts.googleapis.com/...">`) and inline `<style>` applying `font-family:'Inter',sans-serif` to `body`, ensuring the entire app inherits the correct typeface per Figma spec.
+   - line 5: title changed to "Data Loop"; global letter-spacing -0.05em added to body style for Figma accuracy.
 
 98. apps/frontend/src/pages/LoginView.jsx
+   - Multiple style adjustments: heading fontSize 48, button colour #131413, button text size 32 & weight 600, placeholder + forgot-password text colour #373639, input border #CCCCCC, font sizes 26, scoped style block sets placeholder colour & letter-spacing.
+
+99. apps/frontend/src/pages/LoginView.jsx
    - lines 1-140 replaced: switched header text to "Login", centred form with flexbox, updated button to black/white design, introduced disabled-until-complete logic, and appended a "Forgot password?" link. Extensive layman comments added for future maintainers.
 
-99. apps/frontend/tests/LoginView.test.jsx
+100. apps/frontend/tests/LoginView.test.jsx
    - Extended smoke-test: now also asserts presence of the forgot-password link and verifies the Login button is disabled when inputs are empty, reflecting new UI behaviour.
+
+101. Global styles: introduced `colours` object inside component for maintainability.

@@ -10,7 +10,7 @@ UPDATE 2025-05-13 (Flow-1 2.6.1 visual polish)
   focus remains on the action a visitor expects to take.
 • Added a subtle "Forgot password?" link beneath the primary button—this is a
   non-functional placeholder for now but completes the familiar login layout.
-• Button colour updated to solid black `#000` with white text to mirror the
+• Button colour updated to solid black `#131413` with white text to mirror the
   design.  Disabled state drops the opacity to 60 % so users immediately know
   why they cannot click.
 
@@ -64,6 +64,13 @@ function LoginView() {
   // Pre-compute simple flags to keep the JSX tidy below.
   const formIncomplete = !email.trim() || !password.trim();
 
+  /* Inline CSS object reused so we don't repeat colour literals */
+  const colours = {
+    black: '#131413',
+    greyText: '#373639',
+    greyBorder: '#CCCCCC'
+  };
+
   return (
     /*
      * A single flexbox container vertically and horizontally centres the
@@ -89,7 +96,7 @@ function LoginView() {
         }}
       >
         {/* Title */}
-        <h1 style={{ marginBottom: '2rem', fontSize: '2rem', fontWeight: 600 }}>
+        <h1 style={{ marginBottom: '2rem', fontSize: 48, fontWeight: 600 }}>
           Login
         </h1>
 
@@ -103,9 +110,9 @@ function LoginView() {
             style={{
               width: '100%',
               padding: '0.75rem 1rem',
-              border: '1px solid #d1d5db',
+              border: `1px solid ${colours.greyBorder}`,
               borderRadius: 6,
-              fontSize: '0.95rem'
+              fontSize: 26
             }}
             required
           />
@@ -121,9 +128,9 @@ function LoginView() {
             style={{
               width: '100%',
               padding: '0.75rem 1rem',
-              border: '1px solid #d1d5db',
+              border: `1px solid ${colours.greyBorder}`,
               borderRadius: 6,
-              fontSize: '0.95rem'
+              fontSize: 26
             }}
             required
           />
@@ -136,12 +143,12 @@ function LoginView() {
           style={{
             width: '100%',
             padding: '0.9rem',
-            background: '#000',
+            background: colours.black,
             color: '#fff',
             border: 'none',
             borderRadius: 6,
-            fontSize: '1rem',
-            fontWeight: 500,
+            fontSize: 32,
+            fontWeight: 600,
             cursor: loading || formIncomplete ? 'not-allowed' : 'pointer',
             opacity: loading || formIncomplete ? 0.6 : 1,
             transition: 'opacity 0.2s'
@@ -156,8 +163,8 @@ function LoginView() {
             href="#"
             onClick={(e) => e.preventDefault()}
             style={{
-              fontSize: '0.9rem',
-              color: '#4b5563',
+              fontSize: 26,
+              color: colours.greyText,
               textDecoration: 'none'
             }}
           >
@@ -165,6 +172,14 @@ function LoginView() {
           </a>
         </div>
       </form>
+
+      {/* Placeholder colour via scoped style so JSX doesn't need pseudo-element hacks */}
+      <style>{`
+        input::placeholder {
+          color: ${colours.greyText};
+          letter-spacing: -0.05em;
+        }
+      `}</style>
     </div>
   );
 }
