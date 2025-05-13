@@ -54,6 +54,10 @@ const allowedOrigins = process.env.CORS_ORIGIN
 
 app.use(cors({ origin: allowedOrigins }));
 
+// Some browsers send a preflight OPTIONS request. Make sure we reply quickly
+// with the correct CORS headers for *every* path.
+app.options('*', cors({ origin: allowedOrigins }));
+
 // Parse incoming JSON
 app.use(express.json());
 
