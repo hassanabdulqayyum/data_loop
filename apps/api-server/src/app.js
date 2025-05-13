@@ -41,22 +41,41 @@ await initNeo4j();
 const app = express()
 
 // -------------------------------------------------------------
-// Enable CORS so the front-end (served from a different Vercel
-// project/domain) can call this API. We allow the origin set in
-// env var CORS_ORIGIN (comma-separated list) or fall back to '*'
-// during early development. The middleware automatically handles
-// pre-flight OPTIONS requests so browsers don't fail.
+// Smarter origin check – supports wildcard patterns such as
+//   *.vercel.app  or  https://data-loop-frontend*.vercel.app
+// List multiple values in CORS_ORIGIN separated by commas.
+// Example:
+//   CORS_ORIGIN=https://data-loop-frontend.vercel.app,*.vercel.app
 // -------------------------------------------------------------
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',')
-  : '*';
+let corsOrigin;
+if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN.trim() === '*') {
+  corsOrigin = '*';
+} else {
+  const tokens = process.env.CORS_ORIGIN.split(',').map((s) => s.trim());
+  const exact = tokens.filter((t) => !t.includes('*'));
+  const wildcards = tokens
+    .filter((t) => t.includes('*'))
+    .map((pat) =>
+      // escape dots then replace * with .*
+      new RegExp('^' + pat.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$')
+    );
 
-app.use(cors({ origin: allowedOrigins }));
+  corsOrigin = function (origin, callback) {
+    if (!origin) return callback(null, true); // non-browser request
+    if (exact.includes(origin)) return callback(null, true);
+    for (const re of wildcards) {
+      if (re.test(origin)) return callback(null, true);
+    }
+    callback(new Error('CORS not allowed'));
+  };
+}
+
+app.use(cors({ origin: corsOrigin }));
 
 // Some browsers send a preflight OPTIONS request. Make sure we reply quickly
 // with the correct CORS headers for *every* path.
-app.options('*', cors({ origin: allowedOrigins }));
+app.options('*', cors({ origin: corsOrigin }));
 
 // Parse incoming JSON
 app.use(express.json());

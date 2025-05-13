@@ -781,3 +781,5 @@
 90. Added app.options('*', cors(...)) to ensure preflight CORS requests get proper headers.
 
 91. Front-end SPA fallback – added apps/frontend/vercel.json with rewrite to serve index.html for all routes.
+
+92. Improved CORS – app.js now parses CORS_ORIGIN into exact + wildcard patterns and builds dynamic checker allowing *.vercel.app domains.
