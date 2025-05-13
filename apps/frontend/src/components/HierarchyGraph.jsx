@@ -28,7 +28,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
         data: { label: program.id },
         position: { x: 400, y: 0 },
         style: {
-          background: '#9CA3AF',
+          background: '#131413',
           color: '#fff',
           padding: '4px 12px',
           borderRadius: 6,
