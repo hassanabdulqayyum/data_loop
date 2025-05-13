@@ -70,10 +70,43 @@ fi
 NGROK_VERSION=$(ngrok version | head -n1 | awk '{print $3}') || NGROK_VERSION="unknown"
 print_ok "ngrok installed – ${NGROK_VERSION}"
 
-# Check if ngrok authtoken is configured by scanning default config path.
-if ! grep -q "authtoken" "$HOME/.config/ngrok/ngrok.yml" 2>/dev/null; then
-  print_error "ngrok authtoken not found. Run 'ngrok config add-authtoken <TOKEN>' before retrying." && exit 1
+# ---------------------------------------------------------------------------
+# Detect whether an auth-token is configured. We try **three** strategies so the
+# script works across ngrok v2 (config in ~/.ngrok2) *and* v3 (config in
+# ~/.config/ngrok) and even when users set the token via the NGROK_AUTHTOKEN
+# environment variable. If *none* of the strategies succeed we bail out with a
+# helpful hint.
+# ---------------------------------------------------------------------------
+
+has_ngrok_token() {
+  # 1) Newer ngrok CLI exposes a sub-command that prints the token if present.
+  if ngrok config get authtoken >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # 2) Check v3 default path: ~/.config/ngrok/ngrok.yml
+  if grep -q "authtoken" "$HOME/.config/ngrok/ngrok.yml" 2>/dev/null; then
+    return 0
+  fi
+
+  # 3) Check v2 legacy path: ~/.ngrok2/ngrok.yml
+  if grep -q "authtoken" "$HOME/.ngrok2/ngrok.yml" 2>/dev/null; then
+    return 0
+  fi
+
+  # 4) Finally, honour an environment variable if the user prefers not to
+  # touch the YAML at all.
+  if [[ -n "${NGROK_AUTHTOKEN:-}" ]]; then
+    return 0
+  fi
+
+  return 1  # token not found
+}
+
+if ! has_ngrok_token; then
+  print_error "ngrok authtoken not found. Run 'ngrok config add-authtoken <TOKEN>' and then re-run this script." && exit 1
 fi
+
 print_ok "ngrok authtoken found"
 
 # -------- Start tunnels -----------------------------------------------------
