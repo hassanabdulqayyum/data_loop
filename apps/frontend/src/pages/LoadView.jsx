@@ -320,7 +320,7 @@ function LoadView() {
               fontSize: 28,
               fontWeight: 500,
               letterSpacing: '-0.05em',
-              color: '#9CA3AF'
+              color: '#000000'
             }}>Select a script to load…</p>
           )}
         </div>

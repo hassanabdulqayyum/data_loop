@@ -18,7 +18,7 @@ import 'reactflow/dist/style.css';
  */
 const commonTextStyle = {
   fontFamily: 'Inter, sans-serif',
-  fontSize: '36px',
+  fontSize: '28px',
   fontWeight: '500',
   letterSpacing: '-0.05em',
   color: '#000000'
