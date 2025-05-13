@@ -767,3 +767,7 @@
 
 85. Front-end dependency switch – apps/frontend/package.json
    - Removed react-flow-renderer and added reactflow ^11.11.4 (new official package name) to avoid ETARGET errors.
+
+86. Front-end API helper and LoginView update
+   - apps/frontend/src/lib/api.js (new file) – apiFetch helper prefixes paths with VITE_API_BASE_URL, JSON header default, throws on error.
+   - apps/frontend/src/pages/LoginView.jsx – replaced raw fetch with apiFetch and added import.

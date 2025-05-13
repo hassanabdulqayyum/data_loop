@@ -20,6 +20,7 @@ Example manual test:
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore.js';
+import { apiFetch } from '../lib/api.js';
 
 function LoginView() {
   // Local state for the two form fields.
@@ -39,19 +40,10 @@ function LoginView() {
 
     setLoading(true);
     try {
-      const res = await fetch('/auth/login', {
+      const { token } = await apiFetch('/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-
-      if (!res.ok) {
-        // Backend sends JSON { error: "…" }
-        const { error } = await res.json();
-        throw new Error(error || 'Login failed');
-      }
-
-      const { token } = await res.json();
       setToken(token); // Save into zustand + localStorage.
       toast.success('Logged in successfully');
       // TODO: navigate to CanvasView once it exists.
