@@ -795,3 +795,12 @@
 
 96. docs/implementation_plan/user_flow_1_implementation_plan.md
    - Added "CORS hardening – Status: COMPLETE ✅" subsection under 2.3 API-Server.
+
+97. apps/frontend/index.html
+   - lines 6-18: **Added Inter font import** (`<link href="https://fonts.googleapis.com/...">`) and inline `<style>` applying `font-family:'Inter',sans-serif` to `body`, ensuring the entire app inherits the correct typeface per Figma spec.
+
+98. apps/frontend/src/pages/LoginView.jsx
+   - lines 1-140 replaced: switched header text to "Login", centred form with flexbox, updated button to black/white design, introduced disabled-until-complete logic, and appended a "Forgot password?" link. Extensive layman comments added for future maintainers.
+
+99. apps/frontend/tests/LoginView.test.jsx
+   - Extended smoke-test: now also asserts presence of the forgot-password link and verifies the Login button is disabled when inputs are empty, reflecting new UI behaviour.

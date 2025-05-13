@@ -1,20 +1,27 @@
 /*
 LoginView.jsx – Simple email / password form that talks to the back-end.
 
-How it works in plain words:
-1. User types email + password and hits the **Login** button.
-2. We send a POST request to `/auth/login` (same origin; Vercel rewrites).
-3. If the response is `{ token }`, we save it to localStorage so future API
-   calls include the JWT automatically (done later with a fetch helper).
-4. We also put the user into our tiny zustand store so React components know
-   the user is authenticated and can redirect to the main CanvasView.
-5. On error we show a toast in the corner with a human-friendly message.
+UPDATE 2025-05-13 (Flow-1 2.6.1 visual polish)
+———————————————————————————————————————————
+• Font switched to **Inter** (imported globally in `index.html`).
+• Page now uses a clean white canvas with the form centred exactly like the
+  1440 × 1024 Figma frame.
+• Header text changed from project name to a plain **"Login"** title so the
+  focus remains on the action a visitor expects to take.
+• Added a subtle "Forgot password?" link beneath the primary button—this is a
+  non-functional placeholder for now but completes the familiar login layout.
+• Button colour updated to solid black `#000` with white text to mirror the
+  design.  Disabled state drops the opacity to 60 % so users immediately know
+  why they cannot click.
 
-Example manual test:
-• Run the API server locally (`npm --workspace apps/api-server run dev`).
-• In another shell, `npm --workspace apps/frontend run dev`.
-• Open http://localhost:5173 and login with the demo credentials given in the
-  implementation plan (demo@acme.test / pass123).
+Example usage (manual):
+```
+<BrowserRouter>
+  <Routes>
+    <Route path="/login" element={<LoginView />} />
+  </Routes>
+</BrowserRouter>
+```
 */
 
 import React, { useState } from 'react';
@@ -54,44 +61,109 @@ function LoginView() {
     }
   }
 
+  // Pre-compute simple flags to keep the JSX tidy below.
+  const formIncomplete = !email.trim() || !password.trim();
+
   return (
-    <div style={{ maxWidth: 400, margin: '10vh auto', textAlign: 'center' }}>
-      <h1>Flow 1 Dataset Editor</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '0.75rem' }}>
+    /*
+     * A single flexbox container vertically and horizontally centres the
+     * narrow card in the middle of the 1440 × 1024 desktop frame. This keeps
+     * the code responsive without extra CSS files.
+     */
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#ffffff'
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          width: '100%',
+          maxWidth: 360,
+          padding: '0 1rem',
+          textAlign: 'center'
+        }}
+      >
+        {/* Title */}
+        <h1 style={{ marginBottom: '2rem', fontSize: '2rem', fontWeight: 600 }}>
+          Login
+        </h1>
+
+        {/* Email textbox */}
+        <div style={{ marginBottom: '1rem' }}>
           <input
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem' }}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid #d1d5db',
+              borderRadius: 6,
+              fontSize: '0.95rem'
+            }}
             required
           />
         </div>
-        <div style={{ marginBottom: '0.75rem' }}>
+
+        {/* Password textbox */}
+        <div style={{ marginBottom: '1.5rem' }}>
           <input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem' }}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid #d1d5db',
+              borderRadius: 6,
+              fontSize: '0.95rem'
+            }}
             required
           />
         </div>
+
+        {/* Primary action */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || formIncomplete}
           style={{
             width: '100%',
-            padding: '0.75rem',
-            background: '#6366f1',
+            padding: '0.9rem',
+            background: '#000',
             color: '#fff',
             border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer'
+            borderRadius: 6,
+            fontSize: '1rem',
+            fontWeight: 500,
+            cursor: loading || formIncomplete ? 'not-allowed' : 'pointer',
+            opacity: loading || formIncomplete ? 0.6 : 1,
+            transition: 'opacity 0.2s'
           }}
         >
           {loading ? 'Logging in…' : 'Login'}
         </button>
+
+        {/* Forgot password */}
+        <div style={{ marginTop: '1rem' }}>
+          <a
+            href="#"
+            onClick={(e) => e.preventDefault()}
+            style={{
+              fontSize: '0.9rem',
+              color: '#4b5563',
+              textDecoration: 'none'
+            }}
+          >
+            Forgot password?
+          </a>
+        </div>
       </form>
     </div>
   );
