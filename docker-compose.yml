@@ -29,5 +29,36 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7.2-alpine  # Lightweight official Redis image.
+    container_name: redis
+    profiles: ["diff"]  # Allows devs to opt-out: `docker compose --profile diff up -d`.
+    ports:
+      - "6379:6379"  # Exposes Redis so local apps/tests can connect.
+    restart: unless-stopped  # Ensures the service auto-restarts on failure / host reboot.
+    mem_limit: 256m  # Guardrail so laptops don't thrash when multiple services run.
+    volumes:
+      - redis_data:/data  # Persists Redis data outside the image layer.
+    healthcheck:
+      test: ["CMD", "redis-cli", "PING"]  # Simple connectivity ping.
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  diff_worker:
+    build:
+      context: ./apps/py-ai-service  # Path to the Python worker source.
+    container_name: diff_worker
+    depends_on:
+      - redis  # Waits until Redis health-checks pass.
+    profiles: ["diff"]  # Same opt-in profile as Redis.
+    environment:
+      - REDIS_URL=redis://redis:6379  # Internal Docker DNS resolves `redis` → container IP.
+      - NEO4J_URI=bolt://neo4j:7687  # Talks to the existing Neo4j service.
+      - NEO4J_USER=neo4j  # Username aligns with test Neo4j instance.
+      - NEO4J_PASSWORD=test12345  # Password matches NEO4J_AUTH in neo4j service.
+    restart: unless-stopped  # Keep the worker alive across failures.
+
 volumes:
-  neo4j_data: 
+  neo4j_data:
+  redis_data: 

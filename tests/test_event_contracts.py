@@ -28,4 +28,24 @@ def test_diff_reported_contract_shape():
 
     # Exact list of required fields, taken straight from the implementation plan.
     expected = {'id', 'parent_id', 'persona_id', 'diff_html', 'grade'}
+    assert expected.issubset(contract['fields'].keys())
+
+
+def test_updated_contract_shape():  # New test confirming the updated-event contract lists every required field.
+    contract = _load_contract('contracts/events/script.turn.updated.yaml')
+
+    # The event name must remain fixed so consumers can subscribe with confidence.
+    assert contract['name'] == 'script.turn.updated'
+
+    # Required keys as agreed in the implementation plan.
+    expected = {
+        'id',
+        'parent_id',
+        'persona_id',
+        'editor',
+        'ts',
+        'text',
+        'commit_message'
+    }
+    # Layman check: our YAML must at least contain all these keys. Supersets are fine.
     assert expected.issubset(contract['fields'].keys()) 

@@ -691,3 +691,35 @@
    - Milestones section (lines ~25-40): updated M4 to "Python diff-worker plus Docker-Compose integration" and added new M7 "Post-MVP infra migration – GPU workstation".
    - Section 2.5 (lines ~140-190) completely rewritten: removed immediate infra-switch, detailed Docker-Compose additions (`redis`, `diff_worker`), memory limits, profile usage, and clarified worker behaviour & tests.
    - Section 2.8 (lines ~250-300) **newly added**: step-by-step guide for migrating Neo4j, Redis, and Python workers to the shared GPU workstation after staging passes, including env-var flips, health checks, and rollback plan.
+
+72. docker-compose.yml (redis & diff_worker services)
+   - lines 20-47: **Added `redis` service** (profiles diff, 256 MB mem_limit, health-check, volume).
+   - lines 49-61: **Added `diff_worker` service** (builds ./apps/py-ai-service, env vars, depends_on redis).
+   - volumes section: added named volume `redis_data`.
+
+73. apps/py-ai-service/Dockerfile (new file)
+   - Python 3.10-slim image, installs requirements, copies source, runs `diff_worker.py` under non-root user. (lines 1-30)
+
+74. apps/py-ai-service/requirements.txt (new file)
+   - `redis==5.0.4`
+   - `neo4j==5.28.0`
+
+75. apps/py-ai-service/diff_worker.py (new file)
+   - Added `from neo4j import GraphDatabase` import.
+   - Declared new env vars `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` and created a single driver instance in `main()` with connectivity check.
+   - Implemented parent text retrieval inside `_process_message` via Cypher `MATCH (t:Turn {id: $id}) RETURN t.text`.
+   - Gracefully logs and falls back to empty string on errors so diffs are still published.
+   - Added global `_neo4j_driver` reference at bottom for type clarity.
+
+76. apps/py-ai-service/diff_worker.py (previous-text Neo4j lookup)
+   - Added `from neo4j import GraphDatabase` import.
+   - Declared new env vars `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` and created a single driver instance in `main()` with connectivity check.
+   - Implemented parent text retrieval inside `_process_message` via Cypher `MATCH (t:Turn {id: $id}) RETURN t.text`.
+   - Gracefully logs and falls back to empty string on errors so diffs are still published.
+   - Added global `_neo4j_driver` reference at bottom for type clarity.
+
+77. docker-compose.yml
+   - diff_worker environment: added `NEO4J_USER=neo4j`, `NEO4J_PASSWORD=test12345` to match Neo4j service credentials.
+
+78. tests/test_diff_worker.py (new file)
+   - Adds fully mocked unit tests for diff_worker ensuring HTML diff contains "diff_add" on new text and worker handles missing `text` safely without raising. Uses dynamic import because of dash in directory name.
