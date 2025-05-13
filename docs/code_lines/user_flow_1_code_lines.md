@@ -764,3 +764,6 @@
 
 84. Front-end dependency fix – apps/frontend/package.json
    - Downgraded react-flow-renderer to ^10.6.13 because 11.x series published under new package name; keeps install working.
+
+85. Front-end dependency switch – apps/frontend/package.json
+   - Removed react-flow-renderer and added reactflow ^11.11.4 (new official package name) to avoid ETARGET errors.
