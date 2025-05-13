@@ -9,8 +9,8 @@
   ],
   "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "api/index.mjs"
+      "source": "/(.*)",
+      "destination": "api/index.mjs"
     }
   ],
   "headers": [
