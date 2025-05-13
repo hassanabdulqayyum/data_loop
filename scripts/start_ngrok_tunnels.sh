@@ -133,7 +133,8 @@ REDIS_NGROK_PID=$!
 # Function that waits for a forwarding address to appear in a given log file.
 wait_for_tunnel() {
   local log_file="$1"
-  local timeout=30  # seconds
+  # Allow callers to override the wait timeout via ENV so slow networks don't trip the script.
+  local timeout=${TUNNEL_TIMEOUT:-45}  # seconds (default 45)
   local elapsed=0
   while [[ $elapsed -lt $timeout ]]; do
     # Search for the first occurrence of a TCP forwarding address regardless of
@@ -147,6 +148,11 @@ wait_for_tunnel() {
     sleep 1
     elapsed=$((elapsed + 1))
   done
+  # Optional: dump last log lines to aid debugging when timeout hits.
+  if [[ -n "${DEBUG_NGROK_TUNNELS:-}" ]]; then
+    print_error "Dumping last 15 log lines for debugging:"
+    tail -n 15 "$log_file" >&2
+  fi
   return 1  # timed out
 }
 
