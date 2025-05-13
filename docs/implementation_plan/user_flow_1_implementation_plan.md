@@ -222,7 +222,14 @@ id, parent_id, persona_id, editor, ts, text, commit_message?
 
 ### 2.5  Python Diff Worker – `apps/py-ai-service`
 
-During active development **all three stateful back-end services – Neo4j, Redis Streams, and the Python diff-worker – run inside the existing `docker-compose.yml` file**.  One command (`docker compose up -d`) now boots the whole stack on any laptop or CI runner, guaranteeing parity across environments.  A later section details how the same Compose file is reused on the shared GPU workstation once Flow 1 is feature-complete.
+> **Status: COMPLETE ✅**  
+> **Implementation summary (see `docs/code_lines/user_flow_1_code_lines.md` entries 72-78):**  
+> • **Docker-Compose** – `docker-compose.yml` now declares the `redis` service (profile `diff`, 256 MB limit, health-check, named volume) **and** `diff_worker` service that builds from `apps/py-ai-service/` and receives the correct Neo4j/Redis env-vars.  
+> • **Worker image & source** – `apps/py-ai-service/Dockerfile` builds a slim Python 3.10 image, installs `redis`/`neo4j` clients from `requirements.txt`, copies `diff_worker.py`, and starts it as a non-root user.  
+> • **Runtime behaviour** – `diff_worker.py` subscribes to `script.turn.updated`, fetches the *previous* turn text from Neo4j, computes an HTML diff via `difflib.HtmlDiff`, then publishes a `script.turn.diff_reported` event that matches the YAML contract. It keeps running indefinitely and logs, but never crashes the loop on a single bad message.  
+> • **Automated tests** – `tests/test_diff_worker.py` stubs Redis & Neo4j in-memory, asserts diff HTML contains `diff_add`, and verifies the worker handles a missing `text` field gracefully. All 25 repository tests pass (`pytest -q`).
+
+During active development **all three stateful back-end services – Neo4j, Redis Streams, and the Python diff-worker – run inside the existing `docker-compose.yml` file**.  One command (`docker compose --profile diff up -d`) now boots the whole stack on any laptop or CI runner, guaranteeing parity across environments.  A later section details how the same Compose file is reused on the shared GPU workstation once Flow 1 is feature-complete.
 
 #### Docker-Compose additions (Milestone M4)
 • **`redis` service** – official Redis image, named volume `redis-data`, health-check, optional `6379:6379` port mapping.  
