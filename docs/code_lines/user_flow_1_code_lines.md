@@ -761,3 +761,6 @@
 
 83. Front-end dependency fix – apps/frontend/package.json
    - Bumped react-flow-renderer from ^11.8.6 (non-existent) to ^11.10.0 (latest 11.x) so npm install succeeds on Vercel.
+
+84. Front-end dependency fix – apps/frontend/package.json
+   - Downgraded react-flow-renderer to ^10.6.13 because 11.x series published under new package name; keeps install working.
