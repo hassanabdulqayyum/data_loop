@@ -40,75 +40,71 @@ await initNeo4j();
 
 const app = express()
 
-// -------------------------------------------------------------
-// Smarter origin check – supports wildcard patterns such as
-//   *.vercel.app  or  https://data-loop-frontend*.vercel.app
-// List multiple values in CORS_ORIGIN separated by commas.
-// Example:
-//   CORS_ORIGIN=https://data-loop-frontend.vercel.app,*.vercel.app
-// -------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Final CORS policy – dynamic whitelist based on the CORS_ORIGIN env var.
+// ---------------------------------------------------------------------------
+// The env var can contain a comma-separated list such as:
+//   CORS_ORIGIN=https://my-prod-domain.com,*.vercel.app,http://localhost:5173
+// Every token is either:
+//   • an exact match (no asterisk)   → e.g. https://my-prod-domain.com
+//   • a wildcard pattern            → e.g. *.vercel.app   (matches any sub-domain)
+//
+// We transform wildcard tokens into real RegExp objects so they work with the
+// dynamic origin check that the `cors` package supports.
 
-// let corsOrigin; // OLD DYNAMIC LOGIC
-// if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN.trim() === '*') { // OLD DYNAMIC LOGIC
-//   corsOrigin = '*'; // OLD DYNAMIC LOGIC
-// } else { // OLD DYNAMIC LOGIC
-//   const tokens = process.env.CORS_ORIGIN.split(',').map((s) => s.trim()); // OLD DYNAMIC LOGIC
-//   const exact = tokens.filter((t) => !t.includes('*')); // OLD DYNAMIC LOGIC
-//   const wildcards = tokens // OLD DYNAMIC LOGIC
-//     .filter((t) => t.includes('*')) // OLD DYNAMIC LOGIC
-//     .map((pat) => // OLD DYNAMIC LOGIC
-//       // escape dots then replace * with .* // OLD DYNAMIC LOGIC
-//       new RegExp('^' + pat.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$') // OLD DYNAMIC LOGIC
-//     ); // OLD DYNAMIC LOGIC
-// // OLD DYNAMIC LOGIC
-//   corsOrigin = function (origin, callback) { // OLD DYNAMIC LOGIC
-//     if (!origin) return callback(null, true); // non-browser request // OLD DYNAMIC LOGIC
-//     if (exact.includes(origin)) return callback(null, true); // OLD DYNAMIC LOGIC
-//     for (const re of wildcards) { // OLD DYNAMIC LOGIC
-//       if (re.test(origin)) return callback(null, true); // OLD DYNAMIC LOGIC
-//     } // OLD DYNAMIC LOGIC
-//     callback(new Error('CORS not allowed')); // OLD DYNAMIC LOGIC
-//   }; // OLD DYNAMIC LOGIC
-// } // OLD DYNAMIC LOGIC
-// app.use(cors({ origin: corsOrigin })); // OLD DYNAMIC LOGIC
-// // Some browsers send a preflight OPTIONS request. Make sure we reply quickly
-// // with the correct CORS headers for *every* path.
-// app.options('*', cors({ origin: corsOrigin })); // OLD DYNAMIC LOGIC
+function buildCorsOptions() {
+  const raw = process.env.CORS_ORIGIN || '*';
 
-// --- TEMPORARY SIMPLIFIED CORS FOR DEBUGGING ---
-// Explicitly handle OPTIONS preflight requests first.
-// This ensures that preflight requests get the necessary headers immediately.
-// Express 5 no longer accepts bare `*` or `:param*` patterns.
-// The new wildcard syntax is `/*name`  (without braces) or `/{*name}` if you
-// also want to match the root path. We use the latter so *every* URL — even
-// `/` — gets the CORS pre-flight treatment during development.
-app.options('/{*splat}', (req, res) => {
-  // Log to Vercel to confirm if OPTIONS requests reach this handler.
-  console.log(`OPTIONS request received for: ${req.path} from origin: ${req.headers.origin}`);
+  // Shortcut – allow everything when the env var is left at the default '*'.
+  if (raw.trim() === '*') {
+    return {
+      origin: '*',
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    };
+  }
 
-  // Set permissive CORS headers for the preflight response.
-  // 'Access-Control-Allow-Origin' should be '*' or the specific requesting origin.
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow any origin
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  // 'Access-Control-Allow-Headers' must include any headers the client might send,
-  // like 'Content-Type' or 'Authorization' for JWTs.
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version');
-  // 'Access-Control-Allow-Credentials' can be true if your frontend needs to send cookies or auth headers.
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
-  // Respond with 204 No Content, which is a common practice for preflight requests.
-  res.status(204).end();
-});
+  const tokens = raw.split(',').map((s) => s.trim());
+  const exact = tokens.filter((t) => !t.includes('*'));
+  const wildcards = tokens
+    .filter((t) => t.includes('*'))
+    .map((pat) => new RegExp('^' + pat.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$'));
 
-// Then, use the cors middleware for all other (actual) requests.
-// This will also add CORS headers to responses for GET, POST, etc.
-app.use(cors({
-  origin: '*', // Allow all origins for actual requests too.
-  credentials: true, // Allow credentials (e.g., for Authorization header).
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Date', 'X-Api-Version']
-}));
-// --- END TEMPORARY SIMPLIFIED CORS ---
+  const originFn = function (origin, callback) {
+    // Requests coming from tools like curl have no `Origin` header – always allow.
+    if (!origin) return callback(null, true);
+
+    if (exact.includes(origin)) return callback(null, true);
+    for (const re of wildcards) {
+      if (re.test(origin)) return callback(null, true);
+    }
+
+    // Anything else is rejected (browser will surface the CORS failure).
+    return callback(new Error('CORS not allowed for origin: ' + origin));
+  };
+
+  return {
+    origin: originFn,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  };
+}
+
+const corsOptions = buildCorsOptions();
+
+// `cors` automatically handles simple requests. For pre-flight (OPTIONS) we
+// still need an explicit route so Express 5's stricter routing matches every
+// path.  `/{*splat}` is the new wildcard that captures the root and all
+// nested segments.
+app.options('/{*splat}', cors(corsOptions));
+
+// Finally apply the middleware to normal requests.
+app.use(cors(corsOptions));
+// ---------------------------------------------------------------------------
+// END of CORS setup
+// ---------------------------------------------------------------------------
 
 // Parse incoming JSON
 app.use(express.json());

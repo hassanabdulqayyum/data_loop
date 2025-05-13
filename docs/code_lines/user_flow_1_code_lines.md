@@ -783,3 +783,15 @@
 91. Front-end SPA fallback – added apps/frontend/vercel.json with rewrite to serve index.html for all routes.
 
 92. Improved CORS – app.js now parses CORS_ORIGIN into exact + wildcard patterns and builds dynamic checker allowing *.vercel.app domains.
+
+93. apps/api-server/src/app.js
+   - Replaced open CORS debug block (lines ~40-100 removed) with dynamic whitelist function `buildCorsOptions` and Express-5 `/{*splat}` pre-flight handler (new lines ~40-110).
+
+94. apps/api-server/tests/cors.test.js
+   - **New file** lines 1-40 – Jest + Supertest test that sends OPTIONS /auth/login and asserts 204 status plus correct CORS headers.
+
+95. apps/api-server/README.md
+   - Added new "CORS policy" section (lines 80-115) explaining how to add new domains via `CORS_ORIGIN` env var and wildcard syntax.
+
+96. docs/implementation_plan/user_flow_1_implementation_plan.md
+   - Added "CORS hardening – Status: COMPLETE ✅" subsection under 2.3 API-Server.

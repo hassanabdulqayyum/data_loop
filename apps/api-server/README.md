@@ -72,3 +72,33 @@ and the rest happens under the hood.
 * Push a pull-request and watch Vercel spin up a preview URL automatically.
 
 Happy coding! 🚀
+
+## CORS policy – allowing the front-end to talk to the API
+
+Modern browsers block cross-origin requests unless the server explicitly says
+"yes" via HTTP headers. We use the popular `cors` Express middleware but with a
+small twist: the **accepted origins are driven entirely by an environment
+variable** so we never need to touch the code when we spin up another preview
+URL on Vercel.
+
+```
+# Multiple values separated by commas
+CORS_ORIGIN=https://my-prod-domain.com,*.vercel.app,http://localhost:5173
+```
+
+How it works in plain words:
+
+1. Exact strings (no asterisk) must match the browser's `Origin` header 1-to-1.
+2. Tokens that contain a `*` are treated as wildcards, e.g. `*.vercel.app` will
+   match **any** `something.vercel.app` sub-domain.
+3. During development you can set `CORS_ORIGIN=*` to allow **everything** –
+   handy for quick local tests.
+
+Need to add a new domain?
+
+1. Edit the `CORS_ORIGIN` env var in **Vercel → Project Settings → Environment**.
+2. Redeploy and you're done – the API will automatically accept the new
+   front-end without code changes.
+
+The automated test `tests/cors.test.js` ensures we never break pre-flight
+responses again after the Express-5 upgrade.

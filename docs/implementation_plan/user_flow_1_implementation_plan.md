@@ -213,6 +213,13 @@ id, parent_id, persona_id, editor, ts, text, commit_message?
     - **Environment template** – `apps/api-server/env.example` lists every required variable (`NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `REDIS_URL`, `JWT_SECRET`, `PORT`) so developers can run the server locally and can copy–paste the same keys into Vercel.  
     - With those files in place you can now run `vercel dev` locally or push any branch to GitHub and Vercel will build a preview URL automatically, using `npm run start` under the hood.
 
+#### CORS hardening – Status: COMPLETE ✅
+-   - Dynamic whitelist driven by `CORS_ORIGIN` env var implemented in `src/app.js` (lines ↻). Wildcards like `*.vercel.app` supported.
+-   - Automated Jest test `tests/cors.test.js` protects the behaviour (pre-flight OPTIONS returns 204 + correct headers).
+-   - README section added explaining how to add new domains.
+-   - Temporary 'allow all' headers removed; logged noise pruned.
+-   - Vercel config retains header passthrough but server handles CORS centrally now.
+
 ### 2.4  Event Contracts – `contracts/events/`
 
 1. `script.turn.updated.yaml` – exact schema as table above.  
