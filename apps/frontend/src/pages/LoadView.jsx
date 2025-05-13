@@ -46,6 +46,8 @@ function LoadView() {
   const [tree, setTree] = useState(null); // The nested Program → Persona data
   const [loading, setLoading] = useState(true); // While we wait for /hierarchy
   const [selectedPersona, setSelectedPersona] = useState(null); // Leaf choice
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [selectedTopic, setSelectedTopic] = useState(null);
 
   // Grab the JWT so we can call protected endpoints safely.
   const { token } = useAuthStore();
@@ -92,20 +94,59 @@ function LoadView() {
 
       // MODULE level – has `days` array
       if (node.days) {
+        const isSelected = selectedModule === node.id;
         return (
-          <div key={node.id} style={{ marginLeft: depth * 16 }}>
-            <div style={{ marginBottom: 4 }}>{node.id}</div>
-            {renderTree(node.days, depth + 1)}
+          <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 8 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedModule(node.id);
+                setSelectedTopic(null);
+                setSelectedPersona(null);
+              }}
+              style={{
+                background: '#fff',
+                color: '#000',
+                border: `2px solid ${isSelected ? '#1E40AF' : '#000'}` /* blue outline when selected */,
+                borderRadius: 6,
+                padding: '0.3rem 0.6rem',
+                cursor: 'pointer',
+                fontSize: 16,
+                fontWeight: isSelected ? 600 : 400,
+                transition: 'border-color 0.2s'
+              }}
+            >
+              {node.id}
+            </button>
+            {isSelected && renderTree(node.days, depth + 1)}
           </div>
         );
       }
 
-      // DAY level – has `personas` array
+      // DAY/Topic level – has `personas` array
       if (node.personas) {
+        const isSelected = selectedTopic === node.id;
         return (
-          <div key={node.id} style={{ marginLeft: depth * 16 }}>
-            <div style={{ marginBottom: 4 }}>{node.id}</div>
-            {renderTree(node.personas, depth + 1)}
+          <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 6 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedTopic(node.id);
+                setSelectedPersona(null);
+              }}
+              style={{
+                background: '#fff',
+                color: '#000',
+                border: `2px solid ${isSelected ? '#1E40AF' : '#000'}`,
+                borderRadius: 6,
+                padding: '0.25rem 0.5rem',
+                cursor: 'pointer',
+                fontSize: 15
+              }}
+            >
+              {node.id}
+            </button>
+            {isSelected && renderTree(node.personas, depth + 1)}
           </div>
         );
       }
@@ -148,9 +189,23 @@ function LoadView() {
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       {/* Left column – the hierarchy */}
-      <div style={{ flex: 2, padding: '1rem', overflowY: 'auto' }}>
+      <div
+        style={{
+          flex: 2,
+          padding: '1rem',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center' /* centers horizontally */,
+          justifyContent: 'flex-start'
+        }}
+      >
         {loading && <p>Loading hierarchy…</p>}
-        {!loading && tree && renderTree(tree)}
+        {!loading && tree && (
+          <div style={{ textAlign: 'left' /* keep text start inside */ }}>
+            {renderTree(tree)}
+          </div>
+        )}
       </div>
 
       {/* Right column – placeholder panel */}
