@@ -289,7 +289,8 @@ function LoadView() {
           style={{
             flex: 1,
             padding: '1rem',
-            borderLeft: '1px solid #e5e5e5',
+            /* Divider between graph and RSP: 3-px grey (#D1D1D1) per design */
+            borderLeft: '3px solid #D1D1D1',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -302,10 +303,12 @@ function LoadView() {
               onClick={handleLoad}
               style={{
                 padding: '0.75rem 1.5rem',
-                fontSize: 18,
-                background: '#000',
-                color: '#fff',
-                border: 'none',
+                fontSize: 24,
+                fontWeight: 500,
+                letterSpacing: '-0.05em',
+                background: '#ffffff',
+                color: '#000000',
+                border: '2px solid #000000',
                 borderRadius: 6,
                 cursor: 'pointer'
               }}
@@ -313,7 +316,12 @@ function LoadView() {
               Load script
             </button>
           ) : (
-            <p style={{ fontSize: 18, color: '#9CA3AF' /* light grey per Figma */ }}>Select a script to load…</p>
+            <p style={{
+              fontSize: 28,
+              fontWeight: 500,
+              letterSpacing: '-0.05em',
+              color: '#9CA3AF'
+            }}>Select a script to load…</p>
           )}
         </div>
       </div>

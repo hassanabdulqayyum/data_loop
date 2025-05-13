@@ -16,7 +16,8 @@
 
   /* Basic styling */
   background-color: #ffffff; /* White background, can be changed via theme */
-  border-bottom: 1px solid #e0e0e0; /* Subtle border to separate from content */
+  /* Divider between the navbar and the main content now matches the spec: 3&nbsp;px #D1D1D1 */
+  border-bottom: 3px solid #D1D1D1;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Slight shadow for depth */
   z-index: 1000; /* Ensure it stays on top of other content */
 
