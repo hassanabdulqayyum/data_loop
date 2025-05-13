@@ -78,7 +78,7 @@ const app = express()
 // --- TEMPORARY SIMPLIFIED CORS FOR DEBUGGING ---
 // Explicitly handle OPTIONS preflight requests first.
 // This ensures that preflight requests get the necessary headers immediately.
-app.options('/*', (req, res) => {
+app.options('/:path*', (req, res) => {
   // Log to Vercel to confirm if OPTIONS requests reach this handler.
   console.log(`OPTIONS request received for: ${req.path} from origin: ${req.headers.origin}`);
 
