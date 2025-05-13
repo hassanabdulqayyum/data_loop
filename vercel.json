@@ -7,7 +7,7 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
       "src": "/(.*)",
       "dest": "api/index.mjs"
