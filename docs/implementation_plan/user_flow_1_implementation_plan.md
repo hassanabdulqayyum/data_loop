@@ -244,6 +244,10 @@ During active development **all three stateful back-end services – Neo4j, Redi
 
 *Pytest* – asserts correct diff output on normal messages and graceful handling of malformed payloads.
 
+-> **Implementation summary (see `docs/code_lines/user_flow_1_code_lines.md` entries 72-78):**
+> **Implementation summary (see `docs/code_lines/user_flow_1_code_lines.md` entries 72-78):**
+> • **Vercel connectivity verified** – A live preview build (`dev → Production`) now shows `✅ Connected to Redis` and `✅ Connected to Neo4j` at cold-start, proving that the serverless functions can reach the **locally running** Docker-Compose stack through the ngrok TCP tunnels.  This confirms end-to-end integration works exactly as planned when developers keep the helper script running.
+
 ### 2.6  Front-End – `apps/frontend`
 
 Libraries: React 18, React-Router, React-Flow, zustand, react-hot-toast.

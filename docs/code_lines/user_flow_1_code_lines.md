@@ -743,3 +743,15 @@
    - Declares monorepo-level dependencies so Vercel's @vercel/node builder installs runtime libs.
    - Lists dotenv, express, jsonwebtoken, neo4j-driver, redis with same versions as apps/api-server to avoid duplication issues.
    - Marked "private": true to prevent accidental npm publish.
+
+81. Front-end scaffold – apps/frontend (multiple new files)
+   - apps/frontend/package.json (lines 1-40) – Declares React 18 app, scripts `dev/build/test`, dependencies (react, router, zustand, etc.).
+   - apps/frontend/vite.config.js (lines 1-25) – Configures Vite with react plugin.
+   - apps/frontend/index.html (lines 1-20) – Single-page HTML shell with <div id="root">.
+   - apps/frontend/src/main.jsx (lines 1-35) – Boots React app, adds BrowserRouter and Toaster.
+   - apps/frontend/src/App.jsx (lines 1-35) – Defines route switch mapping /login → LoginView.
+   - apps/frontend/src/pages/LoginView.jsx (lines 1-100) – Email/password form that POSTs /auth/login; saves JWT via zustand; shows toasts.
+   - apps/frontend/src/store/useAuthStore.js (lines 1-35) – zustand store for JWT persisting to localStorage.
+   - apps/frontend/tests/LoginView.test.jsx (lines 1-20) – Smoke test: renders LoginView and asserts email input exists.
+   - apps/frontend/jest.config.js (lines 1-20) & babel.config.js (lines 1-10) – Jest setup for JSX.
+   - apps/frontend/.eslintrc.cjs (lines 1-25) – ESLint rules for browser React code.
