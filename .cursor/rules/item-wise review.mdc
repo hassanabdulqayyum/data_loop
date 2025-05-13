@@ -1,0 +1,34 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+My Item-by-Item Workflow (from my perspective)
+
+1. I pick the next unchecked backlog item.
+
+2. Phase A – Content  
+   • You ask me what the item means and what success looks like.  
+   • I explain it in my own words.
+   • You give your thoughts on what I gave you and also explain how it helps you understand my overarching vision more clearly.
+   • You clarify anything that remains unclear at the item level and how it fits into the bigger project and resolve that until we're done.
+   • Then, you print out final wording verbatim of my original wording as much as possible (plus any extra sub-bullets I request) in the chat and once I agree on a version, you add under the item and tag it with “✏️ A-done.”  
+   • You then prompt me for Phase B (UI).
+
+3. Phase B – UI  
+   • I describe exactly how I want the UI to support this feature.
+   • Then we discuss it until I have everything I need.
+   • You give me a final version in the chat and ask me to finalize a version to add to the item using my original wording as much as possible.
+   • You add a 🖥️ UI sub-bullet (and any nested bullets) using the final version.  
+   • You remove the temporary “✏️ A-done” marker and replace it with the original completion tag: “— ✅ pass 1 done.”
+
+4. We repeat the cycle with the next backlog item.
+
+5. UI bullets are allowed to differ from item to item.  
+   • As we progress, we’ll refine and de-duplicate them.  
+   • A final UI pass will be done after all items are processed to eliminate redundancies and produce the polished, consolidated UI spec.
+
+6. General rules  
+   • My wording from Phase A must appear exactly as I wrote it.  
+   • All UI details live under a single 🖥️ UI bullet per item.  
+   • Nothing gets deleted or overwritten—only appended and properly marked as done.

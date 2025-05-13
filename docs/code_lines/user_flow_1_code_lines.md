@@ -432,6 +432,7 @@
    - import * as dotenv from 'dotenv'  # Loads variables from .env so configuration lives outside code.
    - dotenv.config()  # Parses the .env file and populates process.env.
    - import express from 'express'  # Brings in the Express web-framework to create the HTTP API.
+   - Early imports of `../libs/node-shared/redis.js` and `initNeo4j()` verification ensure Vercel cold-start logs immediately show ✅/❌ for Redis & Neo4j tunnels (lines 15-25).
    - const app = express()  # Instantiates the Express application.
    - const PORT = process.env.PORT || 4000  # Configurable listening port with a sensible default.
    - app.get('/health', (req, res) => res.json({ status: 'ok' }))  # Lightweight health-check endpoint for uptime probes.
@@ -663,3 +664,76 @@
 
 66. .cursor/rules/implementation.mdc
    - Added MICRO-TASK STEP 11 Branching Model: outlines dev → prod two-lane flow and feature branch naming.
+
+67. vercel.json (new file)
+   - { "version": 2, "builds": [{ "src": "api/index.mjs", "use": "@vercel/node" }], "routes": [{ "src": "/(.*)", "dest": "api/index.mjs" }], "env": {…} }  # Declarative config telling Vercel how to build and route every request to our Express app, plus env-variable passthrough.
+
+68. api/index.mjs (new file)
+   - /** Vercel serverless entrypoint that simply exports the Express app so every request is handled exactly the same as in local dev. */
+   - import app from '../apps/api-server/src/app.js';
+   - export default app;  # One-liner proxy; Vercel injects req/res so no port listening needed.
+
+69. apps/api-server/env.example (new file)
+   - NEO4J_URI=bolt://localhost:7687
+   - NEO4J_USER=neo4j
+   - NEO4J_PASSWORD=your-db-password
+   - REDIS_URL=redis://localhost:6379
+   - JWT_SECRET=change-me-in-production
+   - PORT=4000  # Sample var list developers copy to .env and to the Vercel dashboard.
+
+70. tests/test_event_contracts.py
+   - def test_updated_contract_shape():  # New unit test that ensures the `script.turn.updated` event contract always contains the agreed mandatory fields so future edits cannot silently remove them.
+   - contract = _load_contract('contracts/events/script.turn.updated.yaml')  # Loads the YAML file under test.
+   - assert contract['name'] == 'script.turn.updated'  # Quick top-level check that the event name never changes.
+   - expected = {'id', 'parent_id', 'persona_id', 'editor', 'ts', 'text', 'commit_message'}  # Canonical list of required keys.
+   - assert expected.issubset(contract['fields'].keys())  # Passes if YAML lists all keys; fails CI otherwise.
+
+71. docs/implementation_plan/user_flow_1_implementation_plan.md
+   - Milestones section (lines ~25-40): updated M4 to "Python diff-worker plus Docker-Compose integration" and added new M7 "Post-MVP infra migration – GPU workstation".
+   - Section 2.5 (lines ~140-190) completely rewritten: removed immediate infra-switch, detailed Docker-Compose additions (`redis`, `diff_worker`), memory limits, profile usage, and clarified worker behaviour & tests.
+   - Section 2.8 (lines ~250-300) **newly added**: step-by-step guide for migrating Neo4j, Redis, and Python workers to the shared GPU workstation after staging passes, including env-var flips, health checks, and rollback plan.
+
+72. docker-compose.yml (redis & diff_worker services)
+   - lines 20-47: **Added `redis` service** (profiles diff, 256 MB mem_limit, health-check, volume).
+   - lines 49-61: **Added `diff_worker` service** (builds ./apps/py-ai-service, env vars, depends_on redis).
+   - volumes section: added named volume `redis_data`.
+
+73. apps/py-ai-service/Dockerfile (new file)
+   - Python 3.10-slim image, installs requirements, copies source, runs `diff_worker.py` under non-root user. (lines 1-30)
+
+74. apps/py-ai-service/requirements.txt (new file)
+   - `redis==5.0.4`
+   - `neo4j==5.28.0`
+
+75. apps/py-ai-service/diff_worker.py (new file)
+   - Added `from neo4j import GraphDatabase` import.
+   - Declared new env vars `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` and created a single driver instance in `main()` with connectivity check.
+   - Implemented parent text retrieval inside `_process_message` via Cypher `MATCH (t:Turn {id: $id}) RETURN t.text`.
+   - Gracefully logs and falls back to empty string on errors so diffs are still published.
+   - Added global `_neo4j_driver` reference at bottom for type clarity.
+
+76. apps/py-ai-service/diff_worker.py (previous-text Neo4j lookup)
+   - Added `from neo4j import GraphDatabase` import.
+   - Declared new env vars `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` and created a single driver instance in `main()` with connectivity check.
+   - Implemented parent text retrieval inside `_process_message` via Cypher `MATCH (t:Turn {id: $id}) RETURN t.text`.
+   - Gracefully logs and falls back to empty string on errors so diffs are still published.
+   - Added global `_neo4j_driver` reference at bottom for type clarity.
+
+77. docker-compose.yml
+   - diff_worker environment: added `NEO4J_USER=neo4j`, `NEO4J_PASSWORD=test12345` to match Neo4j service credentials.
+
+78. tests/test_diff_worker.py (new file)
+   - Adds fully mocked unit tests for diff_worker ensuring HTML diff contains "diff_add" on new text and worker handles missing `text` safely without raising. Uses dynamic import because of dash in directory name.
+
+79. scripts/start_ngrok_tunnels.sh
+   - #!/usr/bin/env bash  # Shebang makes the file executable in any Unix shell.
+   - ###############################################################################  # Visual divider explaining purpose in a non-techie style.
+   - # start_ngrok_tunnels.sh – Convenience wrapper to expose local Neo4j + Redis via ngrok so Vercel preview builds can reach your laptop.
+   - HOW IT WORKS section (lines 5-20) explains the five key steps in everyday language: checks ngrok, opens two tunnels, parses addresses, prints env-vars, keeps tunnels alive.
+   - Helper functions `print_ok`, `print_wait`, `print_error` (lines ~35-55) use colourful icons to improve UX and readability, and new `has_ngrok_token` multi-path checker (lines ~60-95) detects the token in ngrok v2, v3, or NGROK_AUTHTOKEN env.
+   - Resilient address extraction (lines ~120-135) now matches any `tcp://host:port` pattern instead of relying on `"addr":` JSON key so it works across ngrok versions.
+   - Timeout is configurable via `TUNNEL_TIMEOUT` env and debug dumps enabled when `DEBUG_NGROK_TUNNELS=1` (lines ~120-145).
+   - Tunnel startup commands (lines ~85-100) run `ngrok tcp 7687` and `ngrok tcp 6379` in the background while streaming JSON logs to temp files so we can parse them.
+   - Function `wait_for_tunnel` (lines ~105-125) loops until the forwarding address appears, then extracts `tcp://⟨host⟩:⟨port⟩` with `grep`+`sed`.
+   - After parsing, the script echoes ready-to-copy connection strings (NEO4J_URI, REDIS_URL) inside a bold divider (lines ~135-150).
+   - Final `wait` call (last line) keeps the script running so the two ngrok tunnels stay alive until the user hits Ctrl-C.

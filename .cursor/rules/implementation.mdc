@@ -64,8 +64,32 @@ Use these guidelines for **every** user-flow implementation task so we balance l
     1. Proactively propose the change to the user in chat.  
     2. Upon user approval, immediately patch this `implementation.mdc` file with the agreed wording before proceeding.
 
+- MICRO-TASK STEP 10.  **Git Commit Convention (NEW RULE)**
+    After a micro-task is marked complete (tests ⤵️ green, docs updated):
+
+    1. The assistant **must make a Git commit** before replying back to the user.
+    2. The commit message **title** should summarise the micro-task in plain language (≤ 50 chars).
+    3. The **body** must contain:
+        • The **implementation-plan item number** that the micro-task advances or completes (e.g. *2.3.11*).  
+        • The **line numbers** (or range) that were added / changed in `docs/code_lines/user_flow_1_code_lines.md`.  
+        • A 1–2-sentence description of what changed and why.
+
+    This convention makes every change traceable across: ① Git history → ② code-lines ledger → ③ implementation-plan checklist.
+
+- MICRO-TASK STEP 11.  **Branching Model (NEW RULE)**
+    For repository hygiene and predictable deployments:
+    1. All *feature* branches must fork from `dev` and bear the prefix `feature/` followed by the milestone or issue slug (e.g. `feature/2.6-canvas-view`).
+    2. The long-lived `dev` branch acts as the integration branch.  Pull-requests from feature branches should target `dev`.  CI and preview deployments run automatically on every push.
+    3. Once a sprint or milestone passes staging tests, **fast-forward or merge** `dev` → `prod`.  The `prod` branch is the only branch that triggers the production deployment in Vercel.
+    4. Hot-fixes needed on production must branch off `prod`, then merge back into both `prod` and `dev`.
+
+    This two-lane flow (dev → prod) ensures unfinished work never leaks into production while keeping the history linear and easy to revert.
+
+    ---
+
 ## Quick Exit Checklist (assistant ticks mentally before sending a reply)
 - [ ] Code edits applied
 - [ ] New or updated docstrings written in layman style
 - [ ] `docs/code_lines/user_flow_1_code_lines.md` updated (including removals)
 - [ ] Implementation-plan progress updated if item finished
+- [ ] **Git commit created following Step 10 format**

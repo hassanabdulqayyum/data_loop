@@ -32,9 +32,10 @@ Everything else below is required by the spec.
 • M1 (Day 1-2) – Neo4j schema applied; seed data committed  
 • M2 (Day 2-5) – REST CRUD endpoints plus Redis event emission  
 • M3 (Day 4-8) – Front-end Canvas, Right-Side Panel (RSP) + Smart-Resume & first-unedited-node autofocus  
-• M4 (Day 6-9) – Python diff worker (stub)  
+• M4 (Day 6-9) – Python diff-worker *plus* Docker-Compose integration (Redis service & worker container)  
 • M5 (Day 8-11) – Export JSON, commit-summary prompt, toast UX polish  
 • M6 (Day 10-13) – End-to-end smoke in staging, doc tick-boxes, beta hand-off  
+• M7 (Day 12-14) – **Post-MVP infra migration**: move Neo4j, Redis & workers to shared GPU workstation  
 
 > Tip – ship one pull-request per milestone, feature-flagged by `FEATURE_FLOW1`.
 
@@ -206,27 +207,42 @@ id, parent_id, persona_id, editor, ts, text, commit_message?
     - **Push & PRs:** push the branch to the shared remote and open a Pull-Request targeting `main` (or the active milestone branch).  This automatically kicks off CI and Vercel preview deployments.
     - **Branch model:** keep two long-lived branches – `dev` (integration) and `prod` (stable release).  Merge feature branches into `dev`; once the staging checklist passes, fast-forward `prod` from `dev` so Vercel promotes the build to production.
 
-12. **Vercel integration**
-    - Once all 2.3.x tests pass locally, import the repository (or specifically the `feature/flow1-dataset-editing` branch) into Vercel.  
-    - Add the environment variables from `.env.example` in the Vercel dashboard (`NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `REDIS_URL`, `JWT_SECRET`, `PORT`).  
-    - Vercel automatically runs `npm run build` and `npm run start`, producing a preview URL that redeploys on every push—use this for QA before merging.
+12. **Vercel integration – Status: COMPLETE ✅**
+    - **Config files added** – `vercel.json` at repo root declares the serverless build that points every request to `api/index.mjs`, passes through the required environment variables, and pins Vercel's Node builder.  
+    - **Serverless entrypoint** – `api/index.mjs` simply re-exports the existing Express app so no code changes were needed inside the API itself.  
+    - **Environment template** – `apps/api-server/env.example` lists every required variable (`NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `REDIS_URL`, `JWT_SECRET`, `PORT`) so developers can run the server locally and can copy–paste the same keys into Vercel.  
+    - With those files in place you can now run `vercel dev` locally or push any branch to GitHub and Vercel will build a preview URL automatically, using `npm run start` under the hood.
 
 ### 2.4  Event Contracts – `contracts/events/`
 
 1. `script.turn.updated.yaml` – exact schema as table above.  
-2. `script.turn.diff_reported.yaml` – stub; fields `id, parent_id, persona_id, diff_html, grade`.
+2. `script.turn.diff_reported.yaml` – stub; fields `id, parent_id, persona_id, diff_html, grade`.  
+
+- **Status: COMPLETE ✅** – Both contract files exist *and* are now protected by automated unit tests (`tests/test_event_contracts.py`) so CI will fail if any required field is removed or renamed.
 
 ### 2.5  Python Diff Worker – `apps/py-ai-service`
 
-> **Infra switch 🔄**  
-> Starting with Milestone 2.5, **Neo4j**, **Redis Streams**, and the **Python AI-worker** should migrate from each developer's local machine to the **team GPU workstation**.  Update Vercel environment variables so **_both_** the Node API lambdas **and** the front-end previews point at the GPU server (`NEO4J_URI`, `REDIS_URL`, etc.).  From this point forward **all preview and production deployments must use the shared back-end**—avoid tunnels to personal laptops.  Local development can still target personal containers by overriding the `.env`, but every CI build and Vercel deployment must hit the team server.
+> **Implementation summary (see `docs/code_lines/user_flow_1_code_lines.md` entries 72-78):**  
+> • **Docker-Compose** – `docker-compose.yml` now declares the `redis` service (profile `diff`, 256 MB limit, health-check, named volume) **and** `diff_worker` service that builds from `apps/py-ai-service/` and receives the correct Neo4j/Redis env-vars.  
+> • **Worker image & source** – `apps/py-ai-service/Dockerfile` builds a slim Python 3.10 image, installs `redis`/`neo4j` clients from `requirements.txt`, copies `diff_worker.py`, and starts it as a non-root user.  
+> • **Runtime behaviour** – `diff_worker.py` subscribes to `script.turn.updated`, fetches the *previous* turn text from Neo4j, computes an HTML diff via `difflib.HtmlDiff`, then publishes a `script.turn.diff_reported` event that matches the YAML contract. It keeps running indefinitely and logs, but never crashes the loop on a single bad message.  
+> • **Automated tests** – `tests/test_diff_worker.py` stubs Redis & Neo4j in-memory, asserts diff HTML contains `diff_add`, and verifies the worker handles a missing `text` field gracefully. All 25 repository tests pass (`pytest -q`).
 
-1. Subscribe to Redis Stream `script_updates`.  
-2. For each message: compute diff via `difflib.HtmlDiff`.  
-3. Publish `script.turn.diff_reported` to `script_updates` stream (no consumer yet).  
-4. Log errors; never block retry.
+During active development **all three stateful back-end services – Neo4j, Redis Streams, and the Python diff-worker – run inside the existing `docker-compose.yml` file**.  One command (`docker compose --profile diff up -d`) now boots the whole stack on any laptop or CI runner, guaranteeing parity across environments.  A later section details how the same Compose file is reused on the shared GPU workstation once Flow 1 is feature-complete.
 
-*Pytest* – correct diff produced; malformed message handled gracefully.
+#### Docker-Compose additions (Milestone M4)
+• **`redis` service** – official Redis image, named volume `redis-data`, health-check, optional `6379:6379` port mapping.  
+• **`diff_worker` service** – builds from `apps/py-ai-service/`, `depends_on: [redis]`, `restart: unless-stopped`, environment `REDIS_URL=redis://redis:6379`, `NEO4J_URI=bolt://neo4j:7687`.  
+• Memory guardrails: `mem_limit: 256m` on Redis so dev laptops don't thrash.  
+• Profiles: mark Redis & worker with `profile: diff` so front-end-only contributors can opt-out: `docker compose --profile diff up -d`.
+
+#### Worker behaviour
+1. Subscribe to Redis Stream `script_updates` (blocking read).  
+2. For every message compute an HTML diff via `difflib.HtmlDiff`.  
+3. Publish a new entry to the same stream with event-type `script.turn.diff_reported` and fields `id, parent_id, persona_id, diff_html, grade`.  
+4. Log errors and continue; never block retries.
+
+*Pytest* – asserts correct diff output on normal messages and graceful handling of malformed payloads.
 
 ### 2.6  Front-End – `apps/frontend`
 
@@ -270,6 +286,19 @@ Components & Pages
 1. Deploy preview → **Vercel** (frontend + Node lambdas).  The local GPU server continues to host Neo4j, Redis, and the Python worker, exposed over a secure VPN or SSH tunnel.  
 2. Run Cypress E2E: **import → edit → export**.  
 3. Tick *Done-When* checklist in MD file once green.
+
+### 2.8  Post-MVP Infrastructure Migration – Shared GPU Workstation
+
+Once User-Flow 1 passes staging smoke tests, **Neo4j, Redis Streams, and all Python workers move to the on-prem GPU workstation (2 × RTX 3090)**.  The **same `docker-compose.yml`** is copied to that host and started with `docker compose up -d`, preserving all versions and health-checks.
+
+Steps:
+1. Copy `.env.example` → `/opt/flow1/.env` on the GPU box; fill in production credentials.  
+2. `scp` the repository or pull from Git; run `docker compose up -d` to launch `neo4j`, `redis`, and `diff_worker` containers (named volumes keep data outside image layers).  
+3. Update Vercel project env-vars (`NEO4J_URI`, `REDIS_URL`) so the Node lambdas and front-end previews point at the workstation.  
+4. Verify health endpoints (`:7474` for Neo4j, `PING` for Redis, worker logs via `docker compose logs -f diff_worker`).  
+5. Remove any temporary tunnels; all preview and production deployments now hit the shared back-end directly.
+
+Rollback plan: stop the workstation's Compose stack and point env-vars back to the original host; volumes guarantee no data loss.
 
 ---
 

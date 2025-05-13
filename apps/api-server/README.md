@@ -18,7 +18,7 @@ All of that is wrapped in a simple **REST** API built with [Express 5](https://e
 ```bash
 cd apps/api-server          # jump into this folder
 npm install                 # grab all dependencies
-cp .env.example .env        # copy the sample env-file and fill in the blanks
+cp env.example .env        # copy the sample env-file and fill in the blanks
 npm run dev                 # start the server with auto-reload (nodemon)
 ```
 
@@ -32,7 +32,7 @@ The server listens on the port you set in the **PORT** environment variable (def
 
 ---
 
-## Environment variables (see `.env.example`)
+## Environment variables (see `env.example`)
 
 | Name | What it is for |
 |------|----------------|
