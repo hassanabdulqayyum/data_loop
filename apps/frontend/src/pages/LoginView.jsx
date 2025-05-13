@@ -28,6 +28,7 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore.js';
 import { apiFetch } from '../lib/api.js';
+import { useNavigate } from 'react-router-dom';
 
 function LoginView() {
   // Local state for the two form fields.
@@ -37,6 +38,7 @@ function LoginView() {
 
   // Pull the login action from our global store.
   const { setToken } = useAuthStore();
+  const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -53,7 +55,7 @@ function LoginView() {
       });
       setToken(token); // Save into zustand + localStorage.
       toast.success('Logged in successfully');
-      // TODO: navigate to CanvasView once it exists.
+      navigate('/load'); // 🌳 Jump to the hierarchy view.
     } catch (err) {
       toast.error(err.message);
     } finally {

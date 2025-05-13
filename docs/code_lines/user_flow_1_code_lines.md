@@ -809,3 +809,15 @@
    - Extended smoke-test: now also asserts presence of the forgot-password link and verifies the Login button is disabled when inputs are empty, reflecting new UI behaviour.
 
 101. Global styles: introduced `colours` object inside component for maintainability.
+
+102. apps/frontend/src/pages/LoadView.jsx
+   - Added entire file implementing LoadView component that fetches `/hierarchy`, renders nested Program → Module → Day → Persona tree and exposes a "Load script" button.  (Lines 1-200 new).
+
+103. apps/frontend/src/App.jsx
+   - lines 14-32 added: import of LoadView, CanvasStub placeholder component, and new routes `/load` and `/canvas/:personaId`.
+
+104. apps/frontend/src/pages/LoginView.jsx
+   - Added `useNavigate` import and `navigate('/load')` call after successful login (lines ~15 and ~65 new).
+
+105. apps/frontend/tests/LoadView.test.jsx
+   - New test file lines 1-80: mocks fetch, renders LoadView, asserts hierarchy rendering and persona selection enables "Load script" button.
