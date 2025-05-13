@@ -1,0 +1,66 @@
+/*
+ * TopNavBar.module.css - Styles for the TopNavBar component.
+ * ==========================================================
+ * This file contains the CSS rules for styling the global top navigation bar.
+ * It ensures the bar is fixed at the top, spans the full width, and arranges
+ * its content (icons and breadcrumbs) correctly.
+ */
+
+.navBar {
+  /* Fixed position at the top of the viewport */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px; /* Standard height for a top navigation bar */
+
+  /* Basic styling */
+  background-color: #ffffff; /* White background, can be changed via theme */
+  border-bottom: 1px solid #e0e0e0; /* Subtle border to separate from content */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Slight shadow for depth */
+  z-index: 1000; /* Ensure it stays on top of other content */
+
+  /* Flexbox for layout: space-between to push sections apart */
+  display: flex;
+  align-items: center; /* Vertically center items in the bar */
+  justify-content: space-between; /* Distribute space between left, center, right */
+  padding: 0 24px; /* Horizontal padding */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.navSection {
+  /* Each section (left, center, right) uses flex to align its own items if needed */
+  display: flex;
+  align-items: center;
+  flex: 1; /* Allow sections to grow and shrink, but center will be prioritized */
+}
+
+.navCenter {
+  /* Center section should justify its content to the center */
+  justify-content: center;
+  text-align: center;
+}
+
+.navRight {
+  /* Right section should justify its content to the end (right) */
+  justify-content: flex-end;
+}
+
+.breadcrumbTitle {
+  /* Styling for the dynamic breadcrumb text */
+  font-size: 18px; /* Clear and readable font size */
+  font-weight: 500; /* Medium weight for emphasis */
+  color: #333333; /* Dark grey text color */
+  white-space: nowrap; /* Prevent breadcrumbs from wrapping */
+  overflow: hidden; /* Hide overflow if text is too long */
+  text-overflow: ellipsis; /* Show ellipsis (...) if text overflows */
+}
+
+.iconPlaceholder {
+  /* Styling for the placeholder text for icons */
+  font-size: 20px;
+  font-weight: bold;
+  color: #555555;
+  padding: 0 8px; /* Some padding around the icons */
+  cursor: pointer; /* Indicate they are clickable (for future) */
+} 

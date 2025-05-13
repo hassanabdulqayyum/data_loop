@@ -833,3 +833,17 @@
 
 106.3 docs/scripts/neo4j/004_demo_catalog.cypher
     - Added MATCH statements to create HAS_MODULE and HAS_DAY relationships so hierarchy query returns rows.
+
+107. apps/frontend/src/components/TopNavBar/TopNavBar.jsx (new file)
+    - /** TopNavBar.jsx - Global navigation bar ... */ (lines 1-50) - New component created to display a fixed top navigation bar with placeholders for search/user icons and a dynamic breadcrumb title based on selected module, topic, or persona. Defaults to "Data Loop" if no module is selected.
+
+108. apps/frontend/src/components/TopNavBar/TopNavBar.module.css (new file)
+    - /* TopNavBar.module.css - Styles for the TopNavBar component. ... */ (lines 1-58) - New CSS module providing styles for the TopNavBar, including fixed positioning, flex layout for internal sections (left, center, right), and styling for breadcrumb text and icon placeholders.
+
+109. apps/frontend/src/pages/LoadView.jsx (integration of TopNavBar)
+    - import TopNavBar from '../components/TopNavBar/TopNavBar.jsx'; (line ~7) - Added import for the new navigation bar.
+    - Renamed state variables from selectedModule/Topic/Persona to selectedModuleId/TopicId/PersonaId to store only IDs. (lines ~20-22)
+    - Added helper function `findNodeById` and logic to derive full `selectedModuleNode`, `selectedTopicNode`, `selectedPersonaNode` objects (with names) from the `tree` data using their respective IDs. This is crucial for providing context to `TopNavBar`. (lines ~40-75)
+    - Updated `HierarchyGraph` `onSelect` callback and internal `renderTree` selection logic to use the new ID-based state variables (`selectedModuleId`, `selectedTopicId`, `selectedPersonaId`). (various lines)
+    - Rendered `<TopNavBar ... />` component at the top of the JSX, passing the derived node objects as props. (line ~175)
+    - Wrapped main layout in `<>` and added `paddingTop: '60px'` to the main content `div` to prevent `TopNavBar` from obscuring content; set `overflow: 'auto'` on the left pane. (line ~180)

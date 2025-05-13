@@ -270,7 +270,7 @@ Components & Pages
    • Smoke-test extended so CI asserts presence of link + disabled button.  
    • Document title set to **"Data Loop"** for browser tabs.
 
-2. **HierarchyDrawer** – walks `/hierarchy`; closes on "Load script".
+2. **LoadView** – walks `/hierarchy`; closes on "Load script".
 3. **CanvasView**
    * Header: breadcrumb path + **"Change script"** control (allows opt-out from Smart-Resume).
    * React-Flow canvas: gold path nodes render Markdown text & badge `vN`.

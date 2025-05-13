@@ -38,6 +38,7 @@ import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore.js';
 import { apiFetch } from '../lib/api.js';
 import HierarchyGraph from '../components/HierarchyGraph.jsx';
+import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
 
 function LoadView() {
   /* ------------------------------------------------------------------
@@ -46,9 +47,9 @@ function LoadView() {
    * ---------------------------------------------------------------- */
   const [tree, setTree] = useState(null); // The nested Program → Persona data
   const [loading, setLoading] = useState(true); // While we wait for /hierarchy
-  const [selectedPersona, setSelectedPersona] = useState(null); // Leaf choice
-  const [selectedModule, setSelectedModule] = useState(null);
-  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [selectedModuleId, setSelectedModuleId] = useState(null); // Store ID
+  const [selectedTopicId, setSelectedTopicId] = useState(null);   // Store ID
+  const [selectedPersonaId, setSelectedPersonaId] = useState(null); // Store ID
 
   // Grab the JWT so we can call protected endpoints safely.
   const { token } = useAuthStore();
@@ -63,6 +64,10 @@ function LoadView() {
         const { data } = await apiFetch('/hierarchy', {
           headers: { Authorization: `Bearer ${token}` }
         });
+        // Assuming data is an array of programs, and each program has a 'name'
+        // For TopNavBar, we might need the program name if no module is selected.
+        // However, current TopNavBar logic defaults to "Data Loop".
+        // The tree structure is: [{ id: 'ProgramName', name: 'ProgramName', modules: [...] }]
         setTree(data);
       } catch (err) {
         toast.error(err.message);
@@ -73,6 +78,56 @@ function LoadView() {
 
     if (token) fetchHierarchy();
   }, [token]);
+
+  /* ------------------------------------------------------------------
+   * Helper functions to find full node objects from IDs.
+   * These are needed to pass names to TopNavBar.
+   * Assumes tree is an array of program nodes.
+   * ---------------------------------------------------------------- */
+  const findNodeById = (nodes, id) => {
+    if (!nodes || !id) return null;
+    for (const node of nodes) {
+      if (node.id === id) return node;
+      if (node.modules) {
+        const foundInModules = findNodeById(node.modules, id);
+        if (foundInModules) return foundInModules;
+      }
+      if (node.days) { // 'days' are topics
+        const foundInDays = findNodeById(node.days, id);
+        if (foundInDays) return foundInDays;
+      }
+      if (node.personas) {
+        const foundInPersonas = findNodeById(node.personas, id);
+        if (foundInPersonas) return foundInPersonas;
+      }
+    }
+    return null;
+  };
+  
+  // Derive full node objects for TopNavBar
+  // The 'tree' is expected to be an array of programs.
+  // findNodeById needs to search through this structure.
+  
+  // To get the module node, we need to iterate through programs and their modules.
+  let selectedModuleNode = null;
+  if (selectedModuleId && tree) {
+    for (const program of tree) {
+      selectedModuleNode = findNodeById(program.modules, selectedModuleId);
+      if (selectedModuleNode) break;
+    }
+  }
+
+  // To get the topic node, we search within the selected module's days.
+  let selectedTopicNode = null;
+  if (selectedTopicId && selectedModuleNode && selectedModuleNode.days) {
+    selectedTopicNode = findNodeById(selectedModuleNode.days, selectedTopicId);
+  }
+  
+  // To get the persona node, we search within the selected topic's personas.
+  let selectedPersonaNode = null;
+  if (selectedPersonaId && selectedTopicNode && selectedTopicNode.personas) {
+    selectedPersonaNode = findNodeById(selectedTopicNode.personas, selectedPersonaId);
+  }
 
   /* ------------------------------------------------------------------
    * Recursive helper – prints one level of the tree.  The layout is kept
@@ -95,15 +150,15 @@ function LoadView() {
 
       // MODULE level – has `days` array
       if (node.days) {
-        const isSelected = selectedModule === node.id;
+        const isSelected = selectedModuleId === node.id;
         return (
           <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 8 }}>
             <button
               type="button"
               onClick={() => {
-                setSelectedModule(node.id);
-                setSelectedTopic(null);
-                setSelectedPersona(null);
+                setSelectedModuleId(node.id);
+                setSelectedTopicId(null);
+                setSelectedPersonaId(null);
               }}
               style={{
                 background: '#fff',
@@ -126,14 +181,14 @@ function LoadView() {
 
       // DAY/Topic level – has `personas` array
       if (node.personas) {
-        const isSelected = selectedTopic === node.id;
+        const isSelected = selectedTopicId === node.id;
         return (
           <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 6 }}>
             <button
               type="button"
               onClick={() => {
-                setSelectedTopic(node.id);
-                setSelectedPersona(null);
+                setSelectedTopicId(node.id);
+                setSelectedPersonaId(null);
               }}
               style={{
                 background: '#fff',
@@ -157,10 +212,10 @@ function LoadView() {
         <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 4 }}>
           <button
             type="button"
-            onClick={() => setSelectedPersona(node.id)}
+            onClick={() => setSelectedPersonaId(node.id)}
             style={{
-              background: selectedPersona === node.id ? '#000' : '#fff',
-              color: selectedPersona === node.id ? '#fff' : '#000',
+              background: selectedPersonaId === node.id ? '#000' : '#fff',
+              color: selectedPersonaId === node.id ? '#fff' : '#000',
               border: '1px solid #000',
               borderRadius: 4,
               padding: '0.25rem 0.5rem',
@@ -180,82 +235,89 @@ function LoadView() {
    * CanvasView will be fleshed out in the next implementation item.
    * ---------------------------------------------------------------- */
   function handleLoad() {
-    if (!selectedPersona) return; // Guard but button is already disabled.
-    navigate(`/canvas/${selectedPersona}`);
+    if (!selectedPersonaId) return; // Guard but button is already disabled.
+    navigate(`/canvas/${selectedPersonaId}`);
   }
 
   /* ------------------------------------------------------------------
    * Two-column flex layout: tree on the left, placeholder / action on right.
    * ---------------------------------------------------------------- */
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      {/* Left column – the hierarchy */}
-      <div
-        style={{
-          flex: 2,
-          padding: '1rem',
-          height: '100%',
-          overflow: 'hidden'
-        }}
-      >
-        {loading && <p>Loading hierarchy…</p>}
-        {!loading && tree && (
-          <HierarchyGraph
-            tree={tree}
-            selectedIds={{ moduleId: selectedModule, topicId: selectedTopic, personaId: selectedPersona }}
-            onSelect={(id, nodeType) => {
-              // Determine level by checking ids in tree structure
-              if (nodeType === 'program') {
-                // Potentially reset module/topic/persona or handle program click if needed
-                // For now, clicking program doesn't change selection deeper down.
-              } else if (nodeType === 'module') {
-                setSelectedModule(id);
-                setSelectedTopic(null);
-                setSelectedPersona(null);
-              } else if (nodeType === 'day') {
-                setSelectedTopic(id);
-                setSelectedPersona(null);
-              } else if (nodeType === 'persona') {
-                setSelectedPersona(id);
-              }
-            }}
-          />
-        )}
-      </div>
+    <>
+      <TopNavBar 
+        selectedModuleNode={selectedModuleNode}
+        selectedTopicNode={selectedTopicNode}
+        selectedPersonaNode={selectedPersonaNode}
+      />
+      <div style={{ display: 'flex', height: '100vh', paddingTop: '60px', boxSizing: 'border-box' }}>
+        {/* Left column – the hierarchy */}
+        <div
+          style={{
+            flex: 2,
+            padding: '1rem',
+            height: 'calc(100% - 0px)',
+            overflow: 'auto'
+          }}
+        >
+          {loading && <p>Loading hierarchy…</p>}
+          {!loading && tree && (
+            <HierarchyGraph
+              tree={tree}
+              selectedIds={{ moduleId: selectedModuleId, topicId: selectedTopicId, personaId: selectedPersonaId }}
+              onSelect={(id, nodeType, nodeData) => {
+                if (nodeType === 'program') {
+                  setSelectedModuleId(null);
+                  setSelectedTopicId(null);
+                  setSelectedPersonaId(null);
+                } else if (nodeType === 'module') {
+                  setSelectedModuleId(id);
+                  setSelectedTopicId(null);
+                  setSelectedPersonaId(null);
+                } else if (nodeType === 'day') {
+                  setSelectedTopicId(id);
+                  setSelectedPersonaId(null);
+                } else if (nodeType === 'persona') {
+                  setSelectedPersonaId(id);
+                }
+              }}
+            />
+          )}
+        </div>
 
-      {/* Right column – placeholder panel */}
-      <div
-        style={{
-          flex: 1,
-          padding: '1rem',
-          borderLeft: '1px solid #e5e5e5',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        {selectedPersona ? (
-          <button
-            type="button"
-            onClick={handleLoad}
-            style={{
-              padding: '0.75rem 1.5rem',
-              fontSize: 18,
-              background: '#000',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer'
-            }}
-          >
-            Load script
-          </button>
-        ) : (
-          <p style={{ fontSize: 18, color: '#555' }}>Select a script to load…</p>
-        )}
+        {/* Right column – placeholder panel */}
+        <div
+          style={{
+            flex: 1,
+            padding: '1rem',
+            borderLeft: '1px solid #e5e5e5',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          {selectedPersonaId ? (
+            <button
+              type="button"
+              onClick={handleLoad}
+              style={{
+                padding: '0.75rem 1.5rem',
+                fontSize: 18,
+                background: '#000',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer'
+              }}
+            >
+              Load script
+            </button>
+          ) : (
+            <p style={{ fontSize: 18, color: '#555' }}>Select a script to load…</p>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
