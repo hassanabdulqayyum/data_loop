@@ -37,6 +37,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore.js';
 import { apiFetch } from '../lib/api.js';
+import HierarchyGraph from '../components/HierarchyGraph.jsx';
 
 function LoadView() {
   /* ------------------------------------------------------------------
@@ -193,18 +194,29 @@ function LoadView() {
         style={{
           flex: 2,
           padding: '1rem',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center' /* centers horizontally */,
-          justifyContent: 'flex-start'
+          height: '100%',
+          overflow: 'hidden'
         }}
       >
         {loading && <p>Loading hierarchy…</p>}
         {!loading && tree && (
-          <div style={{ textAlign: 'left' /* keep text start inside */ }}>
-            {renderTree(tree)}
-          </div>
+          <HierarchyGraph
+            tree={tree}
+            selectedIds={{ moduleId: selectedModule, topicId: selectedTopic, personaId: selectedPersona }}
+            onSelect={(id) => {
+              // Determine level by checking ids in tree structure
+              if (tree[0].modules.some((m) => m.id === id)) {
+                setSelectedModule(id);
+                setSelectedTopic(null);
+                setSelectedPersona(null);
+              } else if (tree[0].modules.some((m) => m.days.some((d) => d.id === id))) {
+                setSelectedTopic(id);
+                setSelectedPersona(null);
+              } else {
+                setSelectedPersona(id);
+              }
+            }}
+          />
         )}
       </div>
 
