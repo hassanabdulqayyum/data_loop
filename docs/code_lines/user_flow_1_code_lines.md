@@ -773,3 +773,5 @@
    - apps/frontend/src/pages/LoginView.jsx – replaced raw fetch with apiFetch and added import.
 
 87. API CORS support – apps/api-server/src/app.js import cors and added middleware; package.json adds dependency.
+
+88. Root package.json update – added cors ^2.8.5 so Vercel builder for api/index.mjs includes the library.
