@@ -432,6 +432,7 @@
    - import * as dotenv from 'dotenv'  # Loads variables from .env so configuration lives outside code.
    - dotenv.config()  # Parses the .env file and populates process.env.
    - import express from 'express'  # Brings in the Express web-framework to create the HTTP API.
+   - Early imports of `../libs/node-shared/redis.js` and `initNeo4j()` verification ensure Vercel cold-start logs immediately show ✅/❌ for Redis & Neo4j tunnels (lines 15-25).
    - const app = express()  # Instantiates the Express application.
    - const PORT = process.env.PORT || 4000  # Configurable listening port with a sensible default.
    - app.get('/health', (req, res) => res.json({ status: 'ok' }))  # Lightweight health-check endpoint for uptime probes.

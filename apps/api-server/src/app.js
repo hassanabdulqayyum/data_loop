@@ -23,6 +23,20 @@ import scriptRouter from './routes/script.js'
 import turnRouter from './routes/turn.js'
 import exportRouter from './routes/export.js'
 
+// ---------------------------------------------------------------------------
+// Early DB connections – so build logs always show whether the tunnels & env
+// vars are correct *before* the first real HTTP request arrives.
+// ---------------------------------------------------------------------------
+// Redis: the module connects as a side-effect of its top-level code, so simply
+// importing it is enough to see either ✅ or ❌ in the log.
+import '../libs/node-shared/redis.js';
+
+// Neo4j: we expose an explicit init helper that verifies connectivity and
+// prints a success/failure message. We invoke it once at startup using
+// top-level await (Node 18 on Vercel supports this by default).
+import { initNeo4j } from '../libs/node-shared/db.js';
+await initNeo4j();
+
 const app = express()
 
 // Parse incoming JSON
