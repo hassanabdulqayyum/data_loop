@@ -222,7 +222,6 @@ id, parent_id, persona_id, editor, ts, text, commit_message?
 
 ### 2.5  Python Diff Worker – `apps/py-ai-service`
 
-> **Status: COMPLETE ✅**  
 > **Implementation summary (see `docs/code_lines/user_flow_1_code_lines.md` entries 72-78):**  
 > • **Docker-Compose** – `docker-compose.yml` now declares the `redis` service (profile `diff`, 256 MB limit, health-check, named volume) **and** `diff_worker` service that builds from `apps/py-ai-service/` and receives the correct Neo4j/Redis env-vars.  
 > • **Worker image & source** – `apps/py-ai-service/Dockerfile` builds a slim Python 3.10 image, installs `redis`/`neo4j` clients from `requirements.txt`, copies `diff_worker.py`, and starts it as a non-root user.  
