@@ -262,6 +262,14 @@ Libraries: React 18, React-Router, React-Flow, zustand, react-hot-toast.
 Components & Pages
 
 1. **LoginView** – posts to `/auth/login`; stores JWT in `localStorage.jwt`.
+
+   **Status: COMPLETE ✅** – visual and functional implementation matches the Figma spec.
+   *Implementation summary (see `docs/code_lines/user_flow_1_code_lines.md` entries **97-101**)*
+   • Global Inter font import with ‑5 % letter-spacing applied (`index.html` line 5).  
+   • `LoginView.jsx` styles updated to exact colours (#131413 / #373639 / #CCCCCC) and font sizes (48 px heading, 32 px button, 26 px placeholders & link); centred layout and disabled-until-complete logic included.  
+   • Smoke-test extended so CI asserts presence of link + disabled button.  
+   • Document title set to **"Data Loop"** for browser tabs.
+
 2. **HierarchyDrawer** – walks `/hierarchy`; closes on "Load script".
 3. **CanvasView**
    * Header: breadcrumb path + **"Change script"** control (allows opt-out from Smart-Resume).
@@ -340,4 +348,8 @@ This operational event lives outside Neo4j, enabling downstream workers to
 observe import activity without adding "noise" nodes to the graph.  Implementation
 is scheduled for Milestone **M2** alongside the REST CRUD endpoints.
 
-*End of file – every line above is actionable and maps one-to-one to the Flow 1 spec.* 
+> **Clarification (2025-05-13)**  
+> The Figma design files for Flow-1 are already **finalised** and deliberately lightweight because this is an internal-only editor. We will embed the finished visuals **page-by-page as each feature is implemented**, rather than postponing all styling to a separate end-game pass. This keeps the feedback loop tight and prevents a large, risky "polish" merge later.
+
+> **Clarification (2025-05-13)**  
+> The Figma design files for Flow-1 are already **finalised** and deliberately lightweight because this is an internal-only editor. We will embed the finished visuals **page-by-page as each feature is implemented**, rather than postponing all styling to a separate end-game pass. This keeps the feedback loop tight and prevents a large, risky "polish" merge later.
