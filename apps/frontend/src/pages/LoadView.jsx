@@ -203,16 +203,19 @@ function LoadView() {
           <HierarchyGraph
             tree={tree}
             selectedIds={{ moduleId: selectedModule, topicId: selectedTopic, personaId: selectedPersona }}
-            onSelect={(id) => {
+            onSelect={(id, nodeType) => {
               // Determine level by checking ids in tree structure
-              if (tree[0].modules.some((m) => m.id === id)) {
+              if (nodeType === 'program') {
+                // Potentially reset module/topic/persona or handle program click if needed
+                // For now, clicking program doesn't change selection deeper down.
+              } else if (nodeType === 'module') {
                 setSelectedModule(id);
                 setSelectedTopic(null);
                 setSelectedPersona(null);
-              } else if (tree[0].modules.some((m) => m.days.some((d) => d.id === id))) {
+              } else if (nodeType === 'day') {
                 setSelectedTopic(id);
                 setSelectedPersona(null);
-              } else {
+              } else if (nodeType === 'persona') {
                 setSelectedPersona(id);
               }
             }}

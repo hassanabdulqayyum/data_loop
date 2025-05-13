@@ -4,107 +4,167 @@ HierarchyGraph.jsx – Displays Program → Module → Topic → Persona tree us
 Props:
 • tree            – the nested array returned by /hierarchy (Programs at root).
 • selectedIds     – { moduleId, topicId, personaId } so we can highlight.
-• onSelect(node)  – callback invoked when any node is clicked.
+• onSelect(nodeId, nodeType)  – callback invoked when any node is clicked, passing its id and type ('program', 'module', 'day', 'persona').
 
-The graph is rendered with fixed positions because the catalogue is small.
-Depth 0 = y 0, depth 1 = y 120, depth 2 = y 240, depth 3 = y 360.
-Within each depth we space nodes 200 px apart.
+The graph attempts a basic auto-layout logic for centering and distributing nodes.
 */
 import React, { useMemo } from 'react';
-import ReactFlow, { Background } from 'reactflow';
+import ReactFlow, { Background, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
+// Common style for all text within nodes
+const commonTextStyle = {
+  fontFamily: 'Inter, sans-serif',
+  fontSize: '28px',
+  fontWeight: '500', // Medium weight
+  letterSpacing: '-0.05em',
+  color: '#000000'
+};
+
+// Custom node to ensure consistent styling and no default handles
+const CustomNode = ({ data, selected, type }) => {
+  let borderStyle;
+  let backgroundColor = '#fff'; // Default for Module, Topic, Persona
+
+  if (type === 'program') {
+    backgroundColor = '#c8c8c8';
+    borderStyle = 'none';
+  } else {
+    borderStyle = selected ? '2.5px solid #6C80DA' : '1px solid #c8c8c8';
+  }
+
+  return (
+    <div
+      style={{
+        ...commonTextStyle,
+        background: backgroundColor,
+        border: borderStyle,
+        borderRadius: '12px',
+        padding: '10px 20px', // Increased padding for larger font
+        textAlign: 'center',
+      }}
+    >
+      {data.label}
+      {/* Hidden handles to satisfy React Flow if needed, but visually not present */}
+      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
+      <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
+    </div>
+  );
+};
+
+const nodeTypes = {
+  programNode: (props) => <CustomNode {...props} type="program" />,
+  moduleNode: (props) => <CustomNode {...props} type="module" selected={props.data.selected} />,
+  dayNode: (props) => <CustomNode {...props} type="day" selected={props.data.selected} />,
+  personaNode: (props) => <CustomNode {...props} type="persona" selected={props.data.selected} />,
+};
+
 function HierarchyGraph({ tree, selectedIds, onSelect }) {
-  // Helpers to build React-Flow nodes & edges deterministically.
   const { nodes, edges } = useMemo(() => {
     const n = [];
     const e = [];
-    let xPos = 0;
+    const yGap = 180; // Increased vertical gap for larger nodes
+    const baseNodeWidth = 200; // Estimate, actual width depends on label
+
+    let programY = 50;
 
     tree.forEach((program) => {
-      // Program node (depth 0)
+      const programNodeWidth = program.id.length * 15 + 40; // Rough estimate
       n.push({
         id: program.id,
+        type: 'programNode',
         data: { label: program.id },
-        position: { x: 400, y: 0 },
-        style: {
-          background: '#131413',
-          color: '#fff',
-          padding: '4px 12px',
-          borderRadius: 6,
-          fontWeight: 600,
-          border: 'none'
-        },
-        selectable: false
+        position: { x: 0, y: programY }, // Centering will be handled by fitView and layout adjustments
+        selectable: true,
       });
 
+      let moduleY = programY + yGap;
+      const totalModuleWidth = program.modules.length * (baseNodeWidth + 50) - 50;
+      let moduleStartX = -(totalModuleWidth / 2) + (baseNodeWidth / 2);
+
       program.modules.forEach((mod, modIdx) => {
-        const modX = 200 * modIdx;
+        if (selectedIds?.moduleId !== mod.id && selectedIds?.moduleId !== null && !program.modules.find(m=>m.id === selectedIds?.moduleId)) return; // Hide if a specific module is selected and it's not this one
+        if (selectedIds?.moduleId === null && modIdx > 0 && program.modules.length > 1) return; // Show only first module if none selected
+        
+        const isModuleSelected = selectedIds?.moduleId === mod.id;
         n.push({
           id: mod.id,
-          data: { label: mod.id },
-          position: { x: modX, y: 120 },
-          style: {
-            background: '#fff',
-            padding: '4px 12px',
-            borderRadius: 6,
-            border: `2px solid ${selectedIds?.moduleId === mod.id ? '#1E40AF' : '#000'}`
-          }
+          type: 'moduleNode',
+          data: { label: mod.id, selected: isModuleSelected },
+          position: { x: moduleStartX + modIdx * (baseNodeWidth + 50) , y: moduleY },
+          selectable: true,
         });
-        e.push({ id: `${program.id}-${mod.id}`, source: program.id, target: mod.id });
+        e.push({ id: `${program.id}-${mod.id}`, source: program.id, target: mod.id, type: 'straight' });
 
-        mod.days.forEach((day, dayIdx) => {
-          if (selectedIds?.moduleId !== mod.id) return; // hide topics until module selected
+        if (isModuleSelected) {
+          let dayY = moduleY + yGap;
+          const totalDayWidth = mod.days.length * (baseNodeWidth + 40) - 40;
+          let dayStartX = moduleStartX + modIdx * (baseNodeWidth + 50) -(totalDayWidth/2) + (baseNodeWidth/2);
 
-          const dayX = modX + 150 * dayIdx;
-          n.push({
-            id: day.id,
-            data: { label: day.id },
-            position: { x: dayX, y: 240 },
-            style: {
-              background: '#fff',
-              padding: '3px 10px',
-              borderRadius: 6,
-              border: `2px solid ${selectedIds?.topicId === day.id ? '#1E40AF' : '#000'}`,
-              fontSize: 12
+          mod.days.forEach((day, dayIdx) => {
+             if (selectedIds?.topicId !== day.id && selectedIds?.topicId !== null && !mod.days.find(d=>d.id === selectedIds?.topicId)) return;
+             if (selectedIds?.topicId === null && dayIdx > 0 && mod.days.length > 1) return;
+
+            const isTopicSelected = selectedIds?.topicId === day.id;
+            n.push({
+              id: day.id,
+              type: 'dayNode',
+              data: { label: day.id, selected: isTopicSelected },
+              position: { x: dayStartX + dayIdx * (baseNodeWidth + 40) , y: dayY },
+              selectable: true,
+            });
+            e.push({ id: `${mod.id}-${day.id}`, source: mod.id, target: day.id, type: 'straight' });
+
+            if (isTopicSelected) {
+              let personaY = dayY + yGap;
+              const totalPersonaWidth = day.personas.length * (baseNodeWidth + 20) - 20;
+              let personaStartX = dayStartX + dayIdx * (baseNodeWidth + 40) - (totalPersonaWidth/2) + (baseNodeWidth/2) ;
+
+              day.personas.forEach((per, perIdx) => {
+                const isPersonaSelected = selectedIds?.personaId === per.id;
+                n.push({
+                  id: per.id,
+                  type: 'personaNode',
+                  data: { label: per.id, selected: isPersonaSelected },
+                  position: { x: personaStartX + perIdx * (baseNodeWidth + 20) , y: personaY },
+                  selectable: true,
+                });
+                e.push({ id: `${day.id}-${per.id}`, source: day.id, target: per.id, type: 'straight' });
+              });
             }
           });
-          e.push({ id: `${mod.id}-${day.id}`, source: mod.id, target: day.id });
-
-          day.personas.forEach((per, perIdx) => {
-            if (selectedIds?.topicId !== day.id) return; // hide personas until topic selected
-            const perX = dayX + 110 * perIdx;
-            n.push({
-              id: per.id,
-              data: { label: per.id },
-              position: { x: perX, y: 360 },
-              style: {
-                background: '#fff',
-                padding: '2px 8px',
-                borderRadius: 6,
-                border: `2px solid ${selectedIds?.personaId === per.id ? '#1E40AF' : '#000'}`,
-                fontSize: 11
-              }
-            });
-            e.push({ id: `${day.id}-${per.id}`, source: day.id, target: per.id });
-          });
-        });
+        }
       });
     });
     return { nodes: n, edges: e };
   }, [tree, selectedIds]);
+
+  const defaultEdgeOptions = {
+    style: { stroke: '#c8c8c8', strokeWidth: 2.5 },
+    type: 'straight' // Ensured straight edges
+  };
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
+        defaultEdgeOptions={defaultEdgeOptions}
         fitView
         nodesDraggable={false}
-        nodesConnectable={false}
-        onNodeClick={(_, node) => onSelect(node.id)}
+        nodesConnectable={false} // This should hide handles
+        elementsSelectable={true}
+        onNodeClick={(_, node) => {
+          let nodeType = 'persona'; // Default to persona
+          if (node.type === 'programNode') nodeType = 'program';
+          else if (node.type === 'moduleNode') nodeType = 'module';
+          else if (node.type === 'dayNode') nodeType = 'day';
+          onSelect(node.id, nodeType);
+        }}
+        selectNodesOnDrag={false}
       >
-        <Background gap={16} size={0.5} />
+        <Background gap={20} size={1} color="#f0f0f0" />
       </ReactFlow>
     </div>
   );
