@@ -821,3 +821,6 @@
 
 105. apps/frontend/tests/LoadView.test.jsx
    - New test file lines 1-80: mocks fetch, renders LoadView, asserts hierarchy rendering and persona selection enables "Load script" button.
+
+106. docs/scripts/neo4j/004_demo_catalog.cypher
+   - New file lines 1-40: inserts Program 'Program', Module 'Module 1: Defusion', Topic(=Day) 'Topic 1: Intro', and 22 Persona nodes with seq.
