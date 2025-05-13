@@ -27,7 +27,7 @@
     "@testing-library/jest-dom": "^6.4.3",
     "babel-jest": "^29.7.0",
     "@babel/preset-react": "^7.23.3",
-    "identity-obj-proxy": "^4.0.0",
+    "identity-obj-proxy": "^3.0.0",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.34.0",
     "eslint-plugin-react-hooks": "^4.6.0"

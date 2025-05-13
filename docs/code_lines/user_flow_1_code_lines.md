@@ -755,3 +755,6 @@
    - apps/frontend/tests/LoginView.test.jsx (lines 1-20) – Smoke test: renders LoginView and asserts email input exists.
    - apps/frontend/jest.config.js (lines 1-20) & babel.config.js (lines 1-10) – Jest setup for JSX.
    - apps/frontend/.eslintrc.cjs (lines 1-25) – ESLint rules for browser React code.
+
+82. Front-end dependency fix – apps/frontend/package.json
+   - Changed devDependencies.identity-obj-proxy version from ^4.0.0 to ^3.0.0 because npm registry has no 4.x release (lines ~25-30 in file).
