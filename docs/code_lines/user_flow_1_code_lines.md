@@ -737,3 +737,8 @@
    - Function `wait_for_tunnel` (lines ~105-125) loops until the forwarding address appears, then extracts `tcp://⟨host⟩:⟨port⟩` with `grep`+`sed`.
    - After parsing, the script echoes ready-to-copy connection strings (NEO4J_URI, REDIS_URL) inside a bold divider (lines ~135-150).
    - Final `wait` call (last line) keeps the script running so the two ngrok tunnels stay alive until the user hits Ctrl-C.
+
+80. package.json (root)
+   - Declares monorepo-level dependencies so Vercel's @vercel/node builder installs runtime libs.
+   - Lists dotenv, express, jsonwebtoken, neo4j-driver, redis with same versions as apps/api-server to avoid duplication issues.
+   - Marked "private": true to prevent accidental npm publish.

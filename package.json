@@ -1,0 +1,13 @@
+{
+  "name": "data-loop-monorepo",
+  "private": true,
+  "type": "module",
+  "description": "Dependency manifest required so Vercel's @vercel/node builder installs libraries used by the api/index.mjs serverless function.",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "neo4j-driver": "^5.28.1",
+    "redis": "^4.6.7"
+  }
+} 
