@@ -16,6 +16,8 @@ MERGE (prog:Program {id: 'Program'})
 MERGE (mod1:Module {id: 'Module 1: Defusion'})
   ON CREATE SET mod1.seq = 1;
 
+// Connect Program to Module
+MATCH (prog:Program {id:'Program'}), (mod1:Module {id:'Module 1: Defusion'})
 MERGE (prog)-[:HAS_MODULE]->(mod1);
 
 // ─────────────────────────────────────────────────────────────
@@ -23,6 +25,9 @@ MERGE (prog)-[:HAS_MODULE]->(mod1);
 // ─────────────────────────────────────────────────────────────
 MERGE (topic1:Day {id: 'Topic 1: Intro'})
   ON CREATE SET topic1.seq = 1;
+
+// Connect Module to Topic/Day
+MATCH (mod1:Module {id:'Module 1: Defusion'}), (topic1:Day {id:'Topic 1: Intro'})
 MERGE (mod1)-[:HAS_DAY]->(topic1);
 
 // Personas block as single query terminated by semicolon

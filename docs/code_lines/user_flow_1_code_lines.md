@@ -830,3 +830,6 @@
 
 106.2 docs/scripts/neo4j/004_demo_catalog.cypher
     - Added semicolons and combined persona UNWIND into single statement to prevent variable-scope errors when running via -f.
+
+106.3 docs/scripts/neo4j/004_demo_catalog.cypher
+    - Added MATCH statements to create HAS_MODULE and HAS_DAY relationships so hierarchy query returns rows.
