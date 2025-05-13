@@ -779,3 +779,5 @@
 89. apiFetch URL normalization – strip trailing slash from VITE_API_BASE_URL and ensure single leading slash to avoid //auth/login redirect that broke CORS preflight.
 
 90. Added app.options('*', cors(...)) to ensure preflight CORS requests get proper headers.
+
+91. Front-end SPA fallback – added apps/frontend/vercel.json with rewrite to serve index.html for all routes.
