@@ -26,9 +26,9 @@ MERGE (topic1:Day {id: 'Topic 1: Intro'})
 MERGE (mod1)-[:HAS_DAY]->(topic1);
 
 // ─────────────────────────────────────────────────────────────
-// 3. Personas under Topic 1
+// 3. Personas under Topic 1 (separate query – rebinds topic1 via MATCH)
 // ─────────────────────────────────────────────────────────────
-WITH topic1
+MATCH (topic1:Day {id: 'Topic 1: Intro'})
 UNWIND [
   'Focus','Stress','Procrastination','Anxiety','Depression','Productivity',
   'Loneliness','Anger','Social media','Breakup','Physical pain','Grief',

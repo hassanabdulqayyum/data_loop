@@ -824,3 +824,6 @@
 
 106. docs/scripts/neo4j/004_demo_catalog.cypher
    - New file lines 1-40: inserts Program 'Program', Module 'Module 1: Defusion', Topic(=Day) 'Topic 1: Intro', and 22 Persona nodes with seq.
+
+106.1 docs/scripts/neo4j/004_demo_catalog.cypher
+    - Replaced WITH topic1 block with MATCH (topic1:Day ...) to ensure variable exists when creating personas.
