@@ -850,3 +850,13 @@
 
 110. apps/frontend/src/components/TopNavBar/TopNavBar.jsx (breadcrumb fallback)
     - Modified `buildBreadcrumb` function to use `node.id` as a fallback if `node.name` is undefined for module, topic, and persona nodes. This prevents "undefined" from appearing in breadcrumbs and aids diagnostics. (lines ~29-42)
+
+111. apps/frontend/src/components/TopNavBar/TopNavBar.jsx (breadcrumb styling structure)
+    - Replaced `buildBreadcrumb` with `renderBreadcrumbElements` to return an array of JSX `<span>` elements for each breadcrumb part (module, topic, persona) and separators. (lines ~7-67)
+    - Updated the rendering in the component to use a `div` with class `styles.breadcrumbContainer` to host these elements, allowing for individual styling. (line ~71)
+
+112. apps/frontend/src/components/TopNavBar/TopNavBar.module.css (breadcrumb styling implementation)
+    - Repurposed `.breadcrumbTitle` to `.breadcrumbContainer` and updated its styles to be a flex container for breadcrumb parts. (lines ~43-49)
+    - Added new CSS classes: `.breadcrumbSegment`, `.breadcrumbSegment.selected`, `.breadcrumbSegment.nonSelected`, and `.breadcrumbSeparator`. (lines ~52-81)
+    - Applied specified font styles (bold, 36px, -0.05em letter-spacing), colors (#1d1b20 for selected/hover, #7a7a7a for non-selected/separators), hover effects for non-selected segments, and spacing for separators. (lines ~52-81)
+    - Adjusted `.navCenter` with `flex-grow: 2` and `overflow: hidden` to better accommodate potentially long breadcrumbs. (lines ~33-36)

@@ -39,6 +39,9 @@
   /* Center section should justify its content to the center */
   justify-content: center;
   text-align: center;
+  /* Allow breadcrumb container to not be squeezed by flex:1 on navSection */
+  flex-grow: 2; /* Give more space to center if needed */
+  overflow: hidden; /* Prevent long breadcrumbs from breaking layout */
 }
 
 .navRight {
@@ -46,14 +49,48 @@
   justify-content: flex-end;
 }
 
-.breadcrumbTitle {
-  /* Styling for the dynamic breadcrumb text */
-  font-size: 18px; /* Clear and readable font size */
-  font-weight: 500; /* Medium weight for emphasis */
-  color: #333333; /* Dark grey text color */
-  white-space: nowrap; /* Prevent breadcrumbs from wrapping */
-  overflow: hidden; /* Hide overflow if text is too long */
-  text-overflow: ellipsis; /* Show ellipsis (...) if text overflows */
+/* Container for the breadcrumb elements (replaces old .breadcrumbTitle single span) */
+.breadcrumbContainer {
+  display: flex; /* Lay out breadcrumb parts and separators in a row */
+  align-items: center; /* Vertically align items within the breadcrumb line */
+  white-space: nowrap; /* Prevent the breadcrumb line from wrapping */
+  overflow: hidden;    /* Hide overflow if text is too long */
+  text-overflow: ellipsis; /* Show ellipsis (...) if text overflows the container */
+}
+
+/* Individual text parts of the breadcrumb */
+.breadcrumbSegment {
+  font-weight: bold;
+  font-size: 36px; /* As per new requirement */
+  letter-spacing: -0.05em; /* As per new requirement, -5% = -0.05em */
+  cursor: default; /* Default cursor, can be changed to pointer if parts become clickable */
+  transition: color 0.2s ease-in-out; /* Smooth color transition for hover */
+  padding: 0 2px; /* Minimal padding to ensure letter spacing doesn't clip edges */
+}
+
+/* Style for the currently active/selected part of the breadcrumb */
+.breadcrumbSegment.selected {
+  color: #1d1b20; /* Black color for selected */
+}
+
+/* Style for non-active/non-selected parts of the breadcrumb */
+.breadcrumbSegment.nonSelected {
+  color: #7a7a7a; /* Gray color for non-selected */
+}
+
+/* Hover effect for non-selected parts */
+.breadcrumbSegment.nonSelected:hover {
+  color: #1d1b20; /* Black color on hover */
+}
+
+/* Style for the separators (e.g., '/') in the breadcrumb */
+.breadcrumbSeparator {
+  font-weight: bold;
+  font-size: 36px;
+  letter-spacing: -0.05em;
+  color: #7a7a7a; /* Gray color for separator, matching non-selected */
+  margin: 0 0.2em; /* Provides space before and after the separator, adjust as needed */
+  cursor: default;
 }
 
 .iconPlaceholder {

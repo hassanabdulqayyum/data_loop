@@ -24,32 +24,71 @@ import styles from './TopNavBar.module.css';
 
 function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode }) {
   /**
-   * Constructs the breadcrumb string based on the currently selected nodes.
-   * Examples:
-   * - "Module 1: Defusion /"
-   * - "Module 1: Defusion / Topic 1: Intro /"
-   * - "Module 1: Defusion / Topic 1: Intro / Persona 1 - Focus"
-   * If no module is selected, it defaults to "Data Loop".
+   * Generates an array of JSX elements for the breadcrumb, allowing individual styling.
    */
-  const buildBreadcrumb = () => {
+  const renderBreadcrumbElements = () => {
+    const elements = [];
+    const segmentBaseClass = styles.breadcrumbSegment;
+
     if (!selectedModuleNode) {
-      return 'Data Loop'; // Default title
+      elements.push(
+        <span key="default-title" className={`${segmentBaseClass} ${styles.selected}`}>
+          Data Loop
+        </span>
+      );
+      return elements;
     }
 
-    // Use node.name if available, otherwise fallback to node.id
+    // Module part
     const moduleName = selectedModuleNode.name || selectedModuleNode.id;
-    let path = `${moduleName} /`;
+    const isModuleLast = !selectedTopicNode; // Module is the last/selected part if no topic is selected
+    elements.push(
+      <span
+        key="module"
+        className={`${segmentBaseClass} ${isModuleLast ? styles.selected : styles.nonSelected}`}
+      >
+        {moduleName}
+      </span>
+    );
 
+    // Topic part (if selected)
     if (selectedTopicNode) {
+      elements.push(
+        <span key="separator-1" className={styles.breadcrumbSeparator}>
+          {' / '}
+        </span>
+      );
       const topicName = selectedTopicNode.name || selectedTopicNode.id;
-      path += ` ${topicName} /`;
+      const isTopicLast = !selectedPersonaNode; // Topic is last/selected if no persona is selected
+      elements.push(
+        <span
+          key="topic"
+          className={`${segmentBaseClass} ${isTopicLast ? styles.selected : styles.nonSelected}`}
+        >
+          {topicName}
+        </span>
+      );
+
+      // Persona part (if selected)
       if (selectedPersonaNode) {
+        elements.push(
+          <span key="separator-2" className={styles.breadcrumbSeparator}>
+            {' / '}
+          </span>
+        );
         const personaName = selectedPersonaNode.name || selectedPersonaNode.id;
-        // No trailing slash if persona is the last element
-        path = `${moduleName} / ${topicName} / ${personaName}`;
+        // Persona is always the last/selected part if it exists
+        elements.push(
+          <span
+            key="persona"
+            className={`${segmentBaseClass} ${styles.selected}`}
+          >
+            {personaName}
+          </span>
+        );
       }
     }
-    return path;
+    return elements;
   };
 
   return (
@@ -59,7 +98,8 @@ function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode 
         <span className={styles.iconPlaceholder}>[S]</span>
       </div>
       <div className={`${styles.navSection} ${styles.navCenter}`}>
-        <span className={styles.breadcrumbTitle}>{buildBreadcrumb()}</span>
+        {/* Changed from a single span to a div container for multiple breadcrumb elements */}
+        <div className={styles.breadcrumbContainer}>{renderBreadcrumbElements()}</div>
       </div>
       <div className={`${styles.navSection} ${styles.navRight}`}>
         {/* Placeholder for User/Profile Icon */}
