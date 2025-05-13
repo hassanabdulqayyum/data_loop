@@ -12,11 +12,14 @@ import React, { useMemo } from 'react';
 import ReactFlow, { Background, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-// Common style for all text within nodes
+/*
+ * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
+ * spacing for that tight headline look.  The typeface remains "Inter".
+ */
 const commonTextStyle = {
   fontFamily: 'Inter, sans-serif',
-  fontSize: '28px',
-  fontWeight: '500', // Medium weight
+  fontSize: '36px',
+  fontWeight: '500',
   letterSpacing: '-0.05em',
   color: '#000000'
 };
@@ -24,13 +27,20 @@ const commonTextStyle = {
 // Custom node to ensure consistent styling and no default handles
 const CustomNode = ({ data, selected, type }) => {
   let borderStyle;
-  let backgroundColor = '#fff'; // Default for Module, Topic, Persona
+  let backgroundColor = '#F3F3F3'; // Module, Topic *and* Persona default
 
   if (type === 'program') {
-    backgroundColor = '#c8c8c8';
-    borderStyle = 'none';
+    backgroundColor = '#c8c8c8'; // Slightly darker fill for top node
+    borderStyle = 'none'; // Program node has no border in the design
   } else {
-    borderStyle = selected ? '2.5px solid #6C80DA' : '1px solid #c8c8c8';
+    // Bump border to 3 px when selected so the outline is more pronounced.
+    borderStyle = selected ? '3px solid #6C80DA' : '1px solid #c8c8c8';
+  }
+
+  // Persona nodes preserve a pure-white background regardless of selection so
+  // they pop visually at the lowest hierarchy level.
+  if (type === 'persona') {
+    backgroundColor = '#FFFFFF';
   }
 
   return (
@@ -140,12 +150,13 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
   }, [tree, selectedIds]);
 
   const defaultEdgeOptions = {
-    style: { stroke: '#c8c8c8', strokeWidth: 2.5 },
-    type: 'straight' // Ensured straight edges
+    style: { stroke: '#c8c8c8', strokeWidth: 3 }, // Thicker connectors per design
+    type: 'straight'
   };
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div /* Adds a soft gutter so nodes never touch the viewport edge. */
+         style={{ width: '100%', height: '100%', padding: '24px', boxSizing: 'border-box' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

@@ -834,29 +834,28 @@
 106.3 docs/scripts/neo4j/004_demo_catalog.cypher
     - Added MATCH statements to create HAS_MODULE and HAS_DAY relationships so hierarchy query returns rows.
 
-107. apps/frontend/src/components/TopNavBar/TopNavBar.jsx (new file)
-    - /** TopNavBar.jsx - Global navigation bar ... */ (lines 1-50) - New component created to display a fixed top navigation bar with placeholders for search/user icons and a dynamic breadcrumb title based on selected module, topic, or persona. Defaults to "Data Loop" if no module is selected.
+107. apps/frontend/src/components/Icons/SearchIcon.jsx (new file)
+    - Full file (lines 1-70): Stateless magnifying-glass SVG component accepting `size` & `colour` props so we can swap the text placeholder with a real icon.
 
-108. apps/frontend/src/components/TopNavBar/TopNavBar.module.css (new file)
-    - /* TopNavBar.module.css - Styles for the TopNavBar component. ... */ (lines 1-58) - New CSS module providing styles for the TopNavBar, including fixed positioning, flex layout for internal sections (left, center, right), and styling for breadcrumb text and icon placeholders.
+108. apps/frontend/src/components/Icons/UserIcon.jsx (new file)
+    - Full file (lines 1-75): Minimalist avatar SVG (head + shoulders) used in the TopNavBar; same API as `SearchIcon` for consistency.
 
-109. apps/frontend/src/pages/LoadView.jsx (integration of TopNavBar)
-    - import TopNavBar from '../components/TopNavBar/TopNavBar.jsx'; (line ~7) - Added import for the new navigation bar.
-    - Renamed state variables from selectedModule/Topic/Persona to selectedModuleId/TopicId/PersonaId to store only IDs. (lines ~20-22)
-    - Added helper function `findNodeById` and logic to derive full `selectedModuleNode`, `selectedTopicNode`, `selectedPersonaNode` objects (with names) from the `tree` data using their respective IDs. This is crucial for providing context to `TopNavBar`. (lines ~40-75)
-    - Updated `HierarchyGraph` `onSelect` callback and internal `renderTree` selection logic to use the new ID-based state variables (`selectedModuleId`, `selectedTopicId`, `selectedPersonaId`). (various lines)
-    - Rendered `<TopNavBar ... />` component at the top of the JSX, passing the derived node objects as props. (line ~175)
-    - Wrapped main layout in `<>` and added `paddingTop: '60px'` to the main content `div` to prevent `TopNavBar` from obscuring content; set `overflow: 'auto'` on the left pane. (line ~180)
+109. apps/frontend/src/components/TopNavBar/TopNavBar.jsx
+    - lines 4-7: imported `SearchIcon` and `UserIcon`.
+    - lines 25-32: replaced `[S]` span with `<SearchIcon size={28} />`.
+    - lines 45-52: replaced `[U]` span with `<UserIcon size={30} />`.
 
-110. apps/frontend/src/components/TopNavBar/TopNavBar.jsx (breadcrumb fallback)
-    - Modified `buildBreadcrumb` function to use `node.id` as a fallback if `node.name` is undefined for module, topic, and persona nodes. This prevents "undefined" from appearing in breadcrumbs and aids diagnostics. (lines ~29-42)
+110. apps/frontend/src/components/TopNavBar/TopNavBar.module.css
+    - line 13: changed `.navBar` height from **60px → 72px** to match Figma spec.
 
-111. apps/frontend/src/components/TopNavBar/TopNavBar.jsx (breadcrumb styling structure)
-    - Replaced `buildBreadcrumb` with `renderBreadcrumbElements` to return an array of JSX `<span>` elements for each breadcrumb part (module, topic, persona) and separators. (lines ~7-67)
-    - Updated the rendering in the component to use a `div` with class `styles.breadcrumbContainer` to host these elements, allowing for individual styling. (line ~71)
+111. apps/frontend/src/components/HierarchyGraph.jsx
+    - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing` ‑0.05em.
+    - lines 28-35: default background now `#F3F3F3` (light grey).
+    - lines 33-38: selected border now **3px solid #6C80DA**.
+    - lines 41-45: persona nodes forced back to white.
+    - line 95: `defaultEdgeOptions.style.strokeWidth` **2.5 → 3**.
+    - line 100: outer `<div>` now adds `padding: 24px` for gutter margin.
 
-112. apps/frontend/src/components/TopNavBar/TopNavBar.module.css (breadcrumb styling implementation)
-    - Repurposed `.breadcrumbTitle` to `.breadcrumbContainer` and updated its styles to be a flex container for breadcrumb parts. (lines ~43-49)
-    - Added new CSS classes: `.breadcrumbSegment`, `.breadcrumbSegment.selected`, `.breadcrumbSegment.nonSelected`, and `.breadcrumbSeparator`. (lines ~52-81)
-    - Applied specified font styles (bold, 36px, -0.05em letter-spacing), colors (#1d1b20 for selected/hover, #7a7a7a for non-selected/separators), hover effects for non-selected segments, and spacing for separators. (lines ~52-81)
-    - Adjusted `.navCenter` with `flex-grow: 2` and `overflow: hidden` to better accommodate potentially long breadcrumbs. (lines ~33-36)
+112. apps/frontend/src/pages/LoadView.jsx
+    - line 180: updated main wrapper paddingTop **72px** matching taller nav.
+    - line 315: placeholder text colour `#555` → `#9CA3AF` (lighter grey per design).

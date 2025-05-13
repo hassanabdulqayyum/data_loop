@@ -20,6 +20,9 @@
  * If no module is selected, a default title "Data Loop" is shown.
  */
 import React from 'react';
+// Bring in the new SVG icons so we can swap the text placeholders for real graphics.
+import SearchIcon from '../Icons/SearchIcon.jsx';
+import UserIcon from '../Icons/UserIcon.jsx';
 import styles from './TopNavBar.module.css';
 
 function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode }) {
@@ -94,16 +97,16 @@ function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode 
   return (
     <div className={styles.navBar}>
       <div className={styles.navSection}>
-        {/* Placeholder for Search Icon/Input */}
-        <span className={styles.iconPlaceholder}>[S]</span>
+        {/* Real magnifying-glass icon – we keep the span wrapper for consistent alignment. */}
+        <SearchIcon size={28} />
       </div>
       <div className={`${styles.navSection} ${styles.navCenter}`}>
         {/* Changed from a single span to a div container for multiple breadcrumb elements */}
         <div className={styles.breadcrumbContainer}>{renderBreadcrumbElements()}</div>
       </div>
       <div className={`${styles.navSection} ${styles.navRight}`}>
-        {/* Placeholder for User/Profile Icon */}
-        <span className={styles.iconPlaceholder}>[U]</span>
+        {/* Avatar circle icon – clicking will later show a drop-down menu. */}
+        <UserIcon size={30} />
       </div>
     </div>
   );

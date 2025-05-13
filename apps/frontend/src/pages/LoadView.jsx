@@ -249,7 +249,7 @@ function LoadView() {
         selectedTopicNode={selectedTopicNode}
         selectedPersonaNode={selectedPersonaNode}
       />
-      <div style={{ display: 'flex', height: '100vh', paddingTop: '60px', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', height: '100vh', paddingTop: '72px', boxSizing: 'border-box' }}>
         {/* Left column – the hierarchy */}
         <div
           style={{
@@ -313,7 +313,7 @@ function LoadView() {
               Load script
             </button>
           ) : (
-            <p style={{ fontSize: 18, color: '#555' }}>Select a script to load…</p>
+            <p style={{ fontSize: 18, color: '#9CA3AF' /* light grey per Figma */ }}>Select a script to load…</p>
           )}
         </div>
       </div>
