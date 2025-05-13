@@ -847,3 +847,6 @@
     - Updated `HierarchyGraph` `onSelect` callback and internal `renderTree` selection logic to use the new ID-based state variables (`selectedModuleId`, `selectedTopicId`, `selectedPersonaId`). (various lines)
     - Rendered `<TopNavBar ... />` component at the top of the JSX, passing the derived node objects as props. (line ~175)
     - Wrapped main layout in `<>` and added `paddingTop: '60px'` to the main content `div` to prevent `TopNavBar` from obscuring content; set `overflow: 'auto'` on the left pane. (line ~180)
+
+110. apps/frontend/src/components/TopNavBar/TopNavBar.jsx (breadcrumb fallback)
+    - Modified `buildBreadcrumb` function to use `node.id` as a fallback if `node.name` is undefined for module, topic, and persona nodes. This prevents "undefined" from appearing in breadcrumbs and aids diagnostics. (lines ~29-42)

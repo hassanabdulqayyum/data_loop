@@ -36,13 +36,17 @@ function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode 
       return 'Data Loop'; // Default title
     }
 
-    let path = `${selectedModuleNode.name} /`;
+    // Use node.name if available, otherwise fallback to node.id
+    const moduleName = selectedModuleNode.name || selectedModuleNode.id;
+    let path = `${moduleName} /`;
 
     if (selectedTopicNode) {
-      path += ` ${selectedTopicNode.name} /`;
+      const topicName = selectedTopicNode.name || selectedTopicNode.id;
+      path += ` ${topicName} /`;
       if (selectedPersonaNode) {
+        const personaName = selectedPersonaNode.name || selectedPersonaNode.id;
         // No trailing slash if persona is the last element
-        path = `${selectedModuleNode.name} / ${selectedTopicNode.name} / ${selectedPersonaNode.name}`;
+        path = `${moduleName} / ${topicName} / ${personaName}`;
       }
     }
     return path;
