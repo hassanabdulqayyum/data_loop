@@ -775,3 +775,5 @@
 87. API CORS support – apps/api-server/src/app.js import cors and added middleware; package.json adds dependency.
 
 88. Root package.json update – added cors ^2.8.5 so Vercel builder for api/index.mjs includes the library.
+
+89. apiFetch URL normalization – strip trailing slash from VITE_API_BASE_URL and ensure single leading slash to avoid //auth/login redirect that broke CORS preflight.

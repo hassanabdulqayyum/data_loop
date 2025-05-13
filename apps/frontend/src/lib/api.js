@@ -22,13 +22,17 @@ const data = await apiFetch('/hierarchy');
 export async function apiFetch(path, options = {}) {
   const BASE = import.meta.env.VITE_API_BASE_URL || '';
 
+  // Strip trailing slash on base and ensure path starts with single leading slash
+  const normalizedBase = BASE.replace(/\/+$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
   // Ensure header defaults – merge any caller-supplied headers.
   const headers = { ...(options.headers || {}) };
   if (options.body && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${normalizedBase}${normalizedPath}`, { ...options, headers });
 
   // Try to parse JSON either way so error handling sees the message.
   const data = await res.json().catch(() => null);
