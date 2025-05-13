@@ -54,6 +54,8 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
         e.push({ id: `${program.id}-${mod.id}`, source: program.id, target: mod.id });
 
         mod.days.forEach((day, dayIdx) => {
+          if (selectedIds?.moduleId !== mod.id) return; // hide topics until module selected
+
           const dayX = modX + 150 * dayIdx;
           n.push({
             id: day.id,
@@ -70,6 +72,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
           e.push({ id: `${mod.id}-${day.id}`, source: mod.id, target: day.id });
 
           day.personas.forEach((per, perIdx) => {
+            if (selectedIds?.topicId !== day.id) return; // hide personas until topic selected
             const perX = dayX + 110 * perIdx;
             n.push({
               id: per.id,
