@@ -78,7 +78,11 @@ const app = express()
 // --- TEMPORARY SIMPLIFIED CORS FOR DEBUGGING ---
 // Explicitly handle OPTIONS preflight requests first.
 // This ensures that preflight requests get the necessary headers immediately.
-app.options('/:path*', (req, res) => {
+// Express 5 no longer accepts bare `*` or `:param*` patterns.
+// The new wildcard syntax is `/*name`  (without braces) or `/{*name}` if you
+// also want to match the root path. We use the latter so *every* URL — even
+// `/` — gets the CORS pre-flight treatment during development.
+app.options('/{*splat}', (req, res) => {
   // Log to Vercel to confirm if OPTIONS requests reach this handler.
   console.log(`OPTIONS request received for: ${req.path} from origin: ${req.headers.origin}`);
 
