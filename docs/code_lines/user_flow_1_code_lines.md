@@ -758,3 +758,6 @@
 
 82. Front-end dependency fix – apps/frontend/package.json
    - Changed devDependencies.identity-obj-proxy version from ^4.0.0 to ^3.0.0 because npm registry has no 4.x release (lines ~25-30 in file).
+
+83. Front-end dependency fix – apps/frontend/package.json
+   - Bumped react-flow-renderer from ^11.8.6 (non-existent) to ^11.10.0 (latest 11.x) so npm install succeeds on Vercel.
