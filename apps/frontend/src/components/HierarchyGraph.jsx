@@ -26,22 +26,23 @@ const commonTextStyle = {
 
 // Custom node to ensure consistent styling and no default handles
 const CustomNode = ({ data, selected, type }) => {
-  let borderStyle;
-  let backgroundColor = '#F3F3F3'; // Module, Topic *and* Persona default
+  /* `data.ancestor` is true when the node was once selected but the user has
+   * since drilled *deeper* into its children.  In that state the spec wants a
+   * grey fill and *no* blue outline (similar to the Program node). */
+  const { ancestor } = data;
 
-  if (type === 'program') {
-    backgroundColor = '#c8c8c8'; // Slightly darker fill for top node
-    borderStyle = 'none'; // Program node has no border in the design
+  let borderStyle;
+  let backgroundColor = '#F3F3F3'; // Default for mid-level nodes
+
+  if (type === 'program' || ancestor) {
+    backgroundColor = '#c8c8c8';
+    borderStyle = 'none';
   } else {
-    // Bump border to 3 px when selected so the outline is more pronounced.
     borderStyle = selected ? '3px solid #6C80DA' : '1px solid #c8c8c8';
   }
 
-  // Persona nodes preserve a pure-white background regardless of selection so
-  // they pop visually at the lowest hierarchy level.
-  if (type === 'persona') {
-    backgroundColor = '#FFFFFF';
-  }
+  // Persona nodes stay white so they remain the visual "leaf" focus.
+  if (type === 'persona') backgroundColor = '#FFFFFF';
 
   return (
     <div
@@ -100,7 +101,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
         n.push({
           id: mod.id,
           type: 'moduleNode',
-          data: { label: mod.id, selected: isModuleSelected },
+          data: { label: mod.id, selected: isModuleSelected, ancestor: isModuleSelected && selectedIds?.topicId !== null },
           position: { x: moduleStartX + modIdx * (baseNodeWidth + 50) , y: moduleY },
           selectable: true,
         });
@@ -119,7 +120,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
             n.push({
               id: day.id,
               type: 'dayNode',
-              data: { label: day.id, selected: isTopicSelected },
+              data: { label: day.id, selected: isTopicSelected, ancestor: isTopicSelected && selectedIds?.personaId !== null },
               position: { x: dayStartX + dayIdx * (baseNodeWidth + 40) , y: dayY },
               selectable: true,
             });
