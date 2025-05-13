@@ -136,9 +136,12 @@ wait_for_tunnel() {
   local timeout=30  # seconds
   local elapsed=0
   while [[ $elapsed -lt $timeout ]]; do
-    if grep -q "\"lvl\":\"info\".*\"addr\":\"tcp://" "$log_file"; then
-      grep "\"lvl\":\"info\".*\"addr\":\"tcp://" "$log_file" | \
-        sed -E 's/.*"addr":"(tcp:[^"]+)".*/\1/' | tail -n1
+    # Search for the first occurrence of a TCP forwarding address regardless of
+    # the exact JSON key (`public_url`, `url`, etc.). This makes the parser
+    # resilient across ngrok versions.
+    if grep -qE "tcp://[A-Za-z0-9\.-]+:[0-9]+" "$log_file"; then
+      # Extract *only* the first tcp://host:port substring and print it.
+      grep -oE "tcp://[A-Za-z0-9\.-]+:[0-9]+" "$log_file" | head -n1 | tail -n1
       return 0
     fi
     sleep 1

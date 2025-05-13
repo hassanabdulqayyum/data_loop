@@ -729,8 +729,8 @@
    - ###############################################################################  # Visual divider explaining purpose in a non-techie style.
    - # start_ngrok_tunnels.sh – Convenience wrapper to expose local Neo4j + Redis via ngrok so Vercel preview builds can reach your laptop.
    - HOW IT WORKS section (lines 5-20) explains the five key steps in everyday language: checks ngrok, opens two tunnels, parses addresses, prints env-vars, keeps tunnels alive.
-   - Helper functions `print_ok`, `print_wait`, `print_error` (lines ~35-55) use colourful icons to improve UX and readability.
-   - New `has_ngrok_token` multi-path checker (lines ~60-95) detects the token in ngrok v2, v3, or NGROK_AUTHTOKEN env.
+   - Helper functions `print_ok`, `print_wait`, `print_error` (lines ~35-55) use colourful icons to improve UX and readability, and new `has_ngrok_token` multi-path checker (lines ~60-95) detects the token in ngrok v2, v3, or NGROK_AUTHTOKEN env.
+   - Resilient address extraction (lines ~120-135) now matches any `tcp://host:port` pattern instead of relying on `"addr":` JSON key so it works across ngrok versions.
    - Pre-flight checks (lines ~60-75) verify ngrok install + authtoken and exit early with helpful hints.
    - Tunnel startup commands (lines ~85-100) run `ngrok tcp 7687` and `ngrok tcp 6379` in the background while streaming JSON logs to temp files so we can parse them.
    - Function `wait_for_tunnel` (lines ~105-125) loops until the forwarding address appears, then extracts `tcp://⟨host⟩:⟨port⟩` with `grep`+`sed`.
