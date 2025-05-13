@@ -771,3 +771,5 @@
 86. Front-end API helper and LoginView update
    - apps/frontend/src/lib/api.js (new file) – apiFetch helper prefixes paths with VITE_API_BASE_URL, JSON header default, throws on error.
    - apps/frontend/src/pages/LoginView.jsx – replaced raw fetch with apiFetch and added import.
+
+87. API CORS support – apps/api-server/src/app.js import cors and added middleware; package.json adds dependency.

@@ -13,6 +13,7 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 
 import express from 'express'
+import cors from 'cors'
 import errorHandler from './middleware/error.js'
 import authRouter from './routes/auth.js'
 // Import the hierarchy route so we can handle GET /hierarchy requests from logged-in users
@@ -38,6 +39,20 @@ import { initNeo4j } from '../libs/node-shared/db.js';
 await initNeo4j();
 
 const app = express()
+
+// -------------------------------------------------------------
+// Enable CORS so the front-end (served from a different Vercel
+// project/domain) can call this API. We allow the origin set in
+// env var CORS_ORIGIN (comma-separated list) or fall back to '*'
+// during early development. The middleware automatically handles
+// pre-flight OPTIONS requests so browsers don't fail.
+// -------------------------------------------------------------
+
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : '*';
+
+app.use(cors({ origin: allowedOrigins }));
 
 // Parse incoming JSON
 app.use(express.json());

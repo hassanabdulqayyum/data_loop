@@ -29,6 +29,7 @@
     "jsonwebtoken": "^9.0.2",
     "neo4j-driver": "^5.28.1",
     "redis": "^4.6.7",
-    "ioredis": "^5.6.1"
+    "ioredis": "^5.6.1",
+    "cors": "^2.8.5"
   }
 }
