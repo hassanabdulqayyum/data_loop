@@ -25,17 +25,16 @@ MERGE (topic1:Day {id: 'Topic 1: Intro'})
   ON CREATE SET topic1.seq = 1;
 MERGE (mod1)-[:HAS_DAY]->(topic1);
 
-// ─────────────────────────────────────────────────────────────
-// 3. Personas under Topic 1 (separate query – rebinds topic1 via MATCH)
-// ─────────────────────────────────────────────────────────────
+// Personas block as single query terminated by semicolon
 MATCH (topic1:Day {id: 'Topic 1: Intro'})
-UNWIND [
+WITH topic1, [
   'Focus','Stress','Procrastination','Anxiety','Depression','Productivity',
   'Loneliness','Anger','Social media','Breakup','Physical pain','Grief',
   'ADHD','OCD','Impulsivity','Midlife crisis','Insomnia','Health anxiety',
   'Infidelity','Binge eating','Trauma','Mindfulness'
-] AS name
-WITH topic1, name, apoc.algo.indexOf(name, '') AS idx // idx gives deterministic position
+] AS names
+UNWIND range(0, size(names)-1) AS idx
+WITH topic1, names[idx] AS name, idx
 MERGE (per:Persona {id: name})
-  ON CREATE SET per.seq = idx;
+  ON CREATE SET per.seq = idx
 MERGE (topic1)-[:HAS_PERSONA]->(per); 

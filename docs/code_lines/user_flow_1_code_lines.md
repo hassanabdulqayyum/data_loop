@@ -827,3 +827,6 @@
 
 106.1 docs/scripts/neo4j/004_demo_catalog.cypher
     - Replaced WITH topic1 block with MATCH (topic1:Day ...) to ensure variable exists when creating personas.
+
+106.2 docs/scripts/neo4j/004_demo_catalog.cypher
+    - Added semicolons and combined persona UNWIND into single statement to prevent variable-scope errors when running via -f.
