@@ -33,25 +33,35 @@ if (process.env.NODE_ENV === 'test') {
 
   // We create the client lazily so failing to connect crashes fast.
   const client = createClient({ url: redisUrl });
-  (async () => {
-    try {
-      await client.connect();
-      console.log('✅ Connected to Redis');
-    } catch (err) {
-      console.error('❌ Redis connection failed:', err);
-      process.exit(1);
-    }
-  })();
 
-  redisWrapper = {
-    /** Proxy xAdd to the underlying Redis client. */
-    async xAdd(...args) {
-      return client.xAdd(...args);
+  const buildStub = () => ({
+    async xAdd() {
+      return 'OK';
     },
-    async quit() {
-      return client.quit();
-    },
-  };
+    async quit() {},
+  });
+
+  try {
+    await client.connect();
+    console.log('✅ Connected to Redis');
+
+    // If Redis drops later we don't want the whole function to crash.
+    client.on('error', (err) => {
+      console.error('⚠️  Redis connection lost:', err.message);
+    });
+
+    redisWrapper = {
+      async xAdd(...args) {
+        return client.xAdd(...args);
+      },
+      async quit() {
+        return client.quit();
+      },
+    };
+  } catch (err) {
+    console.error('❌ Redis connection failed, falling back to stub:', err.message);
+    redisWrapper = buildStub();
+  }
 }
 
 export default redisWrapper;

@@ -456,6 +456,7 @@
    - if (!process.env.REDIS_URL) throw new Error("Environment variable REDIS_URL is undefined!")  # Fail-fast guard ensures env var is set.
    - const redisClient = createClient({ url: process.env.REDIS_URL }); await redisClient.connect();  # Establishes a singleton connection at startup.
    - export default redisClient;  # Makes the client reusable across route handlers.
+   - production branch now falls back to stub if Redis connection fails and logs warning instead of crashing; adds error listener.
 
 17. apps/api-server/libs/node-shared/jwt.js
    - const sign_jwt = (payload) => jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '12h' });  # Helper signs a JWT with 12-hour expiry.
