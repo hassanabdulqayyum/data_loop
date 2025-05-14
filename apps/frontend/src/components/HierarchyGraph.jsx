@@ -403,6 +403,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
   useEffect(() => {
     /* eslint-disable no-console */
     console.log('Tilt diagnostic hook fired');
+    console.log(`nodes: ${nodes.length}, edges: ${edges.length}`);
     /* eslint-enable no-console */
     // ------------------------------------------------------------------
     // Skip in production builds or SSR
@@ -412,6 +413,13 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
       (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development');
 
     if (!isDev || typeof window === 'undefined') return;
+
+    if (!edges.length || !nodes.length) {
+      /* eslint-disable no-console */
+      console.warn('Tilt diagnostic: nodes/edges empty – skipping angle calc');
+      /* eslint-enable no-console */
+      return;
+    }
 
     // Build quick lookup { id → position } for constant-time fetches.
     const posMap = new Map(nodes.map((n) => [n.id, n.position]));

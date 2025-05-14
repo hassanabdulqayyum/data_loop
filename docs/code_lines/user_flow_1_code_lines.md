@@ -959,3 +959,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885.2 apps/frontend/src/components/HierarchyGraph.jsx
    - Added unconditional console.log('Tilt diagnostic hook fired') to verify hook execution.
+
+885.3 apps/frontend/src/components/HierarchyGraph.jsx
+   - Added logging of nodes/edges length and warning when empty to diagnose why angle table not printing.
