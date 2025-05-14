@@ -811,7 +811,7 @@
 101. Global styles: introduced `colours` object inside component for maintainability.
 
 102. apps/frontend/src/pages/LoadView.jsx
-   - Added entire file implementing LoadView component that fetches `/hierarchy`, renders nested Program → Module → Day → Persona tree and exposes a "Load script" button.  (Lines 1-200 new).
+   - lines ~310-380 replaced: right-side panel now shows staged helper text (module/topic/script) and floating **Export** button.  Added contextual CTA "Load script" button plus disabled logic and toast stub.
 
 103. apps/frontend/src/App.jsx
    - lines 14-32 added: import of LoadView, CanvasStub placeholder component, and new routes `/load` and `/canvas/:personaId`.

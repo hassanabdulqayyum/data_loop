@@ -17,10 +17,17 @@ How it works (plain English):
    (`renderTree`) walks over the object and prints nested `<div>`s indented by
    1 rem per level.  Persona nodes – the *leaf* of the tree – are rendered as
    clickable buttons so the user can choose which script to load.
-4. The right-hand column shows a placeholder text until a persona is selected.
-   Once the user picks a persona we enable the **"Load script"** button.  For
-   now that button simply navigates to `/canvas/{personaId}` – CanvasView does
-   not exist yet so we'll stub the route in `App.jsx` with a temporary page.
+4. The right-hand column (RSP) now mirrors the staged helper wording from the
+   Figma:
+      • *No module picked*   → "Select a module to begin…".
+      • *Module picked but no topic*   → "Select a topic…".
+      • *Topic picked but no persona*  → "Select a script to load…".
+      • *Persona picked*       → large **"Load script"** button.
+   A floating **Export** button appears once the user has entered any module
+   (disabled until a persona is also selected).  For now Export just shows a
+   toast stub – the endpoint will be wired in a later micro-task.
+   The Load button still navigates to `/canvas/{personaId}` which is yet to be
+   implemented; `App.jsx` continues to stub that route for the time being.
 
 Example usage:
 ```js
@@ -291,38 +298,99 @@ function LoadView() {
             padding: '1rem',
             /* Divider between graph and RSP: 3-px grey (#D1D1D1) per design */
             borderLeft: '3px solid #D1D1D1',
+            /* Positioning context so the floating Export button anchors correctly */
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center'
           }}
         >
-          {selectedPersonaId ? (
+          {/* ------------------------------------------------------------------
+               Floating "Export" button – visible once the user has drilled
+               at least one level into the catalogue (i.e. a Module is
+               picked).  It stays disabled until a *Persona* is also picked
+               because the backend export endpoint expects that id.
+               ---------------------------------------------------------------- */}
+          {selectedModuleId && (
             <button
               type="button"
-              onClick={handleLoad}
+              /* When we eventually wire the endpoint this will call handleExport */
+              disabled={!selectedPersonaId}
               style={{
-                padding: '0.75rem 1.5rem',
-                fontSize: 24,
+                position: 'absolute',
+                right: '24px',
+                top: '24px',
+                padding: '0.4rem 1rem',
+                fontSize: 18,
                 fontWeight: 500,
                 letterSpacing: '-0.05em',
                 background: '#ffffff',
                 color: '#000000',
                 border: '2px solid #000000',
                 borderRadius: 6,
-                cursor: 'pointer'
+                cursor: !selectedPersonaId ? 'not-allowed' : 'pointer',
+                opacity: !selectedPersonaId ? 0.4 : 1
+              }}
+              onClick={() => {
+                /* Future-proof stub – real logic lives in CanvasView per spec */
+                toast.success('Export feature coming soon!');
               }}
             >
-              Load script
+              Export
             </button>
-          ) : (
-            <p style={{
-              fontSize: 28,
-              fontWeight: 500,
-              letterSpacing: '-0.05em',
-              color: '#000000'
-            }}>Select a script to load…</p>
           )}
+
+          {/* ------------------------------------------------------------------
+               Contextual helper inside RSP – the wording changes depending on
+               how far the user has navigated through the hierarchy.  Once a
+               Persona is chosen the helper swaps to a prominent **Load script**
+               CTA mirroring the Figma.
+               ---------------------------------------------------------------- */}
+          {(() => {
+            /* First, if a Persona is picked we render the CTA button. */
+            if (selectedPersonaId) {
+              return (
+                <button
+                  type="button"
+                  onClick={handleLoad}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: 24,
+                    fontWeight: 500,
+                    letterSpacing: '-0.05em',
+                    background: '#ffffff',
+                    color: '#000000',
+                    border: '2px solid #000000',
+                    borderRadius: 6,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Load script
+                </button>
+              );
+            }
+
+            /* Next levels: return the contextual guidance sentence. */
+            let helperText = 'Select a script to load…';
+            if (!selectedModuleId) helperText = 'Select a module to begin…';
+            else if (!selectedTopicId) helperText = 'Select a topic…';
+
+            return (
+              <p
+                style={{
+                  fontSize: 28,
+                  fontWeight: 500,
+                  letterSpacing: '-0.05em',
+                  color: '#000000',
+                  textAlign: 'center',
+                  maxWidth: '80%'
+                }}
+              >
+                {helperText}
+              </p>
+            );
+          })()}
         </div>
       </div>
     </>
