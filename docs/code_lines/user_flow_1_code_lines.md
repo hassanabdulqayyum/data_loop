@@ -848,3 +848,24 @@
 
 111. apps/frontend/src/components/HierarchyGraph.jsx
     - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing`
+
+<!-- Added in micro-task 2.6.2-viewport-auto-fit (2025-05-14) -->
+
+850. apps/frontend/src/lib/viewport.js
+   - export function anchorRootToTop(viewport, rootNode, topMargin = 60) {  # Pure helper pans the camera so the Program node sits at a fixed margin.
+   - const currentScreenY = rootNode.position.y * viewport.zoom + viewport.y;  # Converts flow coordinates to on-screen Y.
+   - const requiredDelta = topMargin - currentScreenY;  # Calculates how much to move the camera.
+   - return { ...viewport, y: viewport.y + requiredDelta };  # Returns a new viewport with adjusted translation.
+
+851. apps/frontend/src/components/HierarchyGraph.jsx
+   - import { anchorRootToTop } from '../lib/viewport.js';  # Pull in new helper.
+   - const reactFlowInstance = useReactFlow();  # Access Flow instance for viewport control.
+   - useEffect(() => { /* smart fit & nudge logic */ }, [nodes, nodesInitialised]);  # Automatically fits & pins Program node every time children expand.
+   - reactFlowInstance.fitView({ padding: 0.1 });  # Lets React-Flow choose a sane zoom.
+   - const nudgedVp = anchorRootToTop(currentVp, programNode, 80);  # Moves camera down so Program sits 80 px from top.
+   - reactFlowInstance.setViewport(nudgedVp, { duration: 300 });  # Smooth 300 ms glide.
+
+852. apps/frontend/tests/viewport.test.js
+   - import { anchorRootToTop } from '../src/lib/viewport.js';  # Unit-test imports helper.
+   - const adjusted = anchorRootToTop(viewport, rootNode, 60);  # Calls helper under test.
+   - expect(screenY).toBe(60);  # Asserts node lands exactly 60 px from top.

@@ -8,9 +8,10 @@ Props:
 
 The graph attempts a basic auto-layout logic for centering and distributing nodes.
 */
-import React, { useMemo } from 'react';
-import ReactFlow, { Background, Handle, Position } from 'reactflow';
+import React, { useMemo, useEffect } from 'react';
+import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { anchorRootToTop } from '../lib/viewport.js';
 
 /*
  * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
@@ -150,6 +151,43 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
     return { nodes: n, edges: e };
   }, [tree, selectedIds]);
 
+  /* ------------------------------------------------------------------
+   * Smart viewport logic (option B from our discussion)
+   * ---------------------------------------------------
+   * 1. After every render where the **node set changes** we let React-Flow
+   *    choose a reasonable zoom via `fitView()`.
+   * 2. We then *nudge* the camera so the Program node (root) sits `80` pixels
+   *    from the top of the canvas, matching the Figma screenshot.
+   * 3. When deeper levels of the tree are revealed the effect fires again,
+   *    so the new children are always visible and the root anchor is kept.
+   * ------------------------------------------------------------------ */
+  const reactFlowInstance = useReactFlow();
+  const nodesInitialised = useNodesInitialized();
+
+  useEffect(() => {
+    if (!nodesInitialised || nodes.length === 0) return;
+
+    // Fit the whole graph with 10 % breathing room.
+    reactFlowInstance.fitView({ padding: 0.1 });
+
+    // Identify the single Program node so we can pin it near the top.
+    const programNode = nodes.find((n) => n.type === 'programNode');
+    if (!programNode) return; // Should never happen – safeguard.
+
+    // Retrieve the transform chosen by fitView, then tweak it vertically.
+    const currentVp = reactFlowInstance.getViewport(); // { x, y, zoom }
+    const nudgedVp = anchorRootToTop(currentVp, programNode, 80);
+
+    // Apply the adjusted transform with a 300 ms glide for smooth UX.
+    reactFlowInstance.setViewport(nudgedVp, { duration: 300 });
+
+    /*
+     * eslint-disable-next-line react-hooks/exhaustive-deps
+     * We deliberately omit `reactFlowInstance` from deps – the instance is
+     * stable once mounted, so including it would create an unnecessary re-run.
+     */
+  }, [nodes, nodesInitialised]);
+
   const defaultEdgeOptions = {
     style: { stroke: '#c8c8c8', strokeWidth: 3 }, // Thicker connectors per design
     type: 'straight'
@@ -169,9 +207,8 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
         edges={edges}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
-        fitView
         nodesDraggable={false}
-        nodesConnectable={false} // This should hide handles
+        nodesConnectable={false}
         elementsSelectable={true}
         onNodeClick={(_, node) => {
           let nodeType = 'persona'; // Default to persona
