@@ -64,4 +64,34 @@ export function anchorRootToTop(viewport, rootNode, topMargin = 60) {
     ...viewport,
     y: viewport.y + requiredDelta
   };
+}
+
+export function clampZoom(viewport, minZoom = 0.4, maxZoom = 1.5) {
+  // -----------------------------------------------------------------------
+  // clampZoom – keeps the zoom factor within a comfortable reading range
+  // -----------------------------------------------------------------------
+  // React-Flow will sometimes zoom *very* far in (e.g. 3×) when only a couple
+  // of nodes are visible, or zoom *very* far out (e.g. 0.1×) when dozens of
+  // nodes are on screen.  Both extremes make the labels hard to read.
+  //
+  // This helper takes the viewport returned by `fitView()` and nudges the
+  // `zoom` value so it never goes below `minZoom` nor above `maxZoom`.
+  // Horizontal/vertical translations **stay untouched** – we only adjust the
+  // scale.  The function returns a *new* viewport object and never mutates the
+  // one received so it plays nicely with React state updates.
+  //
+  // Parameters
+  // ----------
+  // viewport – an object like `{ x, y, zoom }` from `reactFlowInstance`.
+  // minZoom  – lowest allowed zoom factor (defaults to 0.4 ×).
+  // maxZoom  – highest allowed zoom factor (defaults to 1.5 ×).
+  //
+  // Returns
+  // -------
+  // A fresh viewport object whose `zoom` sits inside the requested bounds.
+  // -----------------------------------------------------------------------
+  if (!viewport || typeof viewport.zoom !== 'number') return viewport;
+
+  const clamped = Math.max(minZoom, Math.min(maxZoom, viewport.zoom));
+  return { ...viewport, zoom: clamped };
 } 

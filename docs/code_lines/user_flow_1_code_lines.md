@@ -849,8 +849,6 @@
 111. apps/frontend/src/components/HierarchyGraph.jsx
     - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing`
 
-<!-- Added in micro-task 2.6.2-viewport-auto-fit (2025-05-14) -->
-
 850. apps/frontend/src/lib/viewport.js
    - export function anchorRootToTop(viewport, rootNode, topMargin = 60) {  # Pure helper pans the camera so the Program node sits at a fixed margin.
    - const currentScreenY = rootNode.position.y * viewport.zoom + viewport.y;  # Converts flow coordinates to on-screen Y.
@@ -877,3 +875,12 @@
 854. apps/frontend/tests/LoadView.test.jsx
    - import { ReactFlowProvider } from 'reactflow';  # Added to test helper.
    - Render hierarchy inside provider to satisfy hooks during testing.
+
+855. apps/frontend/src/lib/viewport.js
+   - export function clampZoom(viewport, minZoom = 0.4, maxZoom = 1.5) {  # New helper that keeps the `zoom` value between sensible bounds (0.4–1.5) so auto-fit never zooms comically in or out.
+
+856. apps/frontend/src/components/HierarchyGraph.jsx
+   - Switched persona placement to a *grid* (max 6 per row, 140 px row-gap).  Added `clampZoom` call after `anchorRootToTop`, so final viewport never passes comfort limits.
+
+857. apps/frontend/tests/viewport.test.js
+   - Added three unit-tests for `clampZoom`: leaves zoom unchanged inside range, bumps up when too low, caps when too high.

@@ -11,7 +11,7 @@ The graph attempts a basic auto-layout logic for centering and distributing node
 import React, { useMemo, useEffect } from 'react';
 import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { anchorRootToTop } from '../lib/viewport.js';
+import { anchorRootToTop, clampZoom } from '../lib/viewport.js';
 
 /*
  * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
@@ -128,20 +128,54 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
             e.push({ id: `${mod.id}-${day.id}`, source: mod.id, target: day.id, type: 'straight' });
 
             if (isTopicSelected) {
-              let personaY = dayY + yGap;
-              const totalPersonaWidth = day.personas.length * (baseNodeWidth + 20) - 20;
-              let personaStartX = dayStartX + dayIdx * (baseNodeWidth + 40) - (totalPersonaWidth/2) + (baseNodeWidth/2) ;
+              // We switch from a single horizontal strip to a *grid* so the
+              // canvas width no longer explodes when a topic carries many
+              // personas.  The rule is simple: **max 6 personas per row**.
+              // Extra personas automatically wrap onto new rows.
+
+              const maxPerRow = 6;
+              const personaRowGap = 140; // Vertical gap between persona rows
+
+              // How many *columns* will the *widest* row have?  (Never more
+              // than `maxPerRow`.)  We use this width to centre the whole
+              // grid under the Day node so even when the last row is shorter
+              // the left/right edges still line up nicely.
+              const gridCols = Math.min(maxPerRow, day.personas.length);
+              const gridWidth = gridCols * (baseNodeWidth + 20) - 20;
+
+              // Compute the X coordinate of the *first* box in the grid so
+              // that the Day node sits perfectly in the middle.
+              let personaGridStartX =
+                dayStartX +
+                dayIdx * (baseNodeWidth + 40) -
+                gridWidth / 2 +
+                baseNodeWidth / 2;
+
+              let personaY = dayY + yGap; // Y coordinate of the first row
 
               day.personas.forEach((per, perIdx) => {
+                const row = Math.floor(perIdx / maxPerRow);
+                const col = perIdx % maxPerRow;
+
+                const x = personaGridStartX + col * (baseNodeWidth + 20);
+                const y = personaY + row * personaRowGap;
+
                 const isPersonaSelected = selectedIds?.personaId === per.id;
+
                 n.push({
                   id: per.id,
                   type: 'personaNode',
                   data: { label: per.id, selected: isPersonaSelected },
-                  position: { x: personaStartX + perIdx * (baseNodeWidth + 20) , y: personaY },
+                  position: { x, y },
                   selectable: true,
                 });
-                e.push({ id: `${day.id}-${per.id}`, source: day.id, target: per.id, type: 'straight' });
+
+                e.push({
+                  id: `${day.id}-${per.id}`,
+                  source: day.id,
+                  target: per.id,
+                  type: 'straight',
+                });
               });
             }
           });
@@ -176,10 +210,17 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
 
     // Retrieve the transform chosen by fitView, then tweak it vertically.
     const currentVp = reactFlowInstance.getViewport(); // { x, y, zoom }
-    const nudgedVp = anchorRootToTop(currentVp, programNode, 80);
 
-    // Apply the adjusted transform with a 300 ms glide for smooth UX.
-    reactFlowInstance.setViewport(nudgedVp, { duration: 300 });
+    // 1. Keep Program node anchored near the top.
+    let finalVp = anchorRootToTop(currentVp, programNode, 80);
+
+    // 2. Clamp the zoom so we never zoom closer than 1.5× nor further than
+    //    0.4×.  Those numbers were chosen after eyeballing what looks readable
+    //    on a typical laptop screen.
+    finalVp = clampZoom(finalVp, 0.4, 1.5);
+
+    // Apply the adjusted transform with a 300-ms glide for smooth UX.
+    reactFlowInstance.setViewport(finalVp, { duration: 300 });
 
     /*
      * eslint-disable-next-line react-hooks/exhaustive-deps
