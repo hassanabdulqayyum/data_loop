@@ -5,7 +5,7 @@ We keep these tests tiny: they only call the pure function `anchorRootToTop` so
 no DOM or React-Flow context is needed.
 */
 
-import { anchorRootToTop, clampZoom, anchorRootToTopCenter } from '../src/lib/viewport.js';
+import { anchorRootToTop, clampZoom, computeViewportForRoot } from '../src/lib/viewport.js';
 
 describe('anchorRootToTop', () => {
   it('moves the viewport so the root node sits at the requested margin', () => {
@@ -44,14 +44,16 @@ describe('clampZoom', () => {
   });
 });
 
-describe('anchorRootToTopCenter', () => {
-  it('centres the root horizontally and pins top margin', () => {
-    const vp = { x: -200, y: -200, zoom: 1 };
-    const rootNode = { position: { x: 0, y: 0 } };
-    const adjusted = anchorRootToTopCenter(vp, rootNode, 800, 80, 120); // wrapperWidth 800
-    const screenX = rootNode.position.x * vp.zoom + adjusted.x;
-    const screenY = rootNode.position.y * vp.zoom + adjusted.y;
+describe('computeViewportForRoot', () => {
+  it('places node centre at wrapper midpoint and desired Y', () => {
+    const vp = { x: -100, y: -100, zoom: 1 };
+    const rootNode = { position: { x: 0, y: 0 }, width: 120, height: 60 };
+    const adjusted = computeViewportForRoot(vp, rootNode, 800, 80);
+
+    const screenX = rootNode.position.x * vp.zoom + adjusted.x + rootNode.width/2;
+    const screenY = rootNode.position.y * vp.zoom + adjusted.y + rootNode.height/2;
+
     expect(screenX).toBe(400);
-    expect(screenY).toBe(80);
+    expect(screenY).toBe(80 + rootNode.height/2);
   });
 }); 

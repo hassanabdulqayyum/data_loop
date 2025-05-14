@@ -11,7 +11,7 @@ The graph attempts a basic auto-layout logic for centering and distributing node
 import React, { useMemo, useEffect } from 'react';
 import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { anchorRootToTopCenter, clampZoom } from '../lib/viewport.js';
+import { computeViewportForRoot, clampZoom } from '../lib/viewport.js';
 
 /*
  * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
@@ -222,8 +222,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
         ? reactFlowInstance.getWrapper().clientWidth
         : window.innerWidth;
 
-    const progWidth = programNode.width || 120;
-    let finalVp = anchorRootToTopCenter(currentVp, programNode, wrapperWidth, 80, progWidth);
+    let finalVp = computeViewportForRoot(currentVp, programNode, wrapperWidth, 80);
 
     // 2. Clamp the zoom so we never zoom closer than 1.5× nor further than
     //    0.4×.  Those numbers were chosen after eyeballing what looks readable

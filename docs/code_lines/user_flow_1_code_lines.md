@@ -902,3 +902,6 @@
 
 863. apps/frontend/src/lib/viewport.js
    - anchorRootToTopCenter now computes node centre in screen coords and sets desiredX to wrapper midpoint, fixing right-shift when node width was underestimated.
+
+864. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
+   - Introduced `computeViewportForRoot` rectangle-based centring, replaces cascaded fixes; HierarchyGraph now uses this single calculation. Added test ensuring centre maths.
