@@ -31,8 +31,8 @@ const commonTextStyle = {
 // ------------------------------------------------------------------
 // Keeping these near the top makes it trivial for designers/devs to tweak the
 // visual scale in one place without hunting through layout maths later on.
-export const REF_NODE_WIDTH = 220;    // Program / Module / Topic chip width
-export const REF_PERSONA_WIDTH = 150; // Persona chip width
+export const REF_NODE_WIDTH = 360;    // Program / Module / Topic chip width (fits "Module 1: Defusion")
+export const REF_PERSONA_WIDTH = 180; // Persona chip width – wider for long words like "Procrastination"
 // Heights are dictated by line-height + padding so we don't hard-code them.
 
 // Custom node to ensure consistent styling and no default handles
@@ -60,10 +60,10 @@ const CustomNode = ({ data, selected, type }) => {
   // the same constants as the layout maths for perfect alignment.
   // ------------------------------------------------------------------
   const WIDTHS = {
-    program: 220,
-    module: 220,
-    day: 220,
-    persona: 150
+    program: REF_NODE_WIDTH,
+    module: REF_NODE_WIDTH,
+    day: REF_NODE_WIDTH,
+    persona: 'auto'  // persona resolves via minWidth later
   };
 
   return (
@@ -74,10 +74,12 @@ const CustomNode = ({ data, selected, type }) => {
         border: borderStyle,
         borderRadius: '12px',
         padding: '10px 20px', // Increased padding for larger font
-        width: WIDTHS[type], // lock width so zoom logic stays reliable
-        maxWidth: WIDTHS[type],
-        whiteSpace: 'normal',
-        wordBreak: 'break-word',
+        width: WIDTHS[type],
+        minWidth: type === 'persona' ? REF_PERSONA_WIDTH : REF_NODE_WIDTH,
+        maxWidth: 'max-content',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
         textAlign: 'center',
       }}
     >
