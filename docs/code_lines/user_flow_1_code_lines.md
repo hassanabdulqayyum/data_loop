@@ -968,3 +968,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885.5 apps/frontend/src/components/HierarchyGraph.jsx
    - Removed dev/prod guard so tilt diagnostics always run; retained SSR window check.
+
+885.6 apps/frontend/src/components/HierarchyGraph.jsx
+   - Fixed misalignment: subtract full borderWidth (not half) for Module, Day, and Persona positions so visual centres align regardless of 1 px vs 3 px outline.

@@ -190,6 +190,8 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
           const mod = chip.ref;
           const isModuleSelected = selectedIds?.moduleId === mod.id;
 
+          const borderWidth = isModuleSelected ? 3 : 1; // outline thickness
+
           n.push({
             id: mod.id,
             type: 'moduleNode',
@@ -198,7 +200,9 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
               selected: isModuleSelected,
               ancestor: isModuleSelected && selectedIds?.topicId !== null,
             },
-            position: { x: chipX, y: moduleRowY },
+            // Subtract *full* border width so the visual centre (including outline)
+            // aligns perfectly with the canvas spine.
+            position: { x: chipX - borderWidth, y: moduleRowY },
             selectable: true,
           });
 
@@ -261,10 +265,6 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
           const day = chip.ref;
           const isTopicSelected = selectedIds?.topicId === day.id;
 
-          // Border compensation: selected nodes carry a 3-px outline while
-          // the ruler span had none.  We therefore nudge the x-position by
-          // half that border so the *centre* of the rendered chip aligns
-          // with the spine.
           const borderWidth = isTopicSelected ? 3 : 1;
 
           n.push({
@@ -275,7 +275,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
               selected: isTopicSelected,
               ancestor: isTopicSelected && selectedIds?.personaId !== null,
             },
-            position: { x: chipX - borderWidth / 2, y: dayRowY },
+            position: { x: chipX - borderWidth, y: dayRowY },
             selectable: true,
           });
 
@@ -314,17 +314,13 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         rowObj.chips.forEach((chip) => {
           const isPersonaSelected = selectedIds?.personaId === chip.id;
 
-          // Border compensation: selected nodes carry a 3-px outline while
-          // the ruler span had none.  We therefore nudge the x-position by
-          // half that border so the *centre* of the rendered chip aligns
-          // with the spine.
           const borderWidth = isPersonaSelected ? 3 : 1;
 
           n.push({
             id: chip.id,
             type: 'personaNode',
             data: { label: chip.id, selected: isPersonaSelected },
-            position: { x: chipX - borderWidth / 2, y: personaRowY },
+            position: { x: chipX - borderWidth, y: personaRowY },
             selectable: true,
           });
 
