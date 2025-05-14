@@ -869,3 +869,11 @@
    - import { anchorRootToTop } from '../src/lib/viewport.js';  # Unit-test imports helper.
    - const adjusted = anchorRootToTop(viewport, rootNode, 60);  # Calls helper under test.
    - expect(screenY).toBe(60);  # Asserts node lands exactly 60 px from top.
+
+853. apps/frontend/src/pages/LoadView.jsx
+   - import { ReactFlowProvider } from 'reactflow';  # Brings in provider needed by ReactFlow hooks.
+   - Wrapped <HierarchyGraph> with <ReactFlowProvider> so zustand store exists before useReactFlow hook; fixes error 001.
+
+854. apps/frontend/tests/LoadView.test.jsx
+   - import { ReactFlowProvider } from 'reactflow';  # Added to test helper.
+   - Render hierarchy inside provider to satisfy hooks during testing.

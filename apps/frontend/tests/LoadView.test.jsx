@@ -8,6 +8,7 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
+import { ReactFlowProvider } from 'reactflow';
 import LoadView from '../src/pages/LoadView.jsx';
 import useAuthStore from '../src/store/useAuthStore.js';
 
@@ -48,7 +49,9 @@ it('renders hierarchy tree after fetch', async () => {
 
   render(
     <MemoryRouter>
-      <LoadView />
+      <ReactFlowProvider>
+        <LoadView />
+      </ReactFlowProvider>
     </MemoryRouter>
   );
 

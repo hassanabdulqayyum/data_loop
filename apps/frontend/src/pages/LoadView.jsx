@@ -46,6 +46,7 @@ import useAuthStore from '../store/useAuthStore.js';
 import { apiFetch } from '../lib/api.js';
 import HierarchyGraph from '../components/HierarchyGraph.jsx';
 import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
+import { ReactFlowProvider } from 'reactflow';
 
 function LoadView() {
   /* ------------------------------------------------------------------
@@ -287,26 +288,28 @@ function LoadView() {
         >
           {loading && <p>Loading hierarchy…</p>}
           {!loading && tree && (
-            <HierarchyGraph
-              tree={tree}
-              selectedIds={{ moduleId: selectedModuleId, topicId: selectedTopicId, personaId: selectedPersonaId }}
-              onSelect={(id, nodeType, nodeData) => {
-                if (nodeType === 'program') {
-                  setSelectedModuleId(null);
-                  setSelectedTopicId(null);
-                  setSelectedPersonaId(null);
-                } else if (nodeType === 'module') {
-                  setSelectedModuleId(id);
-                  setSelectedTopicId(null);
-                  setSelectedPersonaId(null);
-                } else if (nodeType === 'day') {
-                  setSelectedTopicId(id);
-                  setSelectedPersonaId(null);
-                } else if (nodeType === 'persona') {
-                  setSelectedPersonaId(id);
-                }
-              }}
-            />
+            <ReactFlowProvider>
+              <HierarchyGraph
+                tree={tree}
+                selectedIds={{ moduleId: selectedModuleId, topicId: selectedTopicId, personaId: selectedPersonaId }}
+                onSelect={(id, nodeType, nodeData) => {
+                  if (nodeType === 'program') {
+                    setSelectedModuleId(null);
+                    setSelectedTopicId(null);
+                    setSelectedPersonaId(null);
+                  } else if (nodeType === 'module') {
+                    setSelectedModuleId(id);
+                    setSelectedTopicId(null);
+                    setSelectedPersonaId(null);
+                  } else if (nodeType === 'day') {
+                    setSelectedTopicId(id);
+                    setSelectedPersonaId(null);
+                  } else if (nodeType === 'persona') {
+                    setSelectedPersonaId(id);
+                  }
+                }}
+              />
+            </ReactFlowProvider>
           )}
         </div>
 
