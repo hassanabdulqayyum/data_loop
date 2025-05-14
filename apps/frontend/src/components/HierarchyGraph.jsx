@@ -215,11 +215,12 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         moduleRowY += CHIP_HEIGHT + ROW_GAP;
       });
 
-      /* After finishing all module rows, `moduleRowY` sits *one ROW_GAP* below
-         the last chip baseline.  We therefore subtract it once so the next
-         tier starts exactly `CHIP_HEIGHT + whiteGap` beneath the **bottom
-         border** of the final row. */
-      const dayTierStartY = moduleRowY - ROW_GAP + CHIP_HEIGHT + whiteGap;
+      /* After we exit the Module loop `moduleRowY` already equals
+         bottom-edge-of-last-row + ROW_GAP (because we added CHIP_HEIGHT when
+         we advanced the pointer).  To position the Topic tier we therefore
+         discard that ROW_GAP and replace it with the design-spec whiteGap of
+         74 px.  No extra CHIP_HEIGHT is needed here. */
+      const dayTierStartY = moduleRowY - ROW_GAP + whiteGap;
 
       /* --------------------------------------------------------------
        * 3. DAY (topic) tier – only rendered if a module is selected.
@@ -260,6 +261,12 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
           const day = chip.ref;
           const isTopicSelected = selectedIds?.topicId === day.id;
 
+          // Border compensation: selected nodes carry a 3-px outline while
+          // the ruler span had none.  We therefore nudge the x-position by
+          // half that border so the *centre* of the rendered chip aligns
+          // with the spine.
+          const borderWidth = isTopicSelected ? 3 : 1;
+
           n.push({
             id: day.id,
             type: 'dayNode',
@@ -268,7 +275,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
               selected: isTopicSelected,
               ancestor: isTopicSelected && selectedIds?.personaId !== null,
             },
-            position: { x: chipX, y: dayRowY },
+            position: { x: chipX - borderWidth / 2, y: dayRowY },
             selectable: true,
           });
 
@@ -283,7 +290,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         dayRowY += CHIP_HEIGHT + ROW_GAP;
       });
 
-      const personaTierStartY = dayRowY - ROW_GAP + CHIP_HEIGHT + whiteGap;
+      const personaTierStartY = dayRowY - ROW_GAP + whiteGap;
 
       /* --------------------------------------------------------------
        * 4. PERSONA tier – may span many rows, always centred on mid-point.
@@ -307,11 +314,17 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         rowObj.chips.forEach((chip) => {
           const isPersonaSelected = selectedIds?.personaId === chip.id;
 
+          // Border compensation: selected nodes carry a 3-px outline while
+          // the ruler span had none.  We therefore nudge the x-position by
+          // half that border so the *centre* of the rendered chip aligns
+          // with the spine.
+          const borderWidth = isPersonaSelected ? 3 : 1;
+
           n.push({
             id: chip.id,
             type: 'personaNode',
             data: { label: chip.id, selected: isPersonaSelected },
-            position: { x: chipX, y: personaRowY },
+            position: { x: chipX - borderWidth / 2, y: personaRowY },
             selectable: true,
           });
 

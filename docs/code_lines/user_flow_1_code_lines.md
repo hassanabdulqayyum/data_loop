@@ -943,3 +943,7 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 ### 101-D  apps/frontend/src/components/HierarchyGraph.jsx  – PATCH
 • Program chip now placed at `x = -width/2` so its centre is on spine.
 • All width calculations swapped to `measureChipWidth`, ensuring Module/Topic single-chip rows sit exactly under Program and multi-chip rows straddle the spine evenly.
+
+### 101-E  apps/frontend/src/components/HierarchyGraph.jsx  – PATCH
+• Removed redundant `+ CHIP_HEIGHT` when calculating dayTierStartY and personaTierStartY so Program→Module→Topic gaps are now 74 px as spec.
+• Added `borderWidth / 2` compensation to X-position for selected Topic and Persona chips so their centres align on the spine even with 3-px outline.
