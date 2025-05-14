@@ -13,7 +13,6 @@ import React, { useMemo, useLayoutEffect } from 'react';
 import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { computeViewportForRoot } from '../lib/viewport.js';
-import { makeRows, CHIP_HORIZONTAL_GAP } from '../lib/layoutUtils.js';
 
 /*
  * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
@@ -108,152 +107,167 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
   const { nodes, edges } = useMemo(() => {
     const n = [];
     const e = [];
-    const CHIP_HEIGHT = 44;      // 28 px tall chip (28-px text + padding)
-    const whiteGap = 74;         // Vertical gap between tiers straight from Figma
+    /*-----------------------------------------------
+     * LAYOUT CONSTANTS – tweak here if spacing ever
+     * feels cramped or too loose on different screens
+     *---------------------------------------------*/
+    const CHIP_HEIGHT = 44;      // 28 px font + 8 px padding above + below
+    const whiteGap = 74;         // Visible empty space between chip borders (Figma)
 
-    const globalCentreX = 0;     // Program sits at x=0 so this is the visual centre
-    const maxRowWidth = (graphRect?.width ?? 1200) * 0.9; // 5 % margin either side
+    // -------------------------------------------------------------
+    // Node sizing
+    // -------------------------------------------------------------
+    // These constants mirror the exact pixel sizes in the Figma PNGs so the
+    // UI stays 1-for-1 with the design regardless of zoom.  If the designer
+    // later tweaks a chip size we only need to touch these numbers.
+    // ---------------------------------------------------------------------
+    const baseNodeWidth = REF_NODE_WIDTH;
 
-    let programY = 50; // Leave breathing room below the nav bar
+    let programY = 50;
 
     tree.forEach((program) => {
-      /*--------------------------------------------------------------
-        PROGRAM NODE (root)
-      --------------------------------------------------------------*/
+      const programNodeWidth = program.id.length * 15 + 40; // Rough estimate
       n.push({
         id: program.id,
         type: 'programNode',
         data: { label: program.id },
-        position: { x: globalCentreX, y: programY },
+        position: { x: 0, y: programY }, // Centering will be handled by fitView and layout adjustments
         selectable: true,
       });
 
-      /*--------------------------------------------------------------
-        MODULE TIER – may wrap across multiple rows
-      --------------------------------------------------------------*/
-      const visibleModules = program.modules.filter((mod, idx) => {
-        if (selectedIds?.moduleId !== null && selectedIds?.moduleId !== undefined) {
-          // When a module is selected show *only* that module.
-          return mod.id === selectedIds.moduleId;
+      let moduleY = programY + CHIP_HEIGHT + whiteGap;
+      const totalModuleWidth = program.modules.length * (baseNodeWidth + 50) - 50;
+      let moduleStartX = -(totalModuleWidth / 2) + (baseNodeWidth / 2);
+
+      program.modules.forEach((mod, modIdx) => {
+        if (selectedIds?.moduleId !== mod.id && selectedIds?.moduleId !== null && !program.modules.find(m=>m.id === selectedIds?.moduleId)) return; // Hide if a specific module is selected and it's not this one
+        if (selectedIds?.moduleId === null && modIdx > 0 && program.modules.length > 1) return; // Show only first module if none selected
+        
+        const isModuleSelected = selectedIds?.moduleId === mod.id;
+        n.push({
+          id: mod.id,
+          type: 'moduleNode',
+          data: { label: mod.id, selected: isModuleSelected, ancestor: isModuleSelected && selectedIds?.topicId !== null },
+          position: { x: moduleStartX + modIdx * (baseNodeWidth + 50) , y: moduleY },
+          selectable: true,
+        });
+        e.push({ id: `${program.id}-${mod.id}`, source: program.id, target: mod.id, type: 'straight' });
+
+        if (isModuleSelected) {
+          let dayY = moduleY + CHIP_HEIGHT + whiteGap;
+          const totalDayWidth = mod.days.length * (baseNodeWidth + 40) - 40;
+          let dayStartX = moduleStartX + modIdx * (baseNodeWidth + 50) -(totalDayWidth/2) + (baseNodeWidth/2);
+
+          mod.days.forEach((day, dayIdx) => {
+             if (selectedIds?.topicId !== day.id && selectedIds?.topicId !== null && !mod.days.find(d=>d.id === selectedIds?.topicId)) return;
+             if (selectedIds?.topicId === null && dayIdx > 0 && mod.days.length > 1) return;
+
+            const isTopicSelected = selectedIds?.topicId === day.id;
+            n.push({
+              id: day.id,
+              type: 'dayNode',
+              data: { label: day.id, selected: isTopicSelected, ancestor: isTopicSelected && selectedIds?.personaId !== null },
+              position: { x: dayStartX + dayIdx * (baseNodeWidth + 40) , y: dayY },
+              selectable: true,
+            });
+            e.push({ id: `${mod.id}-${day.id}`, source: mod.id, target: day.id, type: 'straight' });
+
+            if (isTopicSelected) {
+              /* -----------------------------------------------------------------
+               * Persona placement – dynamic row wrapping
+               * -----------------------------------------------------------------
+               * 1. We measure each persona's text width using a temporary canvas
+               *    so every chip hugs its content (textWidth + 16 px padding).
+               * 2. We accumulate chips left-to-right, inserting a 21-px gap in
+               *    front of every chip except the first in the row.
+               * 3. As soon as the running row width would exceed the available
+               *    canvas width (graphRect.width × 0.9 safety), we break and
+               *    start a fresh row beneath the previous one (33-px row gap).
+               * 4. After all rows are known we loop a second time to push
+               *    nodes into React-Flow, centring each row under the Topic
+               *    chip so the tree stays balanced.
+               * ----------------------------------------------------------------- */
+
+              const colGap = 21;
+              const rowGap = 33;
+
+              // Build a measurement context once – avoids repeated DOM calls.
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              ctx.font = `${commonTextStyle.fontWeight} ${commonTextStyle.fontSize} ${commonTextStyle.fontFamily}`;
+
+              // Safety guard when graphRect is missing (e.g. unit tests).
+              const availableWidth = (graphRect?.width ?? 1200) * 0.9;
+
+              const rows = [];
+              let currentRow = [];
+              let currentRowWidth = 0;
+
+              day.personas.forEach((per, index) => {
+                const textW = ctx.measureText(per.id).width;
+                const chipW = textW + 16; // 8 px padding left + right
+
+                const needed = currentRow.length === 0 ? chipW : chipW + colGap;
+
+                if (currentRowWidth + needed > availableWidth) {
+                  // Commit the current row and reset accumulators.
+                  rows.push({ chips: currentRow, width: currentRowWidth });
+                  currentRow = [];
+                  currentRowWidth = 0;
+                }
+
+                currentRow.push({ id: per.id, width: chipW });
+                currentRowWidth += needed;
+              });
+
+              // Push the final row.
+              if (currentRow.length) {
+                rows.push({ chips: currentRow, width: currentRowWidth });
+              }
+
+              // -----  Now create React-Flow nodes row by row  -----
+              const chipHeight = 44; // 28 px font + 8 px padding top + bottom
+              let personaY = dayY + CHIP_HEIGHT + whiteGap; // Position of first row.
+
+              rows.forEach((rowObj) => {
+                const { chips, width: rowW } = rowObj;
+
+                const rowStartX =
+                  dayStartX +
+                  dayIdx * (baseNodeWidth + 40) -
+                  rowW / 2 +
+                  baseNodeWidth / 2;
+
+                let chipX = rowStartX;
+
+                chips.forEach((chip, chipIdx) => {
+                  const isPersonaSelected = selectedIds?.personaId === chip.id;
+
+                  n.push({
+                    id: chip.id,
+                    type: 'personaNode',
+                    data: { label: chip.id, selected: isPersonaSelected },
+                    position: { x: chipX, y: personaY },
+                    selectable: true,
+                  });
+
+                  // Advance X for next chip.
+                  chipX += chip.width + colGap;
+                });
+
+                personaY += chipHeight + rowGap; // Move down by chip height + gap.
+              });
+
+              // NOTE: We intentionally do **not** push Topic→Persona edges in
+              // order to keep the canvas clean – the vertical hierarchy already
+              // implies the relationship.
+            }
+          });
         }
-        // No module selected → only show the first module to reduce clutter.
-        return idx === 0;
       });
-
-      let tierY = programY + CHIP_HEIGHT + whiteGap;
-
-      const moduleRows = makeRows(visibleModules, maxRowWidth);
-
-      moduleRows.forEach((rowObj) => {
-        const startX = globalCentreX - rowObj.width / 2;
-        let chipX = startX;
-
-        rowObj.chips.forEach((chip) => {
-          const mod = program.modules.find((m) => m.id === chip.id);
-          const isModuleSelected = selectedIds?.moduleId === mod.id;
-
-          n.push({
-            id: mod.id,
-            type: 'moduleNode',
-            data: {
-              label: mod.id,
-              selected: isModuleSelected,
-              ancestor: isModuleSelected && selectedIds?.topicId !== null,
-            },
-            position: { x: chipX, y: tierY },
-            selectable: true,
-          });
-
-          // Edge Program → Module
-          e.push({ id: `${program.id}-${mod.id}`, source: program.id, target: mod.id, type: 'straight' });
-
-          chipX += chip.width + CHIP_HORIZONTAL_GAP;
-        });
-
-        tierY += CHIP_HEIGHT + whiteGap; // Move down after finishing this row
-      });
-
-      /*--------------------------------------------------------------
-        TOPIC (Day) TIER – rendered only when a module is picked
-      --------------------------------------------------------------*/
-      const selectedModule = program.modules.find((m) => m.id === selectedIds?.moduleId);
-      if (!selectedModule) return; // No deeper levels visible yet
-
-      const visibleTopics = selectedModule.days.filter((day, idx) => {
-        if (selectedIds?.topicId !== null && selectedIds?.topicId !== undefined) {
-          return day.id === selectedIds.topicId;
-        }
-        return idx === 0;
-      });
-
-      let topicY = tierY; // tierY carries the bottom of the module rows
-
-      const topicRows = makeRows(visibleTopics, maxRowWidth);
-
-      topicRows.forEach((rowObj) => {
-        const startX = globalCentreX - rowObj.width / 2;
-        let chipX = startX;
-
-        rowObj.chips.forEach((chip) => {
-          const day = selectedModule.days.find((d) => d.id === chip.id);
-          const isTopicSelected = selectedIds?.topicId === day.id;
-
-          n.push({
-            id: day.id,
-            type: 'dayNode',
-            data: {
-              label: day.id,
-              selected: isTopicSelected,
-              ancestor: isTopicSelected && selectedIds?.personaId !== null,
-            },
-            position: { x: chipX, y: topicY },
-            selectable: true,
-          });
-
-          e.push({ id: `${selectedModule.id}-${day.id}`, source: selectedModule.id, target: day.id, type: 'straight' });
-
-          chipX += chip.width + CHIP_HORIZONTAL_GAP;
-        });
-
-        topicY += CHIP_HEIGHT + whiteGap;
-      });
-
-      /*--------------------------------------------------------------
-        PERSONA TIER – rendered only when a topic is picked.
-      --------------------------------------------------------------*/
-      const selectedTopic = selectedModule.days.find((d) => d.id === selectedIds?.topicId);
-      if (!selectedTopic) return;
-
-      const personaRows = makeRows(selectedTopic.personas, maxRowWidth);
-
-      const rowGap = 33;
-      let personaY = topicY;
-
-      personaRows.forEach((rowObj) => {
-        const startX = globalCentreX - rowObj.width / 2;
-        let chipX = startX;
-
-        rowObj.chips.forEach((chip) => {
-          const isPersonaSelected = selectedIds?.personaId === chip.id;
-
-          n.push({
-            id: chip.id,
-            type: 'personaNode',
-            data: { label: chip.id, selected: isPersonaSelected },
-            position: { x: chipX, y: personaY },
-            selectable: true,
-          });
-
-          chipX += chip.width + CHIP_HORIZONTAL_GAP;
-        });
-
-        personaY += CHIP_HEIGHT + rowGap;
-      });
-
-      // We purposely do NOT draw edges to personas – keeps the view clear.
     });
     return { nodes: n, edges: e };
-  }, [tree, selectedIds, graphRect]);
+  }, [tree, selectedIds]);
 
   /* ------------------------------------------------------------------
    * Smart viewport logic (option B from our discussion)
