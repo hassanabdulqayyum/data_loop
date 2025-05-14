@@ -217,8 +217,10 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
     const currentVp = reactFlowInstance.getViewport(); // { x, y, zoom }
 
     // 1. Keep Program node anchored near the top.
-    const wrapper = reactFlowInstance.getWrapper();
-    const wrapperWidth = wrapper ? wrapper.clientWidth : window.innerWidth;
+    const wrapperWidth =
+      typeof reactFlowInstance.getWrapper === 'function'
+        ? reactFlowInstance.getWrapper().clientWidth
+        : window.innerWidth;
     let finalVp = anchorRootToTopCenter(currentVp, programNode, wrapperWidth, 80);
 
     // 2. Clamp the zoom so we never zoom closer than 1.5× nor further than

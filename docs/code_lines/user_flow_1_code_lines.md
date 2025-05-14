@@ -893,3 +893,6 @@
 
 860. apps/frontend/src/lib/viewport.js & tests
    - Added `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.
+
+861. apps/frontend/src/components/HierarchyGraph.jsx
+   - Guarded call to `reactFlowInstance.getWrapper()` with typeof check to avoid TypeError in production build; falls back to `window.innerWidth` when method not present.
