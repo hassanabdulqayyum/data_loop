@@ -20,7 +20,7 @@
  *  - onPersonaClick (function): Callback when the persona breadcrumb is clicked (optional).
  *
  * The breadcrumb adapts based on the deepest selected item.
- * If no module is selected, a default title "Data Loop" is shown.
+ * If no module is selected, a default title "Mindfulness Program" is shown.
  */
 import React from 'react';
 // Bring in the new SVG icons so we can swap the text placeholders for real graphics.
@@ -46,7 +46,7 @@ function TopNavBar({
     if (!selectedModuleNode) {
       elements.push(
         <span key="default-title" className={`${segmentBaseClass} ${styles.selected}`}>
-          Data Loop
+          Mindfulness Program
         </span>
       );
       return elements;
@@ -112,17 +112,23 @@ function TopNavBar({
 
   return (
     <div className={styles.navBar}>
+      {/* Left section now holds ONLY the breadcrumb; we removed the search icon
+          so there is no visual distraction on the left. */}
       <div className={styles.navSection}>
-        {/* Left-most part: search icon followed by breadcrumb so the trail is left-aligned per Figma. */}
-        <SearchIcon size={28} />
-        <div className={styles.breadcrumbContainer} style={{ marginLeft: '16px' }}>
+        {/* Extra left-padding so the breadcrumb does not hug the edge. */}
+        <div className={styles.breadcrumbContainer} style={{ marginLeft: '48px' }}>
           {renderBreadcrumbElements()}
         </div>
       </div>
-      {/* Spacer section keeps user icon docked to the far right. */}
+
+      {/* Right section groups both action icons: search first, profile second. */}
       <div className={`${styles.navSection} ${styles.navRight}`}>
-        {/* Avatar circle icon – clicking will later show a drop-down menu. */}
-        <UserIcon size={30} />
+        {/* Magnifying-glass icon – now bigger (36 px) and positioned on the right */}
+        <SearchIcon size={36} />
+        {/* Space between the two icons for breathing room */}
+        <span style={{ width: 24 }} />
+        {/* Avatar circle icon – also enlarged to 36 px for consistent sizing */}
+        <UserIcon size={36} />
       </div>
     </div>
   );

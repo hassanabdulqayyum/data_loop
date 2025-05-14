@@ -841,12 +841,10 @@
     - Full file (lines 1-75): Minimalist avatar SVG (head + shoulders) used in the TopNavBar; same API as `SearchIcon` for consistency.
 
 109. apps/frontend/src/components/TopNavBar/TopNavBar.jsx
-    - lines 4-7: imported `SearchIcon` and `UserIcon`.
-    - lines 25-32: replaced `[S]` span with `<SearchIcon size={28} />`.
-    - lines 45-52: replaced `[U]` span with `<UserIcon size={30} />`.
+   - lines 1-120 updated: default breadcrumb text now "Mindfulness Program" (was "Data Loop"), search icon moved to right section, both icons set to size 36 px, 24 px spacer added between icons, breadcrumb container given left margin 48 px and explanatory layman comments.
 
 110. apps/frontend/src/components/TopNavBar/TopNavBar.module.css
-    - line 13: changed `.navBar` height from **60px → 72px** to match Figma spec.
+   - .navBar rule: horizontal padding increased from 24 px to 40 px so breadcrumb no longer hugs the viewport after icon relocation.
 
 111. apps/frontend/src/components/HierarchyGraph.jsx
     - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing` ‑0.05em.

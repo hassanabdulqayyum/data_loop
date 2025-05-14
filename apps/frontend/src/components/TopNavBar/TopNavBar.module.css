@@ -25,7 +25,7 @@
   display: flex;
   align-items: center; /* Vertically center items in the bar */
   justify-content: space-between; /* Distribute space between left, center, right */
-  padding: 0 24px; /* Horizontal padding */
+  padding: 0 40px; /* Horizontal padding */
   box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
