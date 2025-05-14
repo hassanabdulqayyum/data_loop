@@ -158,7 +158,8 @@ export function anchorRootToTopCenter(
   viewport,
   rootNode,
   wrapperWidth,
-  topMargin = 60
+  topMargin = 60,
+  nodeWidth = 120
 ) {
   if (!rootNode || !rootNode.position || !wrapperWidth) return viewport;
 
@@ -167,7 +168,7 @@ export function anchorRootToTopCenter(
   const screenY = rootNode.position.y * viewport.zoom + viewport.y;
 
   // Where do we *want* it?
-  const desiredX = wrapperWidth / 2;
+  const desiredX = wrapperWidth / 2 - nodeWidth / 2;
 
   const deltaX = desiredX - screenX;
   const deltaY = topMargin - screenY;

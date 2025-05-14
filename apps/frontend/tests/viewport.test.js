@@ -48,7 +48,7 @@ describe('anchorRootToTopCenter', () => {
   it('centres the root horizontally and pins top margin', () => {
     const vp = { x: -200, y: -200, zoom: 1 };
     const rootNode = { position: { x: 0, y: 0 } };
-    const adjusted = anchorRootToTopCenter(vp, rootNode, 800, 80); // wrapperWidth 800
+    const adjusted = anchorRootToTopCenter(vp, rootNode, 800, 80, 120); // wrapperWidth 800
     const screenX = rootNode.position.x * vp.zoom + adjusted.x;
     const screenY = rootNode.position.y * vp.zoom + adjusted.y;
     expect(screenX).toBe(400);

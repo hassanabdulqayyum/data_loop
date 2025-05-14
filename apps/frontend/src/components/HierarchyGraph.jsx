@@ -221,7 +221,9 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
       typeof reactFlowInstance.getWrapper === 'function'
         ? reactFlowInstance.getWrapper().clientWidth
         : window.innerWidth;
-    let finalVp = anchorRootToTopCenter(currentVp, programNode, wrapperWidth, 80);
+
+    const progWidth = programNode.width || 120;
+    let finalVp = anchorRootToTopCenter(currentVp, programNode, wrapperWidth, 80, progWidth);
 
     // 2. Clamp the zoom so we never zoom closer than 1.5× nor further than
     //    0.4×.  Those numbers were chosen after eyeballing what looks readable

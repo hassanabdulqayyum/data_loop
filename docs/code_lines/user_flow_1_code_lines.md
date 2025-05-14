@@ -896,3 +896,6 @@
 
 861. apps/frontend/src/components/HierarchyGraph.jsx
    - Guarded call to `reactFlowInstance.getWrapper()` with typeof check to avoid TypeError in production build; falls back to `window.innerWidth` when method not present.
+
+862. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
+   - `anchorRootToTopCenter` now accepts `nodeWidth`; HierarchyGraph passes actual Program node width (fallback 120) to ensure true centring. Updated tests.
