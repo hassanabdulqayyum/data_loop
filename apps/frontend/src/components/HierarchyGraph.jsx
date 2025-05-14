@@ -156,8 +156,14 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
   };
 
   return (
-    <div /* Adds a soft gutter so nodes never touch the viewport edge. */
-         style={{ width: '100%', height: '100%', padding: '24px', boxSizing: 'border-box' }}>
+    /*
+     * Wrapper div previously carried a 24-px padding on all sides which, combined
+     * with the parent container's own margin, produced visible white gutters
+     * around the canvas.  We drop that padding so the React-Flow surface can
+     * claim the full allotted space.  If future designs need a buffer we can
+     * re-introduce a smaller margin or rely on fitView spacing.
+     */
+    <div style={{ width: '100%', height: '100%' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

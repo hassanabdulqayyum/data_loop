@@ -277,7 +277,10 @@ function LoadView() {
         <div
           style={{
             flex: 2,
-            padding: '1rem',
+            /* Removed 1-rem padding so the graph can span edge-to-edge.  The
+               nav bar already sits above and the right panel has its own
+               divider, so additional padding only wastes space. */
+            padding: 0,
             height: 'calc(100% - 0px)',
             overflow: 'auto'
           }}

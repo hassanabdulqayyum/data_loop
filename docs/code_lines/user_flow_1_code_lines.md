@@ -866,3 +866,9 @@
 
 ### 114. apps/frontend/src/components/TopNavBar/TopNavBar.module.css
 - Removed obsolete .navCenter rule as breadcrumb no longer centered.
+
+117. apps/frontend/src/components/HierarchyGraph.jsx
+   - Wrapper div padding removed (lines ~120-128 replaced) so graph canvas fills full width/height; layman comment added explaining rationale.
+
+118. apps/frontend/src/pages/LoadView.jsx
+   - Left graph column padding property set to 0 (lines ~200-205 updated) to eliminate outer white gutter.
