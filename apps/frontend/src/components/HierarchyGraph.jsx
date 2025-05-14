@@ -190,19 +190,29 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
           const mod = chip.ref;
           const isModuleSelected = selectedIds?.moduleId === mod.id;
 
-          const borderWidth = isModuleSelected ? 3 : 1; // outline thickness
+          // Refined logic for effective border width and node state
+          const isTopicOrPersonaSelected = selectedIds?.topicId !== null || selectedIds?.personaId !== null;
+          const isTrulySelectedModule = isModuleSelected && !isTopicOrPersonaSelected;
+          const isAncestorModule = isModuleSelected && isTopicOrPersonaSelected;
+
+          let effectiveBorderWidth = 1; // Default for unselected
+          if (isTrulySelectedModule) {
+            effectiveBorderWidth = 3;
+          } else if (isAncestorModule) {
+            effectiveBorderWidth = 0; // Ancestors have no border in CustomNode
+          }
 
           n.push({
             id: mod.id,
             type: 'moduleNode',
             data: {
               label: mod.id,
-              selected: isModuleSelected,
-              ancestor: isModuleSelected && selectedIds?.topicId !== null,
+              selected: isTrulySelectedModule, // Pass true only if it's the actual selected item
+              ancestor: isAncestorModule,
             },
-            // Subtract *full* border width so the visual centre (including outline)
+            // Subtract *full* effective border width so the visual centre (including outline)
             // aligns perfectly with the canvas spine.
-            position: { x: chipX - borderWidth, y: moduleRowY },
+            position: { x: chipX - effectiveBorderWidth, y: moduleRowY },
             selectable: true,
           });
 
@@ -265,17 +275,27 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
           const day = chip.ref;
           const isTopicSelected = selectedIds?.topicId === day.id;
 
-          const borderWidth = isTopicSelected ? 3 : 1;
+          // Refined logic for effective border width and node state
+          const isPersonaSelectedUnderThisTopic = selectedIds?.personaId !== null;
+          const isTrulySelectedTopic = isTopicSelected && !isPersonaSelectedUnderThisTopic;
+          const isAncestorTopic = isTopicSelected && isPersonaSelectedUnderThisTopic;
+
+          let effectiveBorderWidth = 1; // Default for unselected
+          if (isTrulySelectedTopic) {
+            effectiveBorderWidth = 3;
+          } else if (isAncestorTopic) {
+            effectiveBorderWidth = 0; // Ancestors have no border in CustomNode
+          }
 
           n.push({
             id: day.id,
             type: 'dayNode',
             data: {
               label: day.id,
-              selected: isTopicSelected,
-              ancestor: isTopicSelected && selectedIds?.personaId !== null,
+              selected: isTrulySelectedTopic,
+              ancestor: isAncestorTopic,
             },
-            position: { x: chipX - borderWidth, y: dayRowY },
+            position: { x: chipX - effectiveBorderWidth, y: dayRowY },
             selectable: true,
           });
 
@@ -314,13 +334,14 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         rowObj.chips.forEach((chip) => {
           const isPersonaSelected = selectedIds?.personaId === chip.id;
 
-          const borderWidth = isPersonaSelected ? 3 : 1;
+          // For Persona nodes, they can't be ancestors, so border is 3 if selected, 1 if not.
+          const effectiveBorderWidth = isPersonaSelected ? 3 : 1;
 
           n.push({
             id: chip.id,
             type: 'personaNode',
             data: { label: chip.id, selected: isPersonaSelected },
-            position: { x: chipX - borderWidth, y: personaRowY },
+            position: { x: chipX - effectiveBorderWidth, y: personaRowY },
             selectable: true,
           });
 

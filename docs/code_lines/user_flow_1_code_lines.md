@@ -971,3 +971,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885.6 apps/frontend/src/components/HierarchyGraph.jsx
    - Fixed misalignment: subtract full borderWidth (not half) for Module, Day, and Persona positions so visual centres align regardless of 1 px vs 3 px outline.
+
+885.7 apps/frontend/src/components/HierarchyGraph.jsx
+   - Refined border logic: `effectiveBorderWidth` calculated for Module and Day nodes based on `isTrulySelected` vs `isAncestor` state (0px for ancestor, 3px for selected, 1px otherwise). This ensures positioning X-offset matches the border rendered by CustomNode, fixing all slants.
