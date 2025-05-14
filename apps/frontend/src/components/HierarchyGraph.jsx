@@ -12,7 +12,7 @@ The graph attempts a basic auto-layout logic for centering and distributing node
 import React, { useMemo, useEffect } from 'react';
 import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { computeViewportForRoot, clampZoom } from '../lib/viewport.js';
+import { computeViewportForRoot } from '../lib/viewport.js';
 
 /*
  * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
@@ -25,6 +25,15 @@ const commonTextStyle = {
   letterSpacing: '-0.05em',
   color: '#000000'
 };
+
+// ------------------------------------------------------------------
+// Design reference constants (single source of truth)
+// ------------------------------------------------------------------
+// Keeping these near the top makes it trivial for designers/devs to tweak the
+// visual scale in one place without hunting through layout maths later on.
+export const REF_NODE_WIDTH = 220;    // Program / Module / Topic chip width
+export const REF_PERSONA_WIDTH = 150; // Persona chip width
+// Heights are dictated by line-height + padding so we don't hard-code them.
 
 // Custom node to ensure consistent styling and no default handles
 const CustomNode = ({ data, selected, type }) => {
@@ -46,6 +55,17 @@ const CustomNode = ({ data, selected, type }) => {
   // Persona nodes stay white so they remain the visual "leaf" focus.
   if (type === 'persona') backgroundColor = '#FFFFFF';
 
+  // ------------------------------------------------------------------
+  // Fixed widths so chips never stretch / shrink with text length.  We pull
+  // the same constants as the layout maths for perfect alignment.
+  // ------------------------------------------------------------------
+  const WIDTHS = {
+    program: 220,
+    module: 220,
+    day: 220,
+    persona: 150
+  };
+
   return (
     <div
       style={{
@@ -54,6 +74,10 @@ const CustomNode = ({ data, selected, type }) => {
         border: borderStyle,
         borderRadius: '12px',
         padding: '10px 20px', // Increased padding for larger font
+        width: WIDTHS[type], // lock width so zoom logic stays reliable
+        maxWidth: WIDTHS[type],
+        whiteSpace: 'normal',
+        wordBreak: 'break-word',
         textAlign: 'center',
       }}
     >
@@ -81,7 +105,15 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
      * feels cramped or too loose on different screens
      *---------------------------------------------*/
     const yGap = 180;            // Vertical gap between hierarchy levels
-    const baseNodeWidth = 220;   // Rough width of a node box incl. padding
+
+    // -------------------------------------------------------------
+    // Node sizing
+    // -------------------------------------------------------------
+    // These constants mirror the exact pixel sizes in the Figma PNGs so the
+    // UI stays 1-for-1 with the design regardless of zoom.  If the designer
+    // later tweaks a chip size we only need to touch these numbers.
+    // ---------------------------------------------------------------------
+    const baseNodeWidth = REF_NODE_WIDTH;
 
     let programY = 50;
 
@@ -138,19 +170,35 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
               // personas.  The rule is simple: **max 6 personas per row**.
               // Extra personas automatically wrap onto new rows.
 
-              const maxPerRow = 6;         // Wrap to next row after N personas
               const colGap = 60;           // Horizontal gap inside persona grid
               const rowGap = 160;          // Vertical gap between persona rows
 
-              // How many *columns* will the *widest* row have? (Never more
-              // than `maxPerRow`.)  We use this width to centre the grid so
-              // even when the last row is shorter the grid as a whole still
-              // sits nicely under the Day node.
-              const gridCols = Math.min(maxPerRow, day.personas.length);
-              const gridWidth = gridCols * (baseNodeWidth + colGap) - colGap;
+              // -----------------------------------------------------------------
+              // Dynamic column count – the grid expands or contracts to fill the
+              // available canvas width **at world co-ordinates** (i.e. before
+              // zoom is applied).  The logic is:
+              //    columns = floor( viewportWidth  /  (personaWidth + colGap) )
+              // If the calculation yields < 1 we fall back to 1 so at least
+              // one card is visible.
+              // -----------------------------------------------------------------
+              // We can only use *approximate* width here because React-Flow's
+              // `viewport.zoom` is not yet known (the layout runs *before* we
+              // calculate the final zoom).  A good heuristic is to assume a
+              // neutral scale of 1 which still adapts nicely on common
+              // laptop widths (> 1280 px).  We recalculate the *exact* zoom
+              // later in the viewport effect, so any small mismatch is
+              // corrected automatically.
+              const worldViewportWidth = (graphRect?.width ?? 1200);
+              const tentativeCols = Math.floor(worldViewportWidth / (REF_PERSONA_WIDTH + colGap));
+              const maxPerRow = Math.max(1, tentativeCols);
 
-              // Compute the X coordinate of the *first* box in the grid so
-              // that the Day node sits perfectly in the middle.
+              // How many columns will the *widest* row actually occupy?  Never
+              // more than the number of personas we have.
+              const gridCols = Math.min(maxPerRow, day.personas.length);
+
+              const gridWidth = gridCols * (REF_PERSONA_WIDTH + colGap) - colGap;
+
+              // Centre the grid under the Day node.
               let personaGridStartX =
                 dayStartX +
                 dayIdx * (baseNodeWidth + 40) -
@@ -163,7 +211,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
                 const row = Math.floor(perIdx / maxPerRow);
                 const col = perIdx % maxPerRow;
 
-                const x = personaGridStartX + col * (baseNodeWidth + colGap);
+                const x = personaGridStartX + col * (REF_PERSONA_WIDTH + colGap);
                 const y = personaY + row * rowGap;
 
                 const isPersonaSelected = selectedIds?.personaId === per.id;
@@ -207,38 +255,44 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
   useEffect(() => {
     if (!nodesInitialised || nodes.length === 0) return;
 
-    // Fit the whole graph with 10 % breathing room.
+    // 1. Let React-Flow calculate a bounding-box-based viewport so everything
+    //    is visible.
     reactFlowInstance.fitView({ padding: 0.1 });
 
-    // Identify the Program node. `nodes` holds only our *DECLARED* positions so
-    // width/height are still undefined.  For accurate centring we grab the
-    // **hydrated** node list from React-Flow which includes runtime box sizes
-    // measured by the browser.
-    const declaredProgram = nodes.find((n) => n.type === 'programNode');
-    if (!declaredProgram) return; // Safety guard – should never happen.
+    // 2. Grab *hydrated* nodes which now include runtime `width` values so we
+    //    can work out the zoom factor required for uniform chip sizes.
+    const hydratedNodes =
+      typeof reactFlowInstance.getNodes === 'function'
+        ? reactFlowInstance.getNodes()
+        : [];
 
-    // The hydrated list contains the same node ids plus `width`/`height` that
-    // React-Flow calculates after the first layout pass.
-    const hydratedProgram =
-      (typeof reactFlowInstance.getNodes === 'function'
-        ? reactFlowInstance.getNodes().find((n) => n.id === declaredProgram.id)
-        : null) || declaredProgram; // Fallback to declared node just in case.
+    // Find the *largest* width among non-persona nodes.  We purposely exclude
+    // persona chips because they are smaller by design.
+    const structuralNodes = hydratedNodes.filter(
+      (n) => n.type === 'programNode' || n.type === 'moduleNode' || n.type === 'dayNode'
+    );
 
-    // Current viewport chosen by the generic fitView helper.
-    const currentVp = reactFlowInstance.getViewport(); // { x, y, zoom }
+    const largestWidth = structuralNodes.reduce((acc, n) => Math.max(acc, n.width || 0), 0);
 
-    // Pan so the Program node ends up 80 px from the top *inside the graph
-    // column* (two-thirds of the screen).  `computeViewportForRoot` expects a
-    // node with width/height so we pass the hydrated variant.
-    let finalVp = computeViewportForRoot(currentVp, hydratedProgram, graphRect, 80);
+    // Desired on-screen width for those chips is our reference constant.
+    const TARGET_WIDTH = REF_NODE_WIDTH;
 
-    // 2. Clamp the zoom so we never zoom closer than 1.5× nor further than
-    //    0.4×.  Those numbers were chosen after eyeballing what looks readable
-    //    on a typical laptop screen.
-    finalVp = clampZoom(finalVp, 0.4, 1.5);
+    // Zoom needed so the largest node ends up exactly TARGET_WIDTH px wide.
+    let desiredZoom = largestWidth > 0 ? TARGET_WIDTH / largestWidth : 1;
 
-    // Apply the adjusted transform with a 300-ms glide for smooth UX.
-    reactFlowInstance.setViewport(finalVp, { duration: 300 });
+    // Keep the zoom inside readable bounds.
+    desiredZoom = Math.max(0.4, Math.min(1.5, desiredZoom));
+
+    // Current viewport – we'll *replace* the zoom then re-anchor the camera
+    // so the Program node sits nicely near the top.
+    let vp = { ...reactFlowInstance.getViewport(), zoom: desiredZoom };
+
+    // Locate the Program node so we can anchor it.
+    const programNode = hydratedNodes.find((n) => n.type === 'programNode');
+    vp = computeViewportForRoot(vp, programNode, graphRect, 80);
+
+    // Apply the transform with a smooth transition.
+    reactFlowInstance.setViewport(vp, { duration: 300 });
 
     /*
      * eslint-disable-next-line react-hooks/exhaustive-deps

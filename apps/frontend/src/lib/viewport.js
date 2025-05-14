@@ -189,21 +189,21 @@ export function anchorRootToTopCenter(
 }
 
 /* -------------------------------------------------------------------------
- * computeViewportForRoot(viewport, rootNode, wrapperWidth, topMargin)
+ * computeViewportForRoot(viewport, rootNode, rect, topMargin)
  * -------------------------------------------------------------------------
  * Returns a new viewport that positions the **centre** of the rootNode
  * horizontally in the middle of the wrapper and vertically `topMargin`
  * pixels from the top.  No assumptions about node size – uses its runtime
  * width/height so layout changes are automatically respected.
  */
-export function computeViewportForRoot(vp, rootNode, wrapperWidth, topMargin = 80) {
-  if (!rootNode || !wrapperWidth) return vp;
+export function computeViewportForRoot(vp, rootNode, rect, topMargin = 80) {
+  if (!rootNode || !rect) return vp;
 
   const nodeCenterX = (rootNode.position.x + (rootNode.width || 0) / 2) * vp.zoom + vp.x;
   const nodeCenterY = (rootNode.position.y + (rootNode.height || 0) / 2) * vp.zoom + vp.y;
 
-  const desiredX = wrapperWidth / 2;
-  const desiredY = topMargin + (rootNode.height || 0) / 2;
+  const desiredX = rect.left + rect.width / 2;
+  const desiredY = rect.top + topMargin + (rootNode.height || 0) / 2;
 
   const deltaX = desiredX - nodeCenterX;
   const deltaY = desiredY - nodeCenterY;

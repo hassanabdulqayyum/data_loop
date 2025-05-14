@@ -73,6 +73,7 @@ Use these guidelines for **every** user-flow implementation task so we balance l
         • The **implementation-plan item number** that the micro-task advances or completes (e.g. *2.3.11*).  
         • The **line numbers** (or range) that were added / changed in `docs/code_lines/user_flow_1_code_lines.md`.  
         • A 1–2-sentence description of what changed and why.
+    4. Push to git dev remote branch.
 
     This convention makes every change traceable across: ① Git history → ② code-lines ledger → ③ implementation-plan checklist.
 
