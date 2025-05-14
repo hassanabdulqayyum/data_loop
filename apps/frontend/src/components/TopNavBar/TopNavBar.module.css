@@ -36,15 +36,6 @@
   flex: 1; /* Allow sections to grow and shrink, but center will be prioritized */
 }
 
-.navCenter {
-  /* Center section should justify its content to the center */
-  justify-content: center;
-  text-align: center;
-  /* Allow breadcrumb container to not be squeezed by flex:1 on navSection */
-  flex-grow: 2; /* Give more space to center if needed */
-  overflow: hidden; /* Prevent long breadcrumbs from breaking layout */
-}
-
 .navRight {
   /* Right section should justify its content to the end (right) */
   justify-content: flex-end;

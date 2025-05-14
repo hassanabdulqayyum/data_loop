@@ -113,18 +113,14 @@ function TopNavBar({
   return (
     <div className={styles.navBar}>
       <div className={styles.navSection}>
-        {/* Real magnifying-glass icon – we keep the span wrapper for consistent alignment. */}
+        {/* Left-most part: search icon followed by breadcrumb so the trail is left-aligned per Figma. */}
         <SearchIcon size={28} />
-      </div>
-      <div className={`${styles.navSection} ${styles.navCenter}`}>
-        {/* Changed from a single span to a div container for multiple breadcrumb elements */}
-        <div className={styles.breadcrumbContainer}>{renderBreadcrumbElements()}</div>
-      </div>
-      {/* We move the breadcrumbs into the right section so the entire trail aligns right per Figma. */}
-      <div className={`${styles.navSection} ${styles.navRight}`}>
-        <div className={styles.breadcrumbContainer} style={{ marginRight: '24px' }}>
+        <div className={styles.breadcrumbContainer} style={{ marginLeft: '16px' }}>
           {renderBreadcrumbElements()}
         </div>
+      </div>
+      {/* Spacer section keeps user icon docked to the far right. */}
+      <div className={`${styles.navSection} ${styles.navRight}`}>
         {/* Avatar circle icon – clicking will later show a drop-down menu. */}
         <UserIcon size={30} />
       </div>

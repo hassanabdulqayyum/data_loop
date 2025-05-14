@@ -864,10 +864,7 @@
 - Added `asPlain` helper that converts Neo4j integer objects into plain JS numbers/strings and used it to coerce `programId|Seq`, `moduleId|Seq`, `dayId|Seq`, and `personaId|Seq`.  Fixes React error #31 and empty /hierarchy response.
 
 ### 113. apps/frontend/src/components/TopNavBar/TopNavBar.jsx
-- Added onModuleClick/onTopicClick/onPersonaClick props and wired spans with role="button" and onClick handlers; moved breadcrumb container to right section; docstring updated.
+- Breadcrumb container moved to left navSection (after SearchIcon); removed duplicates; updated comments.
 
 ### 114. apps/frontend/src/components/TopNavBar/TopNavBar.module.css
-- Changed .breadcrumbSegment cursor to pointer.
-
-### 115. apps/frontend/src/pages/LoadView.jsx
-- Passed new breadcrumb click handlers which reset deeper selections (lines ~90-110 updated).
+- Removed obsolete .navCenter rule as breadcrumb no longer centered.
