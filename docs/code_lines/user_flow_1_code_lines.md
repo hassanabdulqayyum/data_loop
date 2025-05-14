@@ -890,3 +890,6 @@
 
 859. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
    - Added `anchorRootToCorner` helper to pin Program node 80×80 px from the top-left, ensuring it never drifts off-screen when wide persona grids expand; updated `HierarchyGraph` to use it and reverted grid centring sign bug.
+
+860. apps/frontend/src/lib/viewport.js & tests
+   - Added `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.

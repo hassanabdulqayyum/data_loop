@@ -129,4 +129,52 @@ export function anchorRootToCorner(
     x: viewport.x + deltaX,
     y: viewport.y + deltaY
   };
+}
+
+/* -------------------------------------------------------------------------
+ * anchorRootToTopCenter(viewport, rootNode, wrapperWidth, topMargin?)
+ * -------------------------------------------------------------------------
+ * Pins the root node so it sits `topMargin` pixels from the top **and is
+ * dead-centre horizontally** inside the React-Flow wrapper element.  Use this
+ * when a very wide layout skews the auto-fit view to the right, making the
+ * root hug the left edge.  We need the wrapper width to calculate the
+ * horizontal midpoint (`desiredX = wrapperWidth / 2`).
+ *
+ * Parameters
+ * ----------
+ * viewport   – `{ x:number, y:number, zoom:number }` as returned by
+ *              `reactFlowInstance.getViewport()`.
+ * rootNode   – *Any* node object that carries `position.x` & `position.y` in
+ *              **Flow co-ordinates** (i.e. not yet transformed by zoom/pan).
+ * wrapperWidth – Width of the React-Flow wrapper element.
+ * topMargin  – Distance in *screen pixels* you want between the top edge of
+ *              the canvas and the root node.  Defaults to `60` which matches
+ *              the 60 px buffer used in the Figma reference.
+ *
+ * Returns a **new** viewport object.  The function never mutates its inputs so
+ * it behaves nicely inside immutable React state updates or reducers.
+ */
+export function anchorRootToTopCenter(
+  viewport,
+  rootNode,
+  wrapperWidth,
+  topMargin = 60
+) {
+  if (!rootNode || !rootNode.position || !wrapperWidth) return viewport;
+
+  // Current on-screen co-ordinates of the root node.
+  const screenX = rootNode.position.x * viewport.zoom + viewport.x;
+  const screenY = rootNode.position.y * viewport.zoom + viewport.y;
+
+  // Where do we *want* it?
+  const desiredX = wrapperWidth / 2;
+
+  const deltaX = desiredX - screenX;
+  const deltaY = topMargin - screenY;
+
+  return {
+    ...viewport,
+    x: viewport.x + deltaX,
+    y: viewport.y + deltaY
+  };
 } 
