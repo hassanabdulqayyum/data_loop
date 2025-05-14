@@ -48,7 +48,8 @@ describe('computeViewportForRoot', () => {
   it('places node centre at wrapper midpoint and desired Y', () => {
     const vp = { x: -100, y: -100, zoom: 1 };
     const rootNode = { position: { x: 0, y: 0 }, width: 120, height: 60 };
-    const adjusted = computeViewportForRoot(vp, rootNode, 800, 80);
+    const rect = { left: 0, top: 72, width: 800, height: 600 };
+    const adjusted = computeViewportForRoot(vp, rootNode, rect, 80);
 
     const screenX = rootNode.position.x * vp.zoom + adjusted.x + rootNode.width/2;
     const screenY = rootNode.position.y * vp.zoom + adjusted.y + rootNode.height/2;

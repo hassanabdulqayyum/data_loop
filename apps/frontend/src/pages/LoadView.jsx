@@ -39,7 +39,7 @@ Example usage:
 ```
 */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore.js';
@@ -62,6 +62,8 @@ function LoadView() {
   // Grab the JWT so we can call protected endpoints safely.
   const { token } = useAuthStore();
   const navigate = useNavigate();
+
+  const graphRef = useRef(null);
 
   /* ------------------------------------------------------------------
    * Fetch the hierarchy exactly once when the component appears.
@@ -276,6 +278,7 @@ function LoadView() {
       <div style={{ display: 'flex', height: '100vh', paddingTop: '72px', boxSizing: 'border-box' }}>
         {/* Left column – the hierarchy */}
         <div
+          ref={graphRef}
           style={{
             flex: 2,
             /* Removed 1-rem padding so the graph can span edge-to-edge.  The
@@ -292,6 +295,7 @@ function LoadView() {
               <HierarchyGraph
                 tree={tree}
                 selectedIds={{ moduleId: selectedModuleId, topicId: selectedTopicId, personaId: selectedPersonaId }}
+                graphRect={graphRef.current ? graphRef.current.getBoundingClientRect() : null}
                 onSelect={(id, nodeType, nodeData) => {
                   if (nodeType === 'program') {
                     setSelectedModuleId(null);

@@ -905,3 +905,6 @@
 
 864. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
    - Introduced `computeViewportForRoot` rectangle-based centring, replaces cascaded fixes; HierarchyGraph now uses this single calculation. Added test ensuring centre maths.
+
+865. apps/frontend/src/pages/LoadView.jsx
+   - Added `graphRef` to measure canvas rectangle and passed `graphRect` prop to HierarchyGraph so centring uses true canvas bounds.
