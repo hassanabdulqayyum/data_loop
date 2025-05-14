@@ -926,3 +926,13 @@
 884. apps/frontend/src/components/HierarchyGraph.jsx
     - Persona row vertical spacing now uses chipHeight 44 px plus rowGap to avoid overlap (lines ~210).
     - Vertical tier gaps now use CHIP_HEIGHT44 + whiteGap74 to match border-to-border spacing (lines ~120,140,200).
+
+### 97-A  apps/frontend/src/lib/layout.js  – NEW (lines 1-110)
+Added generic `packIntoRows` helper that greedily wraps chips into rows and returns `{chips,rowWidth}` objects.  The logic is fully documented in layman's terms so anyone can grasp the maths in one read-through.
+
+### 101-B  apps/frontend/src/components/HierarchyGraph.jsx  – REPLACED (approx. lines 40-250)
+Replaced bespoke X/Y maths with a call to `packIntoRows`.  All tiers (Module, Day/Topic, every Persona row) now:
+• measure their own chip widths,
+• wrap opportunistically when the row would overflow the graph width,
+• centre each row by subtracting `rowWidth / 2` from the graph midpoint.
+Constants `CHIP_GAP` = 21 px and `ROW_GAP` = 33 px are now single-source of truth per design spec.  Persona placement no longer offsets under the parent Topic – instead it too aligns to the canvas midpoint keeping the whole tree visually balanced.
