@@ -432,13 +432,13 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
       })
       .filter(Boolean);
 
-    /* eslint-disable no-console */
     if (rows.length) {
-      console.groupCollapsed('%cEdge tilt diagnostics', 'color:#888');
+      /* Visible log (un-grouped) so it cannot be missed */
+      console.log('Edge tilt diagnostics →', rows);
       console.table(rows);
-      console.groupEnd();
+    } else {
+      console.warn('Edge tilt diagnostics: no edges found to measure');
     }
-    /* eslint-enable no-console */
   }, [nodes, edges]);
 
   const defaultEdgeOptions = {
