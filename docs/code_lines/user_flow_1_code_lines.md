@@ -916,3 +916,9 @@
    - Updated `CustomNode` width logic (approx. lines 50-70): boxes now use `width:'max-content'` so the chip fits its text; only persona nodes keep a `minWidth` safety. Added explanatory layman comments.
    - Added zoom lock props to `<ReactFlow>` element (approx. lines 340-350): `zoomOnScroll={false}`, `zoomOnPinch={false}`, `zoomOnDoubleClick={false}`, `minZoom={1}`, `maxZoom={1}`.
    - Replaced the previous `useLayoutEffect` viewport logic (approx. lines 250-310) with a new version that forces `zoom:1` and just recentres the Program node, removing the old zoom-calculation maths.
+
+883. apps/frontend/src/components/HierarchyGraph.jsx
+    - Replaced old fixed-grid persona algorithm with dynamic row-wrapping based on chip text width (lines ~150-240 inside isTopicSelected block).
+    - Constants updated: yGap 74, colGap 21, rowGap 33; removed REF_PERSONA_WIDTH constant; node padding now 8 px all round.
+    - Edges from Topic → Persona omitted for cleaner UI.
+    - Program centering margin changed from 80 px to 50 px (viewport effect lines ~310).

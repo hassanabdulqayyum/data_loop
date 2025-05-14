@@ -32,7 +32,8 @@ const commonTextStyle = {
 // Keeping these near the top makes it trivial for designers/devs to tweak the
 // visual scale in one place without hunting through layout maths later on.
 export const REF_NODE_WIDTH = 360;    // Program / Module / Topic chip width (fits "Module 1: Defusion")
-export const REF_PERSONA_WIDTH = 180; // Persona chip width – wider for long words like "Procrastination"
+// We no longer hard-code a persona chip width; each persona now shrinks or
+// expands to wrap its own text content, so the constant becomes obsolete.
 // Heights are dictated by line-height + padding so we don't hard-code them.
 
 // Custom node to ensure consistent styling and no default handles
@@ -77,9 +78,9 @@ const CustomNode = ({ data, selected, type }) => {
         background: backgroundColor,
         border: borderStyle,
         borderRadius: '12px',
-        padding: '10px 20px', // Increased padding for larger font
+        padding: '8px 8px',
         width: WIDTHS[type],
-        minWidth: type === 'persona' ? REF_PERSONA_WIDTH : 'auto',
+        minWidth: 'auto',
         maxWidth: 'max-content',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -110,7 +111,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
      * LAYOUT CONSTANTS – tweak here if spacing ever
      * feels cramped or too loose on different screens
      *---------------------------------------------*/
-    const yGap = 180;            // Vertical gap between hierarchy levels
+    const yGap = 74;             // Gap between Program → Module → Topic → first personas row (Figma)
 
     // -------------------------------------------------------------
     // Node sizing
@@ -171,72 +172,93 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
             e.push({ id: `${mod.id}-${day.id}`, source: mod.id, target: day.id, type: 'straight' });
 
             if (isTopicSelected) {
-              // We switch from a single horizontal strip to a *grid* so the
-              // canvas width no longer explodes when a topic carries many
-              // personas.  The rule is simple: **max 6 personas per row**.
-              // Extra personas automatically wrap onto new rows.
+              /* -----------------------------------------------------------------
+               * Persona placement – dynamic row wrapping
+               * -----------------------------------------------------------------
+               * 1. We measure each persona's text width using a temporary canvas
+               *    so every chip hugs its content (textWidth + 16 px padding).
+               * 2. We accumulate chips left-to-right, inserting a 21-px gap in
+               *    front of every chip except the first in the row.
+               * 3. As soon as the running row width would exceed the available
+               *    canvas width (graphRect.width × 0.9 safety), we break and
+               *    start a fresh row beneath the previous one (33-px row gap).
+               * 4. After all rows are known we loop a second time to push
+               *    nodes into React-Flow, centring each row under the Topic
+               *    chip so the tree stays balanced.
+               * ----------------------------------------------------------------- */
 
-              const colGap = 60;           // Horizontal gap inside persona grid
-              const rowGap = 160;          // Vertical gap between persona rows
+              const colGap = 21;
+              const rowGap = 33;
 
-              // -----------------------------------------------------------------
-              // Dynamic column count – the grid expands or contracts to fill the
-              // available canvas width **at world co-ordinates** (i.e. before
-              // zoom is applied).  The logic is:
-              //    columns = floor( viewportWidth  /  (personaWidth + colGap) )
-              // If the calculation yields < 1 we fall back to 1 so at least
-              // one card is visible.
-              // -----------------------------------------------------------------
-              // We can only use *approximate* width here because React-Flow's
-              // `viewport.zoom` is not yet known (the layout runs *before* we
-              // calculate the final zoom).  A good heuristic is to assume a
-              // neutral scale of 1 which still adapts nicely on common
-              // laptop widths (> 1280 px).  We recalculate the *exact* zoom
-              // later in the viewport effect, so any small mismatch is
-              // corrected automatically.
-              const worldViewportWidth = (graphRect?.width ?? 1200);
-              const tentativeCols = Math.floor(worldViewportWidth / (REF_PERSONA_WIDTH + colGap));
-              const maxPerRow = Math.max(1, tentativeCols);
+              // Build a measurement context once – avoids repeated DOM calls.
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              ctx.font = `${commonTextStyle.fontWeight} ${commonTextStyle.fontSize} ${commonTextStyle.fontFamily}`;
 
-              // How many columns will the *widest* row actually occupy?  Never
-              // more than the number of personas we have.
-              const gridCols = Math.min(maxPerRow, day.personas.length);
+              // Safety guard when graphRect is missing (e.g. unit tests).
+              const availableWidth = (graphRect?.width ?? 1200) * 0.9;
 
-              const gridWidth = gridCols * (REF_PERSONA_WIDTH + colGap) - colGap;
+              const rows = [];
+              let currentRow = [];
+              let currentRowWidth = 0;
 
-              // Centre the grid under the Day node.
-              let personaGridStartX =
-                dayStartX +
-                dayIdx * (baseNodeWidth + 40) -
-                gridWidth / 2 +
-                baseNodeWidth / 2;
+              day.personas.forEach((per, index) => {
+                const textW = ctx.measureText(per.id).width;
+                const chipW = textW + 16; // 8 px padding left + right
 
-              let personaY = dayY + yGap; // Y coordinate of the first row
+                const needed = currentRow.length === 0 ? chipW : chipW + colGap;
 
-              day.personas.forEach((per, perIdx) => {
-                const row = Math.floor(perIdx / maxPerRow);
-                const col = perIdx % maxPerRow;
+                if (currentRowWidth + needed > availableWidth) {
+                  // Commit the current row and reset accumulators.
+                  rows.push({ chips: currentRow, width: currentRowWidth });
+                  currentRow = [];
+                  currentRowWidth = 0;
+                }
 
-                const x = personaGridStartX + col * (REF_PERSONA_WIDTH + colGap);
-                const y = personaY + row * rowGap;
-
-                const isPersonaSelected = selectedIds?.personaId === per.id;
-
-                n.push({
-                  id: per.id,
-                  type: 'personaNode',
-                  data: { label: per.id, selected: isPersonaSelected },
-                  position: { x, y },
-                  selectable: true,
-                });
-
-                e.push({
-                  id: `${day.id}-${per.id}`,
-                  source: day.id,
-                  target: per.id,
-                  type: 'straight',
-                });
+                currentRow.push({ id: per.id, width: chipW });
+                currentRowWidth += needed;
               });
+
+              // Push the final row.
+              if (currentRow.length) {
+                rows.push({ chips: currentRow, width: currentRowWidth });
+              }
+
+              // -----  Now create React-Flow nodes row by row  -----
+              let personaY = dayY + yGap; // Position of first row.
+
+              rows.forEach((rowObj) => {
+                const { chips, width: rowW } = rowObj;
+
+                const rowStartX =
+                  dayStartX +
+                  dayIdx * (baseNodeWidth + 40) -
+                  rowW / 2 +
+                  baseNodeWidth / 2;
+
+                let chipX = rowStartX;
+
+                chips.forEach((chip, chipIdx) => {
+                  const isPersonaSelected = selectedIds?.personaId === chip.id;
+
+                  n.push({
+                    id: chip.id,
+                    type: 'personaNode',
+                    data: { label: chip.id, selected: isPersonaSelected },
+                    position: { x: chipX, y: personaY },
+                    selectable: true,
+                  });
+
+                  // Advance X for next chip.
+                  chipX += chip.width + colGap;
+                });
+
+                personaY += rowGap; // Drop Y for next row.
+              });
+
+              // NOTE: We intentionally do **not** push Topic→Persona edges in
+              // order to keep the canvas clean – the vertical hierarchy already
+              // implies the relationship.
             }
           });
         }
@@ -283,7 +305,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         : [];
 
     const programNode = hydratedNodes.find((n) => n.type === 'programNode');
-    vp = computeViewportForRoot(vp, programNode, graphRect, 80);
+    vp = computeViewportForRoot(vp, programNode, graphRect, 50);
 
     // 3. Apply the viewport instantly (no animation) so the load feels snappy.
     reactFlowInstance.setViewport(vp, { duration: 0 });
