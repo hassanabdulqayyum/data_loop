@@ -922,3 +922,6 @@
     - Constants updated: yGap 74, colGap 21, rowGap 33; removed REF_PERSONA_WIDTH constant; node padding now 8 px all round.
     - Edges from Topic → Persona omitted for cleaner UI.
     - Program centering margin changed from 80 px to 50 px (viewport effect lines ~310).
+
+884. apps/frontend/src/components/HierarchyGraph.jsx
+    - Persona row vertical spacing now uses chipHeight 44 px plus rowGap to avoid overlap (lines ~210).

@@ -225,6 +225,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
               }
 
               // -----  Now create React-Flow nodes row by row  -----
+              const chipHeight = 44; // 28 px font + 8 px padding top + bottom
               let personaY = dayY + yGap; // Position of first row.
 
               rows.forEach((rowObj) => {
@@ -253,7 +254,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
                   chipX += chip.width + colGap;
                 });
 
-                personaY += rowGap; // Drop Y for next row.
+                personaY += chipHeight + rowGap; // Move down by chip height + gap.
               });
 
               // NOTE: We intentionally do **not** push Topic→Persona edges in
