@@ -424,32 +424,42 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
     // Build quick lookup { id → position } for constant-time fetches.
     const posMap = new Map(nodes.map((n) => [n.id, n.position]));
 
-    const rows = edges
-      .map((edge) => {
-        const src = posMap.get(edge.source);
-        const tgt = posMap.get(edge.target);
-        if (!src || !tgt) return null; // edge refers to a node we don't have.
+    const rows = edges.map((edge) => {
+      const src = posMap.get(edge.source);
+      const tgt = posMap.get(edge.target);
 
-        const dx = Math.abs(tgt.x - src.x);
-        const dy = Math.abs(tgt.y - src.y);
-        const angleDeg = (Math.atan2(dx, dy) * 180) / Math.PI;
+      if (!src || !tgt) {
+        /* eslint-disable no-console */
+        console.warn('Tilt diagnostic: missing position for', edge.id, {
+          source: edge.source,
+          target: edge.target,
+          srcFound: !!src,
+          tgtFound: !!tgt
+        });
+        /* eslint-enable no-console */
+        return null;
+      }
 
-        return {
-          id: edge.id,
-          dx: dx.toFixed(1),
-          dy: dy.toFixed(1),
-          'angle°': angleDeg.toFixed(2)
-        };
-      })
-      .filter(Boolean);
+      const dx = Math.abs(tgt.x - src.x);
+      const dy = Math.abs(tgt.y - src.y);
+      const angleDeg = (Math.atan2(dx, dy) * 180) / Math.PI;
 
+      return {
+        id: edge.id,
+        dx: dx.toFixed(1),
+        dy: dy.toFixed(1),
+        'angle°': angleDeg.toFixed(2)
+      };
+    }).filter(Boolean);
+
+    /* eslint-disable no-console */
     if (rows.length) {
-      /* Visible log (un-grouped) so it cannot be missed */
       console.log('Edge tilt diagnostics →', rows);
       console.table(rows);
     } else {
-      console.warn('Edge tilt diagnostics: no edges found to measure');
+      console.warn('Edge tilt diagnostics: rows empty');
     }
+    /* eslint-enable no-console */
   }, [nodes, edges]);
 
   const defaultEdgeOptions = {

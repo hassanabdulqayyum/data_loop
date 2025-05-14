@@ -962,3 +962,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885.3 apps/frontend/src/components/HierarchyGraph.jsx
    - Added logging of nodes/edges length and warning when empty to diagnose why angle table not printing.
+
+885.4 apps/frontend/src/components/HierarchyGraph.jsx
+   - Added per-edge missing position warning and ensured diagnostics log rows or reason.
