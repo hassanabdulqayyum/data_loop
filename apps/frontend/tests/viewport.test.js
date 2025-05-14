@@ -5,7 +5,7 @@ We keep these tests tiny: they only call the pure function `anchorRootToTop` so
 no DOM or React-Flow context is needed.
 */
 
-import { anchorRootToTop, clampZoom } from '../src/lib/viewport.js';
+import { anchorRootToTop, clampZoom, anchorRootToCorner } from '../src/lib/viewport.js';
 
 describe('anchorRootToTop', () => {
   it('moves the viewport so the root node sits at the requested margin', () => {
@@ -41,5 +41,17 @@ describe('clampZoom', () => {
     const vp = { x: 0, y: 0, zoom: 2.2 };
     const adjusted = clampZoom(vp, 0.4, 1.5);
     expect(adjusted.zoom).toBe(1.5);
+  });
+});
+
+describe('anchorRootToCorner', () => {
+  it('moves the viewport so the root lands at given top-left corner', () => {
+    const vp = { x: -200, y: -200, zoom: 1 };
+    const rootNode = { position: { x: 0, y: 0 } };
+    const adjusted = anchorRootToCorner(vp, rootNode, 80, 80);
+    const screenX = rootNode.position.x * vp.zoom + adjusted.x;
+    const screenY = rootNode.position.y * vp.zoom + adjusted.y;
+    expect(screenX).toBe(80);
+    expect(screenY).toBe(80);
   });
 }); 

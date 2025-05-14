@@ -11,7 +11,7 @@ The graph attempts a basic auto-layout logic for centering and distributing node
 import React, { useMemo, useEffect } from 'react';
 import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { anchorRootToTop, clampZoom } from '../lib/viewport.js';
+import { anchorRootToTop, clampZoom, anchorRootToCorner } from '../lib/viewport.js';
 
 /*
  * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
@@ -153,7 +153,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
               let personaGridStartX =
                 dayStartX +
                 dayIdx * (baseNodeWidth + 40) -
-                gridWidth / -2 +
+                gridWidth / 2 +
                 baseNodeWidth / 2;
 
               let personaY = dayY + yGap; // Y coordinate of the first row
@@ -217,7 +217,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
     const currentVp = reactFlowInstance.getViewport(); // { x, y, zoom }
 
     // 1. Keep Program node anchored near the top.
-    let finalVp = anchorRootToTop(currentVp, programNode, 80);
+    let finalVp = anchorRootToCorner(currentVp, programNode, 80, 80);
 
     // 2. Clamp the zoom so we never zoom closer than 1.5× nor further than
     //    0.4×.  Those numbers were chosen after eyeballing what looks readable

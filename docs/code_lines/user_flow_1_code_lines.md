@@ -887,3 +887,6 @@
 
 858. apps/frontend/src/components/HierarchyGraph.jsx
    - Introduced `colGap` 60 px and `rowGap` 160 px constants; increased `baseNodeWidth` to 220 and adjusted grid-centering maths so persona nodes are evenly spaced and no longer crowd each other.
+
+859. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
+   - Added `anchorRootToCorner` helper to pin Program node 80×80 px from the top-left, ensuring it never drifts off-screen when wide persona grids expand; updated `HierarchyGraph` to use it and reverted grid centring sign bug.

@@ -94,4 +94,39 @@ export function clampZoom(viewport, minZoom = 0.4, maxZoom = 1.5) {
 
   const clamped = Math.max(minZoom, Math.min(maxZoom, viewport.zoom));
   return { ...viewport, zoom: clamped };
+}
+
+/* -------------------------------------------------------------------------
+ * anchorRootToCorner(viewport, rootNode, topMargin?, leftMargin?)
+ * -------------------------------------------------------------------------
+ * Same idea as `anchorRootToTop` but clamps both **vertical** *and* **horizontal*
+ * position so the root node (Program) always starts `topMargin` pixels from
+ * the top and `leftMargin` pixels from the left edge of the screen.
+ *
+ * This is useful when the lower levels (e.g. a wide persona grid) push the
+ * auto-fit bounding box far to the right, leaving the root node off-screen on
+ * the left.  By re-centring we guarantee the user can always see where the
+ * tree begins without manual panning.
+ */
+export function anchorRootToCorner(
+  viewport,
+  rootNode,
+  topMargin = 60,
+  leftMargin = 60
+) {
+  if (!rootNode || !rootNode.position) return viewport;
+
+  // Current on-screen coordinates of the root node.
+  const screenX = rootNode.position.x * viewport.zoom + viewport.x;
+  const screenY = rootNode.position.y * viewport.zoom + viewport.y;
+
+  // How far do we need to move the camera?
+  const deltaX = leftMargin - screenX;
+  const deltaY = topMargin - screenY;
+
+  return {
+    ...viewport,
+    x: viewport.x + deltaX,
+    y: viewport.y + deltaY
+  };
 } 
