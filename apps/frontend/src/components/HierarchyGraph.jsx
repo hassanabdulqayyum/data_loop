@@ -56,14 +56,18 @@ const CustomNode = ({ data, selected, type }) => {
   if (type === 'persona') backgroundColor = '#FFFFFF';
 
   // ------------------------------------------------------------------
-  // Fixed widths so chips never stretch / shrink with text length.  We pull
-  // the same constants as the layout maths for perfect alignment.
+  // Let the chip's width be dictated by its text content so labels like
+  // "Focus" no longer sit inside an oversized grey bar.  We still keep a
+  // *minimum* width for persona chips so very short words don't produce
+  // awkward skinny boxes, but ancestor tiers (Program / Module / Topic)
+  // receive no hard-coded width at all – their size is purely the text
+  // length plus the 20-px side padding.
   // ------------------------------------------------------------------
   const WIDTHS = {
-    program: REF_NODE_WIDTH,
-    module: REF_NODE_WIDTH,
-    day: REF_NODE_WIDTH,
-    persona: 'auto'  // persona resolves via minWidth later
+    program: 'max-content',
+    module: 'max-content',
+    day: 'max-content',
+    persona: 'max-content'
   };
 
   return (
@@ -75,7 +79,7 @@ const CustomNode = ({ data, selected, type }) => {
         borderRadius: '12px',
         padding: '10px 20px', // Increased padding for larger font
         width: WIDTHS[type],
-        minWidth: type === 'persona' ? REF_PERSONA_WIDTH : REF_NODE_WIDTH,
+        minWidth: type === 'persona' ? REF_PERSONA_WIDTH : 'auto',
         maxWidth: 'max-content',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -260,52 +264,31 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
   useLayoutEffect(() => {
     if (!nodesInitialised || nodes.length === 0) return;
 
-    // 1. Run the auto-fit calculation *instantly* (duration 0) so the user does
-    //    not perceive the temporary zoom that React-Flow uses to measure node
-    //    positions.  This prevents the noticeable "zoom in then back out" flash.
-    reactFlowInstance.fitView({ padding: 0.1, duration: 0 });
+    // ------------------------------------------------------------------
+    // NEW STRATEGY (May-2025): we **lock the zoom factor to 1×** so the UI
+    // is always rendered at native pixel size.  That means no scroll-wheel or
+    // pinch gestures will scale the canvas – users can still pan, but the
+    // text stays crisp and the chip sizes match the Figma 1-for-1.
+    // ------------------------------------------------------------------
 
-    // 2. Grab *hydrated* nodes which now include runtime `width` values so we
-    //    can work out the zoom factor required for uniform chip sizes.
+    // 1. Grab the current viewport, force zoom to 1.
+    let vp = { ...reactFlowInstance.getViewport(), zoom: 1 };
+
+    // 2. Centre the Program node `80` px from the top edge so the hierarchy
+    //    always starts in a predictable spot.  We need the *hydrated* nodes
+    //    (those contain runtime width/height measurements) to do this.
     const hydratedNodes =
       typeof reactFlowInstance.getNodes === 'function'
         ? reactFlowInstance.getNodes()
         : [];
 
-    // Find the *largest* width among non-persona nodes.  We purposely exclude
-    // persona chips because they are smaller by design.
-    const structuralNodes = hydratedNodes.filter(
-      (n) => n.type === 'programNode' || n.type === 'moduleNode' || n.type === 'dayNode'
-    );
-
-    const largestWidth = structuralNodes.reduce((acc, n) => Math.max(acc, n.width || 0), 0);
-
-    // Desired on-screen width for those chips is our reference constant.
-    const TARGET_WIDTH = REF_NODE_WIDTH;
-
-    // Zoom needed so the largest node ends up exactly TARGET_WIDTH px wide.
-    let desiredZoom = largestWidth > 0 ? TARGET_WIDTH / largestWidth : 1;
-
-    // Keep the zoom inside readable bounds.
-    desiredZoom = Math.max(0.4, Math.min(1.5, desiredZoom));
-
-    // Current viewport – we'll *replace* the zoom then re-anchor the camera
-    // so the Program node sits nicely near the top.
-    let vp = { ...reactFlowInstance.getViewport(), zoom: desiredZoom };
-
-    // Locate the Program node so we can anchor it.
     const programNode = hydratedNodes.find((n) => n.type === 'programNode');
     vp = computeViewportForRoot(vp, programNode, graphRect, 80);
 
-    // Apply our final camera in one go (also no animation) so the whole
-    // transition feels snappy instead of bouncing.
+    // 3. Apply the viewport instantly (no animation) so the load feels snappy.
     reactFlowInstance.setViewport(vp, { duration: 0 });
 
-    /*
-     * eslint-disable-next-line react-hooks/exhaustive-deps
-     * We deliberately omit `reactFlowInstance` from deps – the instance is
-     * stable once mounted, so including it would create an unnecessary re-run.
-     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps – instance is stable.
   }, [nodes, nodesInitialised]);
 
   const defaultEdgeOptions = {
@@ -330,6 +313,11 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={true}
+        zoomOnScroll={false}
+        zoomOnPinch={false}
+        zoomOnDoubleClick={false}
+        minZoom={1}
+        maxZoom={1}
         onNodeClick={(_, node) => {
           let nodeType = 'persona'; // Default to persona
           if (node.type === 'programNode') nodeType = 'program';

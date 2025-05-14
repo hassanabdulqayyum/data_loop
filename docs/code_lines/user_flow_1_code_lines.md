@@ -911,3 +911,8 @@
 
 866. apps/frontend/src/components/HierarchyGraph.jsx
    - lines ~160-190 replaced inside useEffect: instead of using the *declared* Program node (which lacks runtime size), we now fetch the **hydrated** node via `reactFlowInstance.getNodes()` so `width` and `height` are available. These values are passed into `computeViewportForRoot` ensuring the Program node stays centered and stops sliding right after render.
+
+882. apps/frontend/src/components/HierarchyGraph.jsx
+   - Updated `CustomNode` width logic (approx. lines 50-70): boxes now use `width:'max-content'` so the chip fits its text; only persona nodes keep a `minWidth` safety. Added explanatory layman comments.
+   - Added zoom lock props to `<ReactFlow>` element (approx. lines 340-350): `zoomOnScroll={false}`, `zoomOnPinch={false}`, `zoomOnDoubleClick={false}`, `minZoom={1}`, `maxZoom={1}`.
+   - Replaced the previous `useLayoutEffect` viewport logic (approx. lines 250-310) with a new version that forces `zoom:1` and just recentres the Program node, removing the old zoom-calculation maths.
