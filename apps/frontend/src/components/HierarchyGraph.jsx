@@ -405,14 +405,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
     console.log('Tilt diagnostic hook fired');
     console.log(`nodes: ${nodes.length}, edges: ${edges.length}`);
     /* eslint-enable no-console */
-    // ------------------------------------------------------------------
-    // Skip in production builds or SSR
-    // ------------------------------------------------------------------
-    const isDev =
-      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV) ||
-      (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development');
-
-    if (!isDev || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return; // skip during SSR/Jest
 
     if (!edges.length || !nodes.length) {
       /* eslint-disable no-console */

@@ -965,3 +965,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885.4 apps/frontend/src/components/HierarchyGraph.jsx
    - Added per-edge missing position warning and ensured diagnostics log rows or reason.
+
+885.5 apps/frontend/src/components/HierarchyGraph.jsx
+   - Removed dev/prod guard so tilt diagnostics always run; retained SSR window check.
