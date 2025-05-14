@@ -947,3 +947,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 ### 101-E  apps/frontend/src/components/HierarchyGraph.jsx  – PATCH
 • Removed redundant `+ CHIP_HEIGHT` when calculating dayTierStartY and personaTierStartY so Program→Module→Topic gaps are now 74 px as spec.
 • Added `borderWidth / 2` compensation to X-position for selected Topic and Persona chips so their centres align on the spine even with 3-px outline.
+
+885. apps/frontend/src/components/HierarchyGraph.jsx
+   - Added dev-only diagnostic hook `useEffect` that computes Δx/Δy for each edge and logs a console.table with tilt angle; import updated to include `useEffect` (lines ~10 and ~240-300). This gives an objective measure of connector slant during layout tuning.

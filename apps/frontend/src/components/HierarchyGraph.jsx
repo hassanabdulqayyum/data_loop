@@ -9,7 +9,7 @@ Props:
 
 The graph attempts a basic auto-layout logic for centering and distributing nodes.
 */
-import React, { useMemo, useLayoutEffect } from 'react';
+import React, { useMemo, useLayoutEffect, useEffect } from 'react';
 import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { computeViewportForRoot } from '../lib/viewport.js';
@@ -384,6 +384,53 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps – instance is stable.
   }, [nodes, nodesInitialised]);
+
+  /* ------------------------------------------------------------------
+   * Dev-only diagnostic: log edge tilt angles
+   * -------------------------------------------------------------
+   * Purpose – While we refine the horizontal-centering maths, we want an
+   * objective read-out of how much each connector deviates from a perfect
+   * vertical.  For every edge we already know both end-point coordinates in
+   * **flow space** (the same co-ordinate system we position nodes in).  A
+   * vertical line means Δx = 0.  The angle away from vertical therefore is
+   * `atan2(Δx, Δy)` in radians.
+   *
+   * This hook runs **only in development mode** and prints a neat
+   * `console.table` whenever the node/edge set changes.  Designers (or we)
+   * can click different chips and watch the angles update live.  Anything
+   * above ~0.4° is visible to the naked eye and signals a centring bug.
+   */
+  useEffect(() => {
+    // Skip in production builds or during SSR/Jest where `window` is absent.
+    if (process.env.NODE_ENV !== 'development' || typeof window === 'undefined') return;
+    if (!edges.length || !nodes.length) return;
+
+    // Build quick lookup { id → position } for constant-time fetches.
+    const posMap = new Map(nodes.map((n) => [n.id, n.position]));
+
+    const rows = edges
+      .map((edge) => {
+        const src = posMap.get(edge.source);
+        const tgt = posMap.get(edge.target);
+        if (!src || !tgt) return null; // edge refers to a node we don't have.
+
+        const dx = Math.abs(tgt.x - src.x);
+        const dy = Math.abs(tgt.y - src.y);
+        const angleDeg = (Math.atan2(dx, dy) * 180) / Math.PI;
+
+        return {
+          id: edge.id,
+          dx: dx.toFixed(1),
+          dy: dy.toFixed(1),
+          'angle°': angleDeg.toFixed(2)
+        };
+      })
+      .filter(Boolean);
+
+    /* eslint-disable no-console */
+    console.table(rows);
+    /* eslint-enable no-console */
+  }, [nodes, edges]);
 
   const defaultEdgeOptions = {
     style: { stroke: '#c8c8c8', strokeWidth: 3 }, // Thicker connectors per design
