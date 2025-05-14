@@ -30,15 +30,36 @@ router.get('/', async (req, res, next) => {
             // We'll build a nested array structure to match the catalog tree
             const programs = [];
             for (const record of result.records) {
-                // Extract each field from the Neo4j record
-                const programId = record.get('programId');
-                const programSeq = record.get('programSeq');
-                const moduleId = record.get('moduleId');
-                const moduleSeq = record.get('moduleSeq');
-                const dayId = record.get('dayId');
-                const daySeq = record.get('daySeq');
-                const personaId = record.get('personaId');
-                const personaSeq = record.get('personaSeq');
+                // Extract each field from the Neo4j record and coerce Neo4j Integer objects
+                /*
+                 * Neo4j returns its integer properties as special objects with `{ low, high }` keys
+                 * so they can safely hold 64-bit numbers.  Those objects break React rendering
+                 * because React will refuse to print an *object* as text ("Error #31").
+                 *
+                 * The helper below converts anything that looks like a Neo4j Integer into a plain
+                 * JavaScript number (when the field is a *sequence* index) or a string (when the
+                 * field represents an *id* that we only ever treat as an opaque label).
+                 */
+                const asPlain = (value, treatAsString = false) => {
+                    if (value === null || value === undefined) return value;
+                    // Detect the neo4j-driver Integer shape: `{ low: <number>, high: <number> }`
+                    const isNeoInt = typeof value === 'object' && value.low !== undefined && value.high !== undefined;
+                    if (isNeoInt) {
+                        // The driver guarantees the number fits into 32-bit if `high === 0` (our case).
+                        const num = value.low;
+                        return treatAsString ? String(num) : num;
+                    }
+                    return treatAsString ? String(value) : value;
+                };
+
+                const programId = asPlain(record.get('programId'), true);
+                const programSeq = asPlain(record.get('programSeq'));
+                const moduleId = asPlain(record.get('moduleId'), true);
+                const moduleSeq = asPlain(record.get('moduleSeq'));
+                const dayId = asPlain(record.get('dayId'), true);
+                const daySeq = asPlain(record.get('daySeq'));
+                const personaId = asPlain(record.get('personaId'), true);
+                const personaSeq = asPlain(record.get('personaSeq'));
 
                 // Find or create the program node
                 let program = programs.find(p => p.id === programId);

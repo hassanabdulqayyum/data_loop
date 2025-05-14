@@ -859,3 +859,6 @@
 112. apps/frontend/src/pages/LoadView.jsx
     - line 180: updated main wrapper paddingTop **72px** matching taller nav.
     - line 315: placeholder text colour `#555` → `#9CA3AF` (lighter grey per design).
+
+### 82. apps/api-server/src/routes/hierarchy.js – Int coercion fix (lines ~21-41 replaced)
+- Added `asPlain` helper that converts Neo4j integer objects into plain JS numbers/strings and used it to coerce `programId|Seq`, `moduleId|Seq`, `dayId|Seq`, and `personaId|Seq`.  Fixes React error #31 and empty /hierarchy response.
