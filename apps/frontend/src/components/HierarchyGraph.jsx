@@ -255,9 +255,10 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
   useEffect(() => {
     if (!nodesInitialised || nodes.length === 0) return;
 
-    // 1. Let React-Flow calculate a bounding-box-based viewport so everything
-    //    is visible.
-    reactFlowInstance.fitView({ padding: 0.1 });
+    // 1. Run the auto-fit calculation *instantly* (duration 0) so the user does
+    //    not perceive the temporary zoom that React-Flow uses to measure node
+    //    positions.  This prevents the noticeable "zoom in then back out" flash.
+    reactFlowInstance.fitView({ padding: 0.1, duration: 0 });
 
     // 2. Grab *hydrated* nodes which now include runtime `width` values so we
     //    can work out the zoom factor required for uniform chip sizes.
@@ -291,8 +292,9 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
     const programNode = hydratedNodes.find((n) => n.type === 'programNode');
     vp = computeViewportForRoot(vp, programNode, graphRect, 80);
 
-    // Apply the transform with a smooth transition.
-    reactFlowInstance.setViewport(vp, { duration: 300 });
+    // Apply our final camera in one go (also no animation) so the whole
+    // transition feels snappy instead of bouncing.
+    reactFlowInstance.setViewport(vp, { duration: 0 });
 
     /*
      * eslint-disable-next-line react-hooks/exhaustive-deps
