@@ -956,3 +956,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885. apps/frontend/src/components/HierarchyGraph.jsx
    - Added dev-only diagnostic hook `useEffect` (updated again) that computes Δx/Δy for each edge and logs a grouped console.table when `import.meta.env.DEV` or `process.env.NODE_ENV==='development'` is true. Provides objective tilt angles while leaving production bundle clean. Lines ~10 and ~245-315.
+
+885.2 apps/frontend/src/components/HierarchyGraph.jsx
+   - Added unconditional console.log('Tilt diagnostic hook fired') to verify hook execution.

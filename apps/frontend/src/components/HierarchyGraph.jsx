@@ -401,6 +401,9 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
    * above ~0.4° is visible to the naked eye and signals a centring bug.
    */
   useEffect(() => {
+    /* eslint-disable no-console */
+    console.log('Tilt diagnostic hook fired');
+    /* eslint-enable no-console */
     // ------------------------------------------------------------------
     // Skip in production builds or SSR
     // ------------------------------------------------------------------
