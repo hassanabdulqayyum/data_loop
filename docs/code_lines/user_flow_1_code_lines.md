@@ -908,3 +908,6 @@
 
 865. apps/frontend/src/pages/LoadView.jsx
    - Added `graphRef` to measure canvas rectangle and passed `graphRect` prop to HierarchyGraph so centring uses true canvas bounds.
+
+866. apps/frontend/src/components/HierarchyGraph.jsx
+   - lines ~160-190 replaced inside useEffect: instead of using the *declared* Program node (which lacks runtime size), we now fetch the **hydrated** node via `reactFlowInstance.getNodes()` so `width` and `height` are available. These values are passed into `computeViewportForRoot` ensuring the Program node stays centered and stops sliding right after render.

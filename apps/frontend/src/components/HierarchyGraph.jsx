@@ -5,6 +5,7 @@ Props:
 • tree            – the nested array returned by /hierarchy (Programs at root).
 • selectedIds     – { moduleId, topicId, personaId } so we can highlight.
 • onSelect(nodeId, nodeType)  – callback invoked when any node is clicked, passing its id and type ('program', 'module', 'day', 'persona').
+• graphRect       – the rectangle of the graph for viewport calculations.
 
 The graph attempts a basic auto-layout logic for centering and distributing nodes.
 */
@@ -71,7 +72,7 @@ const nodeTypes = {
   personaNode: (props) => <CustomNode {...props} type="persona" selected={props.data.selected} />,
 };
 
-function HierarchyGraph({ tree, selectedIds, onSelect }) {
+function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
   const { nodes, edges } = useMemo(() => {
     const n = [];
     const e = [];
@@ -209,20 +210,27 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
     // Fit the whole graph with 10 % breathing room.
     reactFlowInstance.fitView({ padding: 0.1 });
 
-    // Identify the single Program node so we can pin it near the top.
-    const programNode = nodes.find((n) => n.type === 'programNode');
-    if (!programNode) return; // Should never happen – safeguard.
+    // Identify the Program node. `nodes` holds only our *DECLARED* positions so
+    // width/height are still undefined.  For accurate centring we grab the
+    // **hydrated** node list from React-Flow which includes runtime box sizes
+    // measured by the browser.
+    const declaredProgram = nodes.find((n) => n.type === 'programNode');
+    if (!declaredProgram) return; // Safety guard – should never happen.
 
-    // Retrieve the transform chosen by fitView, then tweak it vertically.
+    // The hydrated list contains the same node ids plus `width`/`height` that
+    // React-Flow calculates after the first layout pass.
+    const hydratedProgram =
+      (typeof reactFlowInstance.getNodes === 'function'
+        ? reactFlowInstance.getNodes().find((n) => n.id === declaredProgram.id)
+        : null) || declaredProgram; // Fallback to declared node just in case.
+
+    // Current viewport chosen by the generic fitView helper.
     const currentVp = reactFlowInstance.getViewport(); // { x, y, zoom }
 
-    // 1. Keep Program node anchored near the top.
-    const wrapperWidth =
-      typeof reactFlowInstance.getWrapper === 'function'
-        ? reactFlowInstance.getWrapper().clientWidth
-        : window.innerWidth;
-
-    let finalVp = computeViewportForRoot(currentVp, programNode, wrapperWidth, 80);
+    // Pan so the Program node ends up 80 px from the top *inside the graph
+    // column* (two-thirds of the screen).  `computeViewportForRoot` expects a
+    // node with width/height so we pass the hydrated variant.
+    let finalVp = computeViewportForRoot(currentVp, hydratedProgram, graphRect, 80);
 
     // 2. Clamp the zoom so we never zoom closer than 1.5× nor further than
     //    0.4×.  Those numbers were chosen after eyeballing what looks readable
