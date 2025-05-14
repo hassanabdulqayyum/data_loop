@@ -925,3 +925,4 @@
 
 884. apps/frontend/src/components/HierarchyGraph.jsx
     - Persona row vertical spacing now uses chipHeight 44 px plus rowGap to avoid overlap (lines ~210).
+    - Vertical tier gaps now use CHIP_HEIGHT44 + whiteGap74 to match border-to-border spacing (lines ~120,140,200).

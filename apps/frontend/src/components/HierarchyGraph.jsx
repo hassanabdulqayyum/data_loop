@@ -111,7 +111,8 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
      * LAYOUT CONSTANTS – tweak here if spacing ever
      * feels cramped or too loose on different screens
      *---------------------------------------------*/
-    const yGap = 74;             // Gap between Program → Module → Topic → first personas row (Figma)
+    const CHIP_HEIGHT = 44;      // 28 px font + 8 px padding above + below
+    const whiteGap = 74;         // Visible empty space between chip borders (Figma)
 
     // -------------------------------------------------------------
     // Node sizing
@@ -134,7 +135,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         selectable: true,
       });
 
-      let moduleY = programY + yGap;
+      let moduleY = programY + CHIP_HEIGHT + whiteGap;
       const totalModuleWidth = program.modules.length * (baseNodeWidth + 50) - 50;
       let moduleStartX = -(totalModuleWidth / 2) + (baseNodeWidth / 2);
 
@@ -153,7 +154,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         e.push({ id: `${program.id}-${mod.id}`, source: program.id, target: mod.id, type: 'straight' });
 
         if (isModuleSelected) {
-          let dayY = moduleY + yGap;
+          let dayY = moduleY + CHIP_HEIGHT + whiteGap;
           const totalDayWidth = mod.days.length * (baseNodeWidth + 40) - 40;
           let dayStartX = moduleStartX + modIdx * (baseNodeWidth + 50) -(totalDayWidth/2) + (baseNodeWidth/2);
 
@@ -226,7 +227,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
 
               // -----  Now create React-Flow nodes row by row  -----
               const chipHeight = 44; // 28 px font + 8 px padding top + bottom
-              let personaY = dayY + yGap; // Position of first row.
+              let personaY = dayY + CHIP_HEIGHT + whiteGap; // Position of first row.
 
               rows.forEach((rowObj) => {
                 const { chips, width: rowW } = rowObj;
