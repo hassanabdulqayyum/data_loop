@@ -884,3 +884,6 @@
 
 857. apps/frontend/tests/viewport.test.js
    - Added three unit-tests for `clampZoom`: leaves zoom unchanged inside range, bumps up when too low, caps when too high.
+
+858. apps/frontend/src/components/HierarchyGraph.jsx
+   - Introduced `colGap` 60 px and `rowGap` 160 px constants; increased `baseNodeWidth` to 220 and adjusted grid-centering maths so persona nodes are evenly spaced and no longer crowd each other.

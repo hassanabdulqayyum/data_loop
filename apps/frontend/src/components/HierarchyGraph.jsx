@@ -75,8 +75,12 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
   const { nodes, edges } = useMemo(() => {
     const n = [];
     const e = [];
-    const yGap = 180; // Increased vertical gap for larger nodes
-    const baseNodeWidth = 200; // Estimate, actual width depends on label
+    /*-----------------------------------------------
+     * LAYOUT CONSTANTS – tweak here if spacing ever
+     * feels cramped or too loose on different screens
+     *---------------------------------------------*/
+    const yGap = 180;            // Vertical gap between hierarchy levels
+    const baseNodeWidth = 220;   // Rough width of a node box incl. padding
 
     let programY = 50;
 
@@ -133,22 +137,23 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
               // personas.  The rule is simple: **max 6 personas per row**.
               // Extra personas automatically wrap onto new rows.
 
-              const maxPerRow = 6;
-              const personaRowGap = 140; // Vertical gap between persona rows
+              const maxPerRow = 6;         // Wrap to next row after N personas
+              const colGap = 60;           // Horizontal gap inside persona grid
+              const rowGap = 160;          // Vertical gap between persona rows
 
-              // How many *columns* will the *widest* row have?  (Never more
-              // than `maxPerRow`.)  We use this width to centre the whole
-              // grid under the Day node so even when the last row is shorter
-              // the left/right edges still line up nicely.
+              // How many *columns* will the *widest* row have? (Never more
+              // than `maxPerRow`.)  We use this width to centre the grid so
+              // even when the last row is shorter the grid as a whole still
+              // sits nicely under the Day node.
               const gridCols = Math.min(maxPerRow, day.personas.length);
-              const gridWidth = gridCols * (baseNodeWidth + 20) - 20;
+              const gridWidth = gridCols * (baseNodeWidth + colGap) - colGap;
 
               // Compute the X coordinate of the *first* box in the grid so
               // that the Day node sits perfectly in the middle.
               let personaGridStartX =
                 dayStartX +
                 dayIdx * (baseNodeWidth + 40) -
-                gridWidth / 2 +
+                gridWidth / -2 +
                 baseNodeWidth / 2;
 
               let personaY = dayY + yGap; // Y coordinate of the first row
@@ -157,8 +162,8 @@ function HierarchyGraph({ tree, selectedIds, onSelect }) {
                 const row = Math.floor(perIdx / maxPerRow);
                 const col = perIdx % maxPerRow;
 
-                const x = personaGridStartX + col * (baseNodeWidth + 20);
-                const y = personaY + row * personaRowGap;
+                const x = personaGridStartX + col * (baseNodeWidth + colGap);
+                const y = personaY + row * rowGap;
 
                 const isPersonaSelected = selectedIds?.personaId === per.id;
 
