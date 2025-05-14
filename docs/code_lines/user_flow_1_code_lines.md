@@ -974,3 +974,6 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885.7 apps/frontend/src/components/HierarchyGraph.jsx
    - Refined border logic: `effectiveBorderWidth` calculated for Module and Day nodes based on `isTrulySelected` vs `isAncestor` state (0px for ancestor, 3px for selected, 1px otherwise). This ensures positioning X-offset matches the border rendered by CustomNode, fixing all slants.
+
+885.8 apps/frontend/src/components/HierarchyGraph.jsx
+   - Removed tilt diagnostic `useEffect` hook and associated comments now that alignment is fixed.
