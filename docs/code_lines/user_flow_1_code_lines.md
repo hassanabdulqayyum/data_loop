@@ -899,3 +899,6 @@
 
 862. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
    - `anchorRootToTopCenter` now accepts `nodeWidth`; HierarchyGraph passes actual Program node width (fallback 120) to ensure true centring. Updated tests.
+
+863. apps/frontend/src/lib/viewport.js
+   - anchorRootToTopCenter now computes node centre in screen coords and sets desiredX to wrapper midpoint, fixing right-shift when node width was underestimated.
