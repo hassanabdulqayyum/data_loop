@@ -274,7 +274,12 @@ Components & Pages
 3. **CanvasView**
    * Header: breadcrumb path + **"Change script"** control (allows opt-out from Smart-Resume).
    * React-Flow canvas: gold path nodes render Markdown text & badge `vN`.
-   * **Right-Side Panel (RSP)** — four states:
+     * **Key Principle: Border-Aware Alignment:** For both the Script View (linear stack of turns) and the Node Inspector/Version Timeline View (alternating cards on a central spine), ensure all elements maintain perfect vertical alignment despite dynamic border changes (e.g., when selected or in a draft state). This involves:
+       1. Determining the element's current state (selected, editing, ancestor, default).
+       2. Calculating an `effectiveBorderWidth` that precisely matches what CSS will render for that state (e.g., 0px for an ancestor with no border, 3px for a selected item's thick outline, 1px for a default thin border).
+       3. Adjusting the element's horizontal positioning (e.g., its `x` offset, `marginLeft`, or internal content width if it's an alternating card) by this `effectiveBorderWidth`. This keeps the *visual center* of the element (or its relevant edge for alternating layouts) consistently aligned to the intended spine, preventing jitter or perceived misalignment as borders change thickness.
+   * **Right-Side Pan
+   el (RSP)** — four states:
      a. *Selector* – shows prompts + "Load script" button.  
      b. *Selected-node context* – single-click view with actions.  
      c. *Node inspector / version timeline* – double-click view; shows parent turn + alternating timeline cards.  
@@ -337,19 +342,4 @@ Rollback plan: stop the workstation's Compose stack and point env-vars back to t
 1. `git checkout -b feature/flow1-dataset-editing`  
 2. Implement **2.1** (schema + seed); push PR #1.  
 3. While PR #1 awaits review, stub API endpoints using in-memory arrays to unblock front-end.  
-4. Iterate through milestones, merging early & often behind `FEATURE_FLOW1`.  
-5. When Definition of Done is satisfied, remove the flag and deploy to production.
-
-### TODO – Import Completion Event (Redis)
-
-Create a `script.import.completed` entry in the existing Redis Streams broker.  Fields:
-`job_id, program_id, module_seq, day_seq, persona_id, importer, ts`.
-This operational event lives outside Neo4j, enabling downstream workers to
-observe import activity without adding "noise" nodes to the graph.  Implementation
-is scheduled for Milestone **M2** alongside the REST CRUD endpoints.
-
-> **Clarification (2025-05-13)**  
-> The Figma design files for Flow-1 are already **finalised** and deliberately lightweight because this is an internal-only editor. We will embed the finished visuals **page-by-page as each feature is implemented**, rather than postponing all styling to a separate end-game pass. This keeps the feedback loop tight and prevents a large, risky "polish" merge later.
-
-> **Clarification (2025-05-13)**  
-> The Figma design files for Flow-1 are already **finalised** and deliberately lightweight because this is an internal-only editor. We will embed the finished visuals **page-by-page as each feature is implemented**, rather than postponing all styling to a separate end-game pass. This keeps the feedback loop tight and prevents a large, risky "polish" merge later.
+4. Iterate through milestones, merging early & often behind `
