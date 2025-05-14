@@ -9,7 +9,7 @@ Props:
 
 The graph attempts a basic auto-layout logic for centering and distributing nodes.
 */
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useLayoutEffect } from 'react';
 import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitialized } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { computeViewportForRoot } from '../lib/viewport.js';
@@ -252,7 +252,10 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
   const reactFlowInstance = useReactFlow();
   const nodesInitialised = useNodesInitialized();
 
-  useEffect(() => {
+  // useLayoutEffect fires **before** the browser paints the updated DOM, so
+  // any viewport tweaks we make here are applied invisibly—removing the last
+  // flicker some users noticed.
+  useLayoutEffect(() => {
     if (!nodesInitialised || nodes.length === 0) return;
 
     // 1. Run the auto-fit calculation *instantly* (duration 0) so the user does
