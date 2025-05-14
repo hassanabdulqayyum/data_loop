@@ -14,6 +14,7 @@ import ReactFlow, { Background, Handle, Position, useReactFlow, useNodesInitiali
 import 'reactflow/dist/style.css';
 import { computeViewportForRoot } from '../lib/viewport.js';
 import { packIntoRows } from '../lib/layout.js';
+import { measureChipWidth } from '../lib/textMeasurer.js';
 
 /*
  * All node labels now mirror the Figma spec: 36 px font-size with a ‑5 % letter
@@ -133,24 +134,18 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
     // ---------------------------------------------------------------------
     const baseNodeWidth = REF_NODE_WIDTH;
 
-    const measureCtx = (() => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.font = `${commonTextStyle.fontWeight} ${commonTextStyle.fontSize} ${commonTextStyle.fontFamily}`;
-      return ctx;
-    })();
-
     let programY = 50; // Anchor Program tier 50 px from top in Flow co-ords.
 
     tree.forEach((program) => {
       /* --------------------------------------------------------------
        * 1. PROGRAM (root) – always a single chip centred at x=0
        * ------------------------------------------------------------*/
+      const progW = measureChipWidth(program.id);
       n.push({
         id: program.id,
         type: 'programNode',
         data: { label: program.id },
-        position: { x: 0, y: programY },
+        position: { x: -progW / 2, y: programY },
         selectable: true,
       });
 
@@ -175,7 +170,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
 
       const measuredModules = filteredModules.map((mod) => ({
         id: mod.id,
-        width: measureCtx.measureText(mod.id).width + 16, // 8-px padding each side.
+        width: measureChipWidth(mod.id),
         ref: mod,
       }));
 
@@ -248,7 +243,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
 
       const measuredDays = filteredDays.map((d) => ({
         id: d.id,
-        width: measureCtx.measureText(d.id).width + 16,
+        width: measureChipWidth(d.id),
         ref: d,
       }));
 
@@ -298,7 +293,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
 
       const measuredPersonas = activeDay.personas.map((p) => ({
         id: p.id,
-        width: measureCtx.measureText(p.id).width + 16,
+        width: measureChipWidth(p.id),
       }));
 
       const personaRows = packIntoRows(measuredPersonas, CHIP_GAP, availableWidth);

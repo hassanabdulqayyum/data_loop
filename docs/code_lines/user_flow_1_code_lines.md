@@ -936,3 +936,10 @@ Replaced bespoke X/Y maths with a call to `packIntoRows`.  All tiers (Module, Da
 • wrap opportunistically when the row would overflow the graph width,
 • centre each row by subtracting `rowWidth / 2` from the graph midpoint.
 Constants `CHIP_GAP` = 21 px and `ROW_GAP` = 33 px are now single-source of truth per design spec.  Persona placement no longer offsets under the parent Topic – instead it too aligns to the canvas midpoint keeping the whole tree visually balanced.
+
+### 102-C  apps/frontend/src/lib/textMeasurer.js  – NEW (lines 1-90)
+Added hidden-span based `measureChipWidth` helper that returns exact rendered width, eliminating 5 % error from canvas measurement.
+
+### 101-D  apps/frontend/src/components/HierarchyGraph.jsx  – PATCH
+• Program chip now placed at `x = -width/2` so its centre is on spine.
+• All width calculations swapped to `measureChipWidth`, ensuring Module/Topic single-chip rows sit exactly under Program and multi-chip rows straddle the spine evenly.
