@@ -251,10 +251,26 @@ function LoadView() {
    * ---------------------------------------------------------------- */
   return (
     <>
-      <TopNavBar 
+      <TopNavBar
         selectedModuleNode={selectedModuleNode}
         selectedTopicNode={selectedTopicNode}
         selectedPersonaNode={selectedPersonaNode}
+        /* Clicking module crumb resets deeper selections so user jumps back */
+        onModuleClick={() => {
+          if (!selectedModuleId) return; // no module selected yet
+          setSelectedTopicId(null);
+          setSelectedPersonaId(null);
+        }}
+        /* Clicking topic crumb clears persona selection */
+        onTopicClick={() => {
+          if (!selectedTopicId) return;
+          setSelectedPersonaId(null);
+        }}
+        onPersonaClick={() => {
+          /* At the moment clicking the persona breadcrumb does nothing extra,
+             but we include the handler so future tasks can hook in analytics.
+          */
+        }}
       />
       <div style={{ display: 'flex', height: '100vh', paddingTop: '72px', boxSizing: 'border-box' }}>
         {/* Left column – the hierarchy */}

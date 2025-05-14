@@ -64,7 +64,7 @@
   font-weight: bold;
   font-size: 36px; /* As per new requirement */
   letter-spacing: -0.05em; /* As per new requirement, -5% = -0.05em */
-  cursor: default; /* Default cursor, can be changed to pointer if parts become clickable */
+  cursor: pointer; /* Pointer because breadcrumb parts are now clickable */
   transition: color 0.2s ease-in-out; /* Smooth color transition for hover */
   padding: 0 2px; /* Minimal padding to ensure letter spacing doesn't clip edges */
 }

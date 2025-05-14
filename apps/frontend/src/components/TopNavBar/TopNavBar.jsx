@@ -15,6 +15,9 @@
  *    (e.g., { id: 'topic1', name: 'Topic 1: Intro' }). Null if no topic selected.
  *  - selectedPersonaNode (object|null): The currently selected persona node
  *    (e.g., { id: 'persona1', name: 'Persona 1 - Focus' }). Null if no persona selected.
+ *  - onModuleClick (function): Callback when the module breadcrumb is clicked.
+ *  - onTopicClick  (function): Callback when the topic breadcrumb is clicked.
+ *  - onPersonaClick (function): Callback when the persona breadcrumb is clicked (optional).
  *
  * The breadcrumb adapts based on the deepest selected item.
  * If no module is selected, a default title "Data Loop" is shown.
@@ -25,7 +28,14 @@ import SearchIcon from '../Icons/SearchIcon.jsx';
 import UserIcon from '../Icons/UserIcon.jsx';
 import styles from './TopNavBar.module.css';
 
-function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode }) {
+function TopNavBar({
+  selectedModuleNode,
+  selectedTopicNode,
+  selectedPersonaNode,
+  onModuleClick = () => {},
+  onTopicClick = () => {},
+  onPersonaClick = () => {},
+}) {
   /**
    * Generates an array of JSX elements for the breadcrumb, allowing individual styling.
    */
@@ -48,6 +58,8 @@ function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode 
     elements.push(
       <span
         key="module"
+        role="button"
+        onClick={onModuleClick}
         className={`${segmentBaseClass} ${isModuleLast ? styles.selected : styles.nonSelected}`}
       >
         {moduleName}
@@ -66,6 +78,8 @@ function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode 
       elements.push(
         <span
           key="topic"
+          role="button"
+          onClick={onTopicClick}
           className={`${segmentBaseClass} ${isTopicLast ? styles.selected : styles.nonSelected}`}
         >
           {topicName}
@@ -84,6 +98,8 @@ function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode 
         elements.push(
           <span
             key="persona"
+            role="button"
+            onClick={onPersonaClick}
             className={`${segmentBaseClass} ${styles.selected}`}
           >
             {personaName}
@@ -104,7 +120,11 @@ function TopNavBar({ selectedModuleNode, selectedTopicNode, selectedPersonaNode 
         {/* Changed from a single span to a div container for multiple breadcrumb elements */}
         <div className={styles.breadcrumbContainer}>{renderBreadcrumbElements()}</div>
       </div>
+      {/* We move the breadcrumbs into the right section so the entire trail aligns right per Figma. */}
       <div className={`${styles.navSection} ${styles.navRight}`}>
+        <div className={styles.breadcrumbContainer} style={{ marginRight: '24px' }}>
+          {renderBreadcrumbElements()}
+        </div>
         {/* Avatar circle icon – clicking will later show a drop-down menu. */}
         <UserIcon size={30} />
       </div>
