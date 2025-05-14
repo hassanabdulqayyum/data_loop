@@ -797,7 +797,7 @@
    - Added "CORS hardening – Status: COMPLETE ✅" subsection under 2.3 API-Server.
 
 97. apps/frontend/index.html
-   - line 5: title changed to "Data Loop"; global letter-spacing -0.05em added to body style for Figma accuracy.
+   - Added `margin:0; padding:0;` to `html, body` rule inside inline <style> to eliminate residual white gutters around the React root.
 
 98. apps/frontend/src/pages/LoginView.jsx
    - Multiple style adjustments: heading fontSize 48, button colour #131413, button text size 32 & weight 600, placeholder + forgot-password text colour #373639, input border #CCCCCC, font sizes 26, scoped style block sets placeholder colour & letter-spacing.
@@ -847,28 +847,4 @@
    - .navBar rule: horizontal padding increased from 24 px to 40 px so breadcrumb no longer hugs the viewport after icon relocation.
 
 111. apps/frontend/src/components/HierarchyGraph.jsx
-    - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing` ‑0.05em.
-    - lines 28-35: default background now `#F3F3F3` (light grey).
-    - lines 33-38: selected border now **3px solid #6C80DA**.
-    - lines 41-45: persona nodes forced back to white.
-    - line 95: `defaultEdgeOptions.style.strokeWidth` **2.5 → 3**.
-    - line 100: outer `<div>` now adds `padding: 24px` for gutter margin.
-
-112. apps/frontend/src/pages/LoadView.jsx
-    - line 180: updated main wrapper paddingTop **72px** matching taller nav.
-    - line 315: placeholder text colour `#555` → `#9CA3AF` (lighter grey per design).
-
-### 82. apps/api-server/src/routes/hierarchy.js – Int coercion fix (lines ~21-41 replaced)
-- Added `asPlain` helper that converts Neo4j integer objects into plain JS numbers/strings and used it to coerce `programId|Seq`, `moduleId|Seq`, `dayId|Seq`, and `personaId|Seq`.  Fixes React error #31 and empty /hierarchy response.
-
-### 113. apps/frontend/src/components/TopNavBar/TopNavBar.jsx
-- Breadcrumb container moved to left navSection (after SearchIcon); removed duplicates; updated comments.
-
-### 114. apps/frontend/src/components/TopNavBar/TopNavBar.module.css
-- Removed obsolete .navCenter rule as breadcrumb no longer centered.
-
-117. apps/frontend/src/components/HierarchyGraph.jsx
-   - Wrapper div padding removed (lines ~120-128 replaced) so graph canvas fills full width/height; layman comment added explaining rationale.
-
-118. apps/frontend/src/pages/LoadView.jsx
-   - Left graph column padding property set to 0 (lines ~200-205 updated) to eliminate outer white gutter.
+    - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing`

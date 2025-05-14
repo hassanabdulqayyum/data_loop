@@ -18,7 +18,11 @@ You normally don't touch this file often; React manipulates the DOM.
     <!-- Apply Inter globally in a tiny inline style block so every element inherits it. -->
     <style>
       /* We keep this in index.html because the rest of the styles are inline React styles. */
-      body {
+      /* Reset default margins so the canvas touches the viewport edges and no
+         unintended white gutters remain. */
+      html, body {
+        margin: 0;
+        padding: 0;
         font-family: 'Inter', sans-serif;
         letter-spacing: -0.05em; /* Matches Figma spec: -5% letter spacing globally */
       }
