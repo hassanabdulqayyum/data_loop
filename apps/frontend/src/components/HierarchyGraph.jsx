@@ -401,9 +401,14 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
    * above ~0.4° is visible to the naked eye and signals a centring bug.
    */
   useEffect(() => {
-    // Skip in production builds or during SSR/Jest where `window` is absent.
-    if (process.env.NODE_ENV !== 'development' || typeof window === 'undefined') return;
-    if (!edges.length || !nodes.length) return;
+    // ------------------------------------------------------------------
+    // Skip in production builds or SSR
+    // ------------------------------------------------------------------
+    const isDev =
+      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV) ||
+      (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development');
+
+    if (!isDev || typeof window === 'undefined') return;
 
     // Build quick lookup { id → position } for constant-time fetches.
     const posMap = new Map(nodes.map((n) => [n.id, n.position]));
@@ -428,7 +433,11 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
       .filter(Boolean);
 
     /* eslint-disable no-console */
-    console.table(rows);
+    if (rows.length) {
+      console.groupCollapsed('%cEdge tilt diagnostics', 'color:#888');
+      console.table(rows);
+      console.groupEnd();
+    }
     /* eslint-enable no-console */
   }, [nodes, edges]);
 
