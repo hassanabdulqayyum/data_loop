@@ -1256,3 +1256,6 @@ const rspContent = (
 
 146. .github/workflows/ci.yml – PATCH
    - Replaced `npm ci` with `npm install` in three steps to avoid lock-file requirement errors on GitHub runners because the repository does not yet commit a `package-lock.json`.  This unblocks the failing backend, frontend, and lint jobs while keeping dependency caching intact.
+
+147. .github/workflows/ci.yml – PATCH
+   - Removed `cache: "npm"` and `cache: "pip"` parameters from all `actions/setup-node/python` steps because GitHub's built-in cache support requires a lock-file (`package-lock.json`, `pip-requirements.txt hash`, etc.).  The repository doesn't store lock-files yet, so the cache step aborted the job.  Disabling cache lets the workflow run successfully until lock-files are introduced.

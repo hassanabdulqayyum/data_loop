@@ -40,7 +40,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: "npm"
+          # cache disabled because repo currently has no package-lock.json
 
       - name: Install dependencies (apps/api-server)
         run: npm install --workspace=apps/api-server
@@ -60,7 +60,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: "npm"
+          # cache disabled because repo currently has no package-lock.json
 
       - name: Install dependencies (apps/frontend)
         run: npm install --workspace=apps/frontend
@@ -79,7 +79,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.9"
-          cache: "pip"
+          # cache disabled because repo currently has no package-lock.json
 
       - name: Install Python dependencies
         run: |
@@ -101,7 +101,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: "npm"
+          # cache disabled because repo currently has no package-lock.json
 
       - name: Install dependencies (all workspaces)
         run: npm install --workspaces --include-workspace-root
