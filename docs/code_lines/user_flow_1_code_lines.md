@@ -1288,3 +1288,22 @@ const rspContent = (
 
 150. apps/py-ai-service/requirements.txt – PATCH
    - Added missing dependencies used by the Python test-suite: `pydantic==2.11.4` and `PyYAML==6.0.2`.  This ensures `pytest` can import `pydantic` (used in import_google_docs) and `yaml` (used in test_event_contracts) during CI.
+
+166. apps/frontend/src/store/useScriptStore.js
+   - Added full layman-style docstring (lines 1-35) explaining what the zustand store holds and why.
+   - Declared `initialState` object and exported so tests can reset store easily (lines 60-69).
+   - Implemented `loadScript`, `startEdit`, `cancelEdit`, `saveEdit`, `autoResume`, and `reset` actions (lines 70-140) complete with verbose inline comments so future readers grasp intent quickly.
+   - Helper constant `SEVEN_DAYS_MS` clarifies magic number and aids test readability.
+
+167. apps/frontend/src/lib/api.js
+   - Added `getScript` helper (lines 49-58) that wraps apiFetch with JWT header.
+   - Added `patchTurn` helper (lines 60-71) that abstracts PATCH /turn/:id boiler-plate.
+
+168. apps/frontend/src/pages/ScriptView.jsx
+   - New route target component with placeholder banner; docstring at top summarises future work (lines 1-25).
+
+169. apps/frontend/src/App.jsx
+   - Replaced inline CanvasStub with imported `<ScriptView />` and associated route (lines 17-28).
+
+170. apps/frontend/tests/useScriptStore.test.js
+   - Jest tests covering store helpers (`loadScript`, editing flags, `autoResume`) and mocking network layer to keep suite fast (all lines).

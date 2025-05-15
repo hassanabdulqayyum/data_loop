@@ -16,15 +16,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import LoginView from './pages/LoginView.jsx';
 import LoadView from './pages/LoadView.jsx';
-
-// Temporary stub so the router resolves /canvas/:id until CanvasView is built.
-function CanvasStub() {
-  return (
-    <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
-      <h2>CanvasView coming soon…</h2>
-    </div>
-  );
-}
+import ScriptView from './pages/ScriptView.jsx';
 
 function App() {
   return (
@@ -32,7 +24,7 @@ function App() {
       {/* Public route – users land here first */}
       <Route path="/login" element={<LoginView />} />
       <Route path="/load" element={<LoadView />} />
-      <Route path="/canvas/:personaId" element={<CanvasStub />} />
+      <Route path="/canvas/:personaId" element={<ScriptView />} />
 
       {/* Fallback – any unknown path goes to /login for now. */}
       <Route path="*" element={<Navigate to="/login" replace />} />

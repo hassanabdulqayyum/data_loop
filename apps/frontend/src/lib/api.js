@@ -20,7 +20,8 @@ const data = await apiFetch('/hierarchy');
 */
 
 export async function apiFetch(path, options = {}) {
-  const BASE = import.meta.env.VITE_API_BASE_URL || '';
+  // Guard: `import.meta` is undefined in Jest (Node) so we fall back safely.
+  const BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '';
 
   // Strip trailing slash on base and ensure path starts with single leading slash
   const normalizedBase = BASE.replace(/\/+$/, '');
@@ -44,4 +45,41 @@ export async function apiFetch(path, options = {}) {
   }
 
   return data;
+}
+
+/**
+ * getScript – Fetch the *current gold-path* for a given Persona.
+ *
+ * Plain-English behaviour:
+ * • Makes a GET call to `/script/:personaId` and returns the JSON body.
+ * • Requires a JWT so the request gets authorised by the backend.
+ *
+ * Example:
+ * ```js
+ * const { data } = await getScript('persona-123', token);
+ * ```
+ */
+export async function getScript(personaId, token) {
+  if (!personaId || !token) throw new Error('personaId and token are required');
+  return apiFetch(`/script/${encodeURIComponent(personaId)}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+/**
+ * patchTurn – Save a *new* version under an existing Turn.
+ *
+ * • parentId – the Turn we are editing (becomes the parent of the new Turn).
+ * • body – { text: 'new text', commit_message?: 'optional summary' }
+ * • token – JWT string.
+ *
+ * Returns whatever the backend echoes (usually new Turn id & meta-data).
+ */
+export async function patchTurn(parentId, body, token) {
+  if (!parentId || !body || !token) throw new Error('parentId, body and token are required');
+  return apiFetch(`/turn/${encodeURIComponent(parentId)}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
 } 
