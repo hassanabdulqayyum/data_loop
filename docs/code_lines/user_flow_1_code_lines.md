@@ -1285,3 +1285,6 @@ const rspContent = (
 149. apps/api-server/libs/node-shared/db.js – PATCH
    - Replaced one-shot `initNeo4j` connection check with a **retry-aware** implementation that tries up to 10 times with 1-second delays.
    - In `NODE_ENV==='test'` the helper no longer calls `process.exit(1)` on failure; it logs the error and returns so Jest can proceed.  Production builds still exit after all retries fail.  This prevents CI from aborting before the Neo4j Docker container is fully ready.
+
+150. apps/py-ai-service/requirements.txt – PATCH
+   - Added missing dependencies used by the Python test-suite: `pydantic==2.11.4` and `PyYAML==6.0.2`.  This ensures `pytest` can import `pydantic` (used in import_google_docs) and `yaml` (used in test_event_contracts) during CI.
