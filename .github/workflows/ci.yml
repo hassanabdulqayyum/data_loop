@@ -1,0 +1,110 @@
+# ----------------------------------------------------------------------------------
+# Continuous Integration for the Data Loop project – User Flow 1
+#
+# In plain, everyday language: this workflow runs **all automated tests** plus ESLint
+# every time someone pushes code or opens a Pull-Request against the `dev`, `prod`,
+# or any `feature/*` branch.  Four separate jobs run in parallel so the whole check
+# finishes quickly:
+#   1. backend-test   – installs Node 18 and executes the Jest suite for the API server
+#   2. frontend-test  – installs Node 18 and executes the Vitest suite for the React app
+#   3. python-test    – installs Python 3.9 and executes the PyTest suite for the AI worker
+#   4. lint           – runs ESLint across **all** workspaces to catch style errors
+#
+# After these jobs succeed you will see four ✅ marks on the GitHub Checks tab. If
+# any job fails, it shows a ❌ so the team knows the change must be fixed before
+# merging.  This protects the main branches from broken code and keeps confidence high.
+# ----------------------------------------------------------------------------------
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+      - prod
+      - "feature/**"
+  pull_request:
+    branches:
+      - dev
+      - prod
+
+jobs:
+  backend-test:
+    name: "Node – API server tests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node 18 and cache deps
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies (apps/api-server)
+        run: npm ci --workspace=apps/api-server
+
+      # Jest automatically discovers all *.test.js files, including turn_save.test.js
+      - name: Run Jest tests
+        run: npm run test --workspace=apps/api-server
+
+  frontend-test:
+    name: "Node – Front-end tests"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 18 and cache deps
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies (apps/frontend)
+        run: npm ci --workspace=apps/frontend
+
+      - name: Run Vitest
+        run: npm run test --workspace=apps/frontend
+
+  python-test:
+    name: "Python – PyTest suite"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.9 and cache deps
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/py-ai-service/requirements.txt
+          pip install pytest
+
+      - name: Run PyTest
+        run: pytest -q
+
+  lint:
+    name: "ESLint (all workspaces)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 18 and cache deps
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies (all workspaces)
+        run: npm ci --workspaces
+
+      - name: Run ESLint
+        run: npm run lint --workspaces 

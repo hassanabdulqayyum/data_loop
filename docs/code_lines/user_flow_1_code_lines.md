@@ -1241,3 +1241,15 @@ const rspContent = (
 
 143. apps/api-server/src/routes/script.js
     - Mapping section: depth now coerces to a native number using `.toNumber()` when the driver returns a Neo4j Integer, ensuring equality checks in Jest don't fail (one-liner change).
+
+144. docs/implementation_plan/user_flow_1_implementation_plan.md
+    - Marked item 2.3 "CI – back-end job" as IN PROGRESS 🛠️ to reflect current task focus.
+
+145. .github/workflows/ci.yml – NEW FILE
+   - Introduced full GitHub Actions workflow that runs in **four parallel jobs**:
+     • backend-test (Node 18 + Jest) – executes every API-server test, automatically including the new `turn_save.test.js`.
+     • frontend-test (Node 18 + Vitest) – runs the React unit-test suite for the front-end.
+     • python-test (Python 3.9 + PyTest) – covers the Python AI-worker and helper scripts.
+     • lint (Node 18 + ESLint) – enforces consistent code style across all workspaces.
+   - Top-of-file comments explain—in simple layman terms—how the workflow protects the `dev` and `prod` branches by blocking merges when any test fails.
+   - Branch filters watch `dev`, `prod`, and any `feature/**` branch so contributors get instant feedback during development.
