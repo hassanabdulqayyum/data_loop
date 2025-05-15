@@ -1348,3 +1348,5 @@ const rspContent = (
 
 1348. package.json (root) – added "engines":{"node":"20.x"} to pin Node version for Vercel build compatibility.
 1349. apps/frontend/package.json – same engines pin inserted.
+
+1350. apps/frontend/package.json – added optionalDependencies with @rollup/rollup-linux-x64-gnu "4.40.2" to work around npm optional-deps bug on Vercel.
