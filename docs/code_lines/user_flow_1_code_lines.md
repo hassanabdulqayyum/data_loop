@@ -1361,3 +1361,7 @@ const rspContent = (
    - PropTypes relaxed: `text` is no longer `isRequired`; detailed inline comment explains why (lines ~70-75).
    - Header docstring updated to mention empty-preview behaviour (lines ~10-15).
    - Added Jest test `renders safely when text is null` (tests/TurnNode.test.jsx lines ~15-30) verifying the component mounts without throwing and still renders the role badge.
+
+1355. docs/scripts/neo4j/005_remove_legacy_demo.cypher & apps/api-server/tests/remove_legacy_demo.test.js
+   - Added one-off maintenance Cypher that DETACH DELETEs obsolete `(Program {id:'ProgramDemo'})` and every connected node/edge.  The script is idempotent so running it twice is safe.
+   - New Jest test inserts a dummy ProgramDemo node, runs the script, then asserts the node no longer exists, ensuring CI alerts if the legacy branch ever sneaks back in.
