@@ -1041,7 +1041,7 @@ if (selectedPersonaId) {
 } else if (selectedTopicId) {
   // Topic selected, but no Persona: Show "Select a script to load..." and "Export" button
   helperText = "Select a script to load…";
-  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%', marginBottom: '20px' }}>{helperText}</p>);
+  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', marginBottom: '20px' }}>{helperText}</p>); // Removed maxWidth
   rspContentElements.push(
     <button
       key="export-button"
@@ -1056,7 +1056,7 @@ if (selectedPersonaId) {
 } else if (selectedModuleId) {
   // Module selected, but no Topic: Show "Select a topic..." and "Export" button
   helperText = "Select a topic…";
-  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%', marginBottom: '20px' }}>{helperText}</p>); 
+  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', marginBottom: '20px' }}>{helperText}</p>); // Removed maxWidth
   rspContentElements.push(
     <button
       key="export-button"
@@ -1071,7 +1071,7 @@ if (selectedPersonaId) {
 } else {
   // Nothing selected beyond Program, or only Program selected: Show "Select a module to begin..."
   helperText = "Select a module to begin…";
-  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%' }}>{helperText}</p>);
+  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center' }}>{helperText}</p>); // Removed maxWidth
 }
 
 const rspContent = (
