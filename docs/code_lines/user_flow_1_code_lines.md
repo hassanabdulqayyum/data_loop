@@ -1350,3 +1350,6 @@ const rspContent = (
 1349. apps/frontend/package.json – same engines pin inserted.
 
 1350. apps/frontend/package.json – added optionalDependencies with @rollup/rollup-linux-x64-gnu "4.40.2" to work around npm optional-deps bug on Vercel.
+
+1351. docs/scripts/neo4j/004_demo_catalog.cypher – appended block creating demo turns for Focus persona without APOC, using randomUUID and FOREACH wiring.
+1352. tests/test_focus_persona_turns.py – NEW test ensures Focus persona has script chain (root + ≥1 child).
