@@ -1259,3 +1259,8 @@ const rspContent = (
 
 147. .github/workflows/ci.yml – PATCH
    - Removed `cache: "npm"` and `cache: "pip"` parameters from all `actions/setup-node/python` steps because GitHub's built-in cache support requires a lock-file (`package-lock.json`, `pip-requirements.txt hash`, etc.).  The repository doesn't store lock-files yet, so the cache step aborted the job.  Disabling cache lets the workflow run successfully until lock-files are introduced.
+
+148. .github/workflows/ci.yml – PATCH
+   - Swapped `npm install --workspace=<dir>` for `npm install --prefix <dir>` (workspace flag needs a "workspaces" field in root package.json).
+   - Lint job now installs deps in both sub-packages and runs `npm run lint` in each, because monorepo root has no lint script.
+   - These tweaks fix the "No workspaces found" error during the front-end install step.
