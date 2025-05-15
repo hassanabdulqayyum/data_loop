@@ -288,36 +288,73 @@ function LoadView() {
     toast.success(`Export for persona ${selectedPersonaId} would start here.`);
   }
 
-  // Determine what message/content to show in the right-side panel (RSP)
   // based on what the user has selected in the hierarchy tree.
-  let rspContent = <p>Select a module to begin…</p>;
-  if (selectedModuleId && !selectedTopicId) {
-    rspContent = <p>Select a topic…</p>;
-  } else if (selectedTopicId && !selectedPersonaId) {
-    rspContent = <p>Select a script to load…</p>;
-  } else if (selectedPersonaId) {
-    rspContent = (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
-          <button
-            type="button"
-            onClick={handleLoad}
-            style={buttonStyle}
-          >
-            Load script
-          </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            style={buttonStyle}
-            disabled={!selectedPersonaId} // Disable if no persona is selected
-          >
-            Export
-          </button>
-        </div>
+  let rspContentElements = []; // Array to hold elements for RSP
+  let helperText = "";
+
+  if (selectedPersonaId) {
+    // Persona selected: Show "Load script" and "Export" buttons
+    // Helper text is not needed when buttons are present for this state.
+    rspContentElements.push(
+      <div key="buttons" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
+        <button
+          type="button"
+          onClick={handleLoad}
+          style={buttonStyle}
+        >
+          Load script
+        </button>
+        <button
+          type="button"
+          onClick={handleExport}
+          style={buttonStyle}
+          // Export button is always enabled when a Persona is selected to allow export
+        >
+          Export
+        </button>
       </div>
     );
+  } else if (selectedTopicId) {
+    // Topic selected, but no Persona: Show "Select a script to load..." and "Export" button
+    helperText = "Select a script to load…";
+    rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%', marginBottom: '20px' }}>{helperText}</p>);
+    rspContentElements.push(
+      <button
+        key="export-button"
+        type="button"
+        onClick={handleExport} // handleExport already checks for selectedPersonaId, but here we want to allow export attempt for a topic (backend might support it or show specific message)
+        style={buttonStyle}
+        disabled={!selectedTopicId} // Enable if a topic is selected, for consistency with design showing export at this stage
+      >
+        Export
+      </button>
+    );
+  } else if (selectedModuleId) {
+    // Module selected, but no Topic: Show "Select a topic..." and "Export" button
+    helperText = "Select a topic…";
+    rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%', marginBottom: '20px' }}>{helperText}</p>); 
+    rspContentElements.push(
+      <button
+        key="export-button"
+        type="button"
+        onClick={handleExport} // Allow export attempt for a module
+        style={buttonStyle}
+        disabled={!selectedModuleId} // Enable if a module is selected
+      >
+        Export
+      </button>
+    );
+  } else {
+    // Nothing selected beyond Program, or only Program selected: Show "Select a module to begin..."
+    helperText = "Select a module to begin…";
+    rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%' }}>{helperText}</p>);
   }
+
+  const rspContent = (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
+      {rspContentElements}
+    </div>
+  );
 
   /* ------------------------------------------------------------------
    * Two-column flex layout: tree on the left, placeholder / action on right.
@@ -402,91 +439,8 @@ function LoadView() {
             justifyContent: 'center'
           }}
         >
-          {/* ------------------------------------------------------------------
-               Floating "Export" button – visible once the user has drilled
-               at least one level into the catalogue (i.e. a Module is
-               picked).  It stays disabled until a *Persona* is also picked
-               because the backend export endpoint expects that id.
-               ---------------------------------------------------------------- */}
-          {selectedModuleId && (
-            <button
-              type="button"
-              /* When we eventually wire the endpoint this will call handleExport */
-              disabled={!selectedPersonaId}
-              style={{
-                position: 'absolute',
-                right: '24px',
-                top: '24px',
-                padding: '0.4rem 1rem',
-                fontSize: 18,
-                fontWeight: 500,
-                letterSpacing: '-0.05em',
-                background: '#ffffff',
-                color: '#000000',
-                border: '2px solid #000000',
-                borderRadius: 6,
-                cursor: !selectedPersonaId ? 'not-allowed' : 'pointer',
-                opacity: !selectedPersonaId ? 0.4 : 1
-              }}
-              onClick={() => {
-                /* Future-proof stub – real logic lives in CanvasView per spec */
-                toast.success('Export feature coming soon!');
-              }}
-            >
-              Export
-            </button>
-          )}
-
-          {/* ------------------------------------------------------------------
-               Contextual helper inside RSP – the wording changes depending on
-               how far the user has navigated through the hierarchy.  Once a
-               Persona is chosen the helper swaps to a prominent **Load script**
-               CTA mirroring the Figma.
-               ---------------------------------------------------------------- */}
-          {(() => {
-            /* First, if a Persona is picked we render the CTA button. */
-            if (selectedPersonaId) {
-              return (
-                <button
-                  type="button"
-                  onClick={handleLoad}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    fontSize: 24,
-                    fontWeight: 500,
-                    letterSpacing: '-0.05em',
-                    background: '#ffffff',
-                    color: '#000000',
-                    border: '2px solid #000000',
-                    borderRadius: 6,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Load script
-                </button>
-              );
-            }
-
-            /* Next levels: return the contextual guidance sentence. */
-            let helperText = 'Select a script to load…';
-            if (!selectedModuleId) helperText = 'Select a module to begin…';
-            else if (!selectedTopicId) helperText = 'Select a topic…';
-
-            return (
-              <p
-                style={{
-                  fontSize: 28,
-                  fontWeight: 500,
-                  letterSpacing: '-0.05em',
-                  color: '#000000',
-                  textAlign: 'center',
-                  maxWidth: '80%'
-                }}
-              >
-                {helperText}
-              </p>
-            );
-          })()}
+          {/* Render the new rspContent which handles all states */}
+          {rspContent}
         </div>
       </div>
     </>

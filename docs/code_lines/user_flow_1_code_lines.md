@@ -984,7 +984,7 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 // ... existing code ...
 
 // --- 2.6.2 LoadView --- 
-// apps/frontend/src/pages/LoadView.jsx, lines 43-59 (new buttonStyle object for RSP buttons)
+// apps/frontend/src/pages/LoadView.jsx, lines 43-59 (buttonStyle object for RSP buttons - no change from previous)
 /* Style for the Load and Export buttons in the RSP */
 const buttonStyle = {
   fontFamily: '"Inter", sans-serif', // Ensure Inter is in quotes
@@ -1000,7 +1000,7 @@ const buttonStyle = {
   textDecoration: 'none',
 };
 
-// apps/frontend/src/pages/LoadView.jsx, lines 262-270 (new handleExport function stub)
+// apps/frontend/src/pages/LoadView.jsx, lines 262-270 (handleExport function stub - no change from previous)
 /* When the user presses "Export" (stub for now). */
 function handleExport() {
   if (!selectedPersonaId) {
@@ -1010,50 +1010,85 @@ function handleExport() {
   toast.success(`Export for persona ${selectedPersonaId} would start here.`);
 }
 
-// apps/frontend/src/pages/LoadView.jsx, lines 272-295 (updated rspContent to include styled and centered Load/Export buttons)
-let rspContent = <p>Select a module to begin…</p>;
-if (selectedModuleId && !selectedTopicId) {
-  rspContent = <p>Select a topic…</p>;
-} else if (selectedTopicId && !selectedPersonaId) {
-  rspContent = <p>Select a script to load…</p>;
-} else if (selectedPersonaId) {
-  rspContent = (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
-        <button
-          type="button"
-          onClick={handleLoad}
-          style={buttonStyle}
-        >
-          Load script
-        </button>
-        <button
-          type="button"
-          onClick={handleExport}
-          style={buttonStyle}
-          disabled={!selectedPersonaId} // Disable if no persona is selected
-        >
-          Export
-        </button>
-      </div>
+// apps/frontend/src/pages/LoadView.jsx, lines 273-319 (REVISED rspContent logic for contextual buttons and text)
+// Determine what message/content to show in the right-side panel (RSP)
+// based on what the user has selected in the hierarchy tree.
+let rspContentElements = []; // Array to hold elements for RSP
+let helperText = "";
+
+if (selectedPersonaId) {
+  // Persona selected: Show "Load script" and "Export" buttons
+  // Helper text is not needed when buttons are present for this state.
+  rspContentElements.push(
+    <div key="buttons" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
+      <button
+        type="button"
+        onClick={handleLoad}
+        style={buttonStyle}
+      >
+        Load script
+      </button>
+      <button
+        type="button"
+        onClick={handleExport}
+        style={buttonStyle}
+        // Export button is always enabled when a Persona is selected to allow export
+      >
+        Export
+      </button>
     </div>
   );
+} else if (selectedTopicId) {
+  // Topic selected, but no Persona: Show "Select a script to load..." and "Export" button
+  helperText = "Select a script to load…";
+  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%', marginBottom: '20px' }}>{helperText}</p>);
+  rspContentElements.push(
+    <button
+      key="export-button"
+      type="button"
+      onClick={handleExport} 
+      style={buttonStyle}
+      disabled={!selectedTopicId} 
+    >
+      Export
+    </button>
+  );
+} else if (selectedModuleId) {
+  // Module selected, but no Topic: Show "Select a topic..." and "Export" button
+  helperText = "Select a topic…";
+  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%', marginBottom: '20px' }}>{helperText}</p>); 
+  rspContentElements.push(
+    <button
+      key="export-button"
+      type="button"
+      onClick={handleExport} 
+      style={buttonStyle}
+      disabled={!selectedModuleId} 
+    >
+      Export
+    </button>
+  );
+} else {
+  // Nothing selected beyond Program, or only Program selected: Show "Select a module to begin..."
+  helperText = "Select a module to begin…";
+  rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', maxWidth: '80%' }}>{helperText}</p>);
 }
 
-// apps/frontend/src/pages/LoadView.jsx, lines 307-315 (updated RSP container div to use flex for centering)
-{/* Right-Side Panel (RSP) */}
-<div style={{
-  width: '33%', // RSP takes 1/3 of the space
-  padding: '20px',
-  borderLeft: '1px solid #E0E0E0', // A light separator
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center', // Center content horizontally in RSP
-  justifyContent: 'center', // Center content vertically in RSP
-}}>
-  {rspContent}
-</div>
+const rspContent = (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
+    {rspContentElements}
+  </div>
+);
 
 
-// --- 2.6.3 CanvasView --- 
+// apps/frontend/src/pages/LoadView.jsx, lines 380-405 (REMOVED - Floating export button)
+// [This section was removed as the floating export button is no longer used]
+
+// apps/frontend/src/pages/LoadView.jsx, lines 407-449 (REMOVED - Old IIFE for RSP content)
+// [This section was removed as rspContent is now generated by the new logic above]
+
+// apps/frontend/src/pages/LoadView.jsx, line 451 (UPDATED - RSP now renders the new rspContent variable)
+{/* Render the new rspContent which handles all states */}
+{rspContent}
+
 // ... existing code ...
