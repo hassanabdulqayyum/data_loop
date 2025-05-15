@@ -888,7 +888,7 @@
 858. apps/frontend/src/components/HierarchyGraph.jsx
    - Introduced `colGap` 60 px and `rowGap` 160 px constants; increased `baseNodeWidth` to 220 and adjusted grid-centering maths so persona nodes are evenly spaced and no longer crowd each other.
 
-859. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
+859. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
    - Added `anchorRootToCorner` helper to pin Program node 80×80 px from the top-left, ensuring it never drifts off-screen when wide persona grids expand; updated `HierarchyGraph` to use it and reverted grid centring sign bug.
 
 860. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
@@ -898,7 +898,7 @@
    - Guarded call to `reactFlowInstance.getWrapper()` with typeof check to avoid TypeError in production build; falls back to `window.innerWidth` when method not present.
 
 862. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
-   - Added `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.
+   - Introduced `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.
 
 863. apps/frontend/src/lib/viewport.js
    - anchorRootToTopCenter now computes node centre in screen coords and sets desiredX to wrapper midpoint, fixing right-shift when node width was underestimated.
@@ -1151,7 +1151,7 @@ const rspContent = (
 120. (Old number for reference: 858) apps/frontend/src/components/HierarchyGraph.jsx
    - Introduced `colGap` 60 px and `rowGap` 160 px constants; increased `baseNodeWidth` to 220 and adjusted grid-centering maths so persona nodes are evenly spaced and no longer crowd each other.
 
-121. (Old number for reference: 859) apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
+121. (Old number for reference: 859) apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
    - Added `anchorRootToCorner` helper to pin Program node 80×80 px from the top-left, ensuring it never drifts off-screen when wide persona grids expand; updated `HierarchyGraph` to use it and reverted grid centring sign bug.
 
 122. (Old number for reference: 860) apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
@@ -1353,3 +1353,5 @@ const rspContent = (
 
 1351. docs/scripts/neo4j/004_demo_catalog.cypher – appended block creating demo turns for Focus persona without APOC, using randomUUID and FOREACH wiring.
 1352. tests/test_focus_persona_turns.py – NEW test ensures Focus persona has script chain (root + ≥1 child).
+
+1353. docs/implementation_plan/user_flow_1_implementation_plan.md – inserted subsection **2.1a Per-Persona Script Seed Files** describing one-Cypher-per-script model and bulk-load command.

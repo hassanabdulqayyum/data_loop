@@ -64,6 +64,23 @@ The sequence above gives editors four visible turns (system, user, assistant) be
 > • **Seed Data** – `docs/scripts/neo4j/002_seed_data.cypher` (lines 1-14) inserts the minimal catalog and gold-path DAG (`root → system → user → assistant`) with `accepted:true` flags set per spec.  
 > • **Automated Tests** – `tests/test_schema.py` and `tests/test_seed.py` load the DDL/seed scripts in isolated sessions and assert that each constraint, index, node and relationship exists, guaranteeing CI regression coverage.
 
+### 2.1a  Per-Persona Script Seed Files (new)
+
+To keep the catalogue seed minimal yet support *thousands* of branch scripts, we introduce **one Cypher file per Persona script**:
+
+• Location: `docs/scripts/neo4j/scripts/` – filename pattern `script_<personaId>.cypher`.
+• Responsibility: assumes the Persona node already exists (created by the catalogue seed) and MERGE-s a `ROOTS` turn plus the gold-path chain (all `accepted:true`).
+• Idempotent: first checks for an existing `(:Persona)-[:ROOTS]->(:Turn)` link and aborts if present so running the whole folder twice is safe.
+• Bulk load command example:
+```bash
+# After catalogue_init.cypher is applied
+for f in docs/scripts/neo4j/scripts/script_*.cypher; do
+  cypher-shell -u $NEO4J_USER -p $NEO4J_PASSWORD -f "$f"
+done
+```
+
+This structure lets us add or update a single branch by committing its dedicated file without touching the global catalogue.
+
 ### 2.2  Import CLI – `scripts/import_google_docs.py`
 
 > **Status: COMPLETE ✅**  
