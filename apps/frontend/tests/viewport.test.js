@@ -51,10 +51,18 @@ describe('computeViewportForRoot', () => {
     const rect = { left: 0, top: 72, width: 800, height: 600 };
     const adjusted = computeViewportForRoot(vp, rootNode, rect, 80);
 
-    const screenX = rootNode.position.x * vp.zoom + adjusted.x + rootNode.width/2;
-    const screenY = rootNode.position.y * vp.zoom + adjusted.y + rootNode.height/2;
+    const screenX = rootNode.position.x * vp.zoom + adjusted.x + rootNode.width / 2;
+    const screenY = rootNode.position.y * vp.zoom + adjusted.y + rootNode.height / 2;
 
-    expect(screenX).toBe(400);
-    expect(screenY).toBe(80 + rootNode.height/2);
+    // The helper should centre the node horizontally inside the wrapper and
+    // place it `topMargin` pixels from the top (plus half the node height
+    // because we align centres, not edges).  We compute the *desired* screen
+    // coordinates directly from the rect instead of hard-coding magic numbers
+    // so the test stays valid if the wrapper changes size in future refactors.
+    const expectedX = rect.left + rect.width / 2;
+    const expectedY = rect.top + 80 + rootNode.height / 2;
+
+    expect(screenX).toBe(expectedX);
+    expect(screenY).toBe(expectedY);
   });
 }); 

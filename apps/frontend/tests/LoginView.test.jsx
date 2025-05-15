@@ -6,9 +6,31 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import LoginView from '../src/pages/LoginView.jsx';
+import { MemoryRouter } from 'react-router-dom';
+import { jest } from '@jest/globals';
+
+// Stub network calls so the component never hits the actual API during unit
+// tests.  We restore the original `fetch` implementation after each test to
+// avoid side-effects elsewhere in the suite.
+beforeEach(() => {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ token: 'dummy-token' })
+  });
+});
+
+afterEach(() => {
+  if (global.fetch && global.fetch.mockRestore) {
+    global.fetch.mockRestore();
+  }
+});
 
 it('renders email input', () => {
-  render(<LoginView />);
+  render(
+    <MemoryRouter>
+      <LoginView />
+    </MemoryRouter>
+  );
   const emailInput = screen.getByPlaceholderText(/email/i);
   expect(emailInput).toBeInTheDocument();
 
