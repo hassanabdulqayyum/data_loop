@@ -72,7 +72,8 @@ def start_neo4j_session():
         tuple: A (neo4j.Session, neo4j.Driver) pair.
     """
     URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
-    AUTH = os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test")
+    # Default to the canonical local/CI password "test12345" if not supplied.
+    AUTH = os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test12345")
 
     driver = GraphDatabase.driver(URI, auth=AUTH)
     driver.verify_connectivity()
@@ -104,7 +105,7 @@ def import_file(json_file_path):
 
     Args:
         json_file_path (str): Absolute or relative path to the JSON file.
-                              Example: "data/MyProgram/Module01/Day01/Therapist01.json"
+                              Example: "data/MyProgram/Module01/Day01/persona01.json"
 
     Returns:
         str: A string representation of a UUIDv1, serving as the Job ID for this import.

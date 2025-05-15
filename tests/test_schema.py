@@ -7,7 +7,8 @@ import pathlib
 
 def start_neo4j_session():
     URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
-    AUTH = os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test")
+    # Align with canonical test credentials used across Vercel & docker-compose.
+    AUTH = os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "test12345")
 
     driver = GraphDatabase.driver(URI, auth=AUTH)
     driver.verify_connectivity()
