@@ -30,6 +30,109 @@ import { withSession } from '../../libs/node-shared/db.js'
 
 const router = express.Router();
 
+// ---------------------------------------------------------------------------
+// GET /export/module/:moduleId – download full JSON for an entire Module
+// ---------------------------------------------------------------------------
+router.get('/module/:moduleId', async (req, res, next) => {
+    try {
+        // Extract & normalise the Module identifier (numbers stay numeric for Neo4j)
+        const rawId = req.params.moduleId;
+        const moduleId = /^[0-9]+$/.test(rawId) ? Number(rawId) : rawId;
+
+        const result = await withSession(async (session) => {
+            /*
+             * We need a nested structure, but APOC isn't guaranteed, so we pull a flat
+             * recordset from Cypher and build the nested JSON in JavaScript.
+             *
+             * 1. Grab every Day below the requested Module.
+             * 2. For each Day fetch its Personas and each Persona's approved gold path.
+             * 3. We return **one row per Persona** with the Turn list already collected so
+             *    JS can group the rows by Day easily afterwards.
+             */
+            const query = `
+                MATCH (m:Module {id: $moduleId})-[:HAS_DAY]->(d:Day)
+                MATCH (d)-[:HAS_PERSONA]->(p:Persona)
+                MATCH (p)-[:ROOTS]->(root:Turn)
+                MATCH path=(root)<-[:CHILD_OF*0..]-(t:Turn)
+                WHERE t = root OR t.accepted = true
+                WITH d, p, t, length(path) AS depth
+                ORDER BY d.seq ASC, p.seq ASC, depth ASC, t.ts ASC
+                WITH d, p, collect({id:t.id, role:t.role, depth:depth, text:t.text, ts:t.ts}) AS turns
+                RETURN d.id AS dayId, p.id AS personaId, turns
+            `;
+            return session.run(query, { moduleId });
+        });
+
+        if (!result.records.length) {
+            const err = new Error('Module not found');
+            err.status = 404;
+            return next(err);
+        }
+
+        // Build the nested JS structure → { id, days:[ { id, personas:[ { id, turns } ] } ] }
+        const daysMap = new Map();
+        for (const record of result.records) {
+            const dayId = record.get('dayId');
+            const personaId = record.get('personaId');
+            const turns = record.get('turns');
+
+            if (!daysMap.has(dayId)) {
+                daysMap.set(dayId, { id: dayId, personas: [] });
+            }
+            const dayObj = daysMap.get(dayId);
+            dayObj.personas.push({ id: personaId, turns });
+        }
+
+        const payload = {
+            id: moduleId,
+            days: Array.from(daysMap.values()),
+        };
+
+        res.setHeader('Content-Disposition', `attachment; filename=module_${rawId}.json`);
+        return res.json(payload);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+// ---------------------------------------------------------------------------
+// GET /export/day/:dayId – download JSON for a single Topic/Day
+// ---------------------------------------------------------------------------
+router.get('/day/:dayId', async (req, res, next) => {
+    try {
+        const rawId = req.params.dayId;
+        const dayId = /^[0-9]+$/.test(rawId) ? Number(rawId) : rawId;
+
+        const result = await withSession(async (session) => {
+            const query = `
+                MATCH (d:Day {id: $dayId})-[:HAS_PERSONA]->(p:Persona)
+                MATCH (p)-[:ROOTS]->(root:Turn)
+                MATCH path=(root)<-[:CHILD_OF*0..]-(t:Turn)
+                WHERE t = root OR t.accepted = true
+                WITH p, t, length(path) AS depth
+                ORDER BY p.seq ASC, depth ASC, t.ts ASC
+                WITH p, collect({id:t.id, role:t.role, depth:depth, text:t.text, ts:t.ts}) AS turns
+                RETURN p.id AS personaId, turns
+            `;
+            return session.run(query, { dayId });
+        });
+
+        if (!result.records.length) {
+            const err = new Error('Day not found');
+            err.status = 404;
+            return next(err);
+        }
+
+        const personas = result.records.map(rec => ({ id: rec.get('personaId'), turns: rec.get('turns') }));
+
+        const payload = { id: dayId, personas };
+        res.setHeader('Content-Disposition', `attachment; filename=day_${rawId}.json`);
+        return res.json(payload);
+    } catch (error) {
+        return next(error);
+    }
+});
+
 router.get('/:personaId', async (req, res, next) => {
     try {
         // Grab the personaId from the URL (always a string)

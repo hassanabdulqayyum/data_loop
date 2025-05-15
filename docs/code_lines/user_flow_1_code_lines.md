@@ -1092,3 +1092,16 @@ const rspContent = (
 {rspContent}
 
 // ... existing code ...
+
+// --- 2.6.2 LoadView (Export enhancements) ---
+885.9 apps/frontend/src/pages/LoadView.jsx
+   - Replaced stub `handleExport` (lines ~160–200) with full implementation that detects selection level and calls `/export/module/:id`, `/export/day/:id` or `/export/:id` then triggers a file download.
+
+// --- 2.3 API-Server Export routes ---
+62.1 apps/api-server/src/routes/export.js
+   - Added new route `GET /export/module/:moduleId` (lines 10–58) generating nested `{days:[{personas:[…]}]}` JSON.
+62.2 apps/api-server/src/routes/export.js
+   - Added new route `GET /export/day/:dayId` (lines 60–104) returning `{personas:[…]}` JSON.
+
+// --- Tests ---
+105.0 apps/api-server/tests/export_module_day.test.js – new test file covering both new endpoints (auth required, happy path, 404).

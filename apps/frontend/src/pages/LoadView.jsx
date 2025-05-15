@@ -75,7 +75,7 @@ function LoadView() {
     letterSpacing: '-0.05em', // -5% letter spacing
     color: '#000000',
     border: '2px solid #000000',
-    padding: '12px',
+    padding: '8px', // 8px padding as per figma
     borderRadius: '6px', // Added a slight border radius for aesthetics, can be removed if not desired
     cursor: 'pointer',
     backgroundColor: '#FFFFFF', // Assuming a white background, can be transparent
@@ -267,25 +267,58 @@ function LoadView() {
   }
 
   /* ------------------------------------------------------------------
-   * When the user presses "Export" (stub for now).
+   * When the user presses "Export" we call the correct back-end endpoint
+   * depending on what the user currently has highlighted.
+   *
+   *   Persona selected → GET /export/:personaId
+   *   Topic   selected → GET /export/day/:dayId
+   *   Module  selected → GET /export/module/:moduleId
+   *
+   * The server already sends `Content-Disposition: attachment` but browsers
+   * don't respect that for `fetch` calls.  Therefore we build a Blob and
+   * drive a synthetic <a download> click so the file lands in the user's
+   * download tray with a human-readable name.
    * ---------------------------------------------------------------- */
-  function handleExport() {
-    if (!selectedPersonaId) {
-      toast.error('Please select a persona script to export.');
-      return;
+  async function handleExport() {
+    try {
+      let path = null;
+      let filename = null;
+
+      if (selectedPersonaId) {
+        path = `/export/${encodeURIComponent(selectedPersonaId)}`;
+        filename = `script_${selectedPersonaId}.json`;
+      } else if (selectedTopicId) {
+        path = `/export/day/${encodeURIComponent(selectedTopicId)}`;
+        filename = `day_${selectedTopicId}.json`;
+      } else if (selectedModuleId) {
+        path = `/export/module/${encodeURIComponent(selectedModuleId)}`;
+        filename = `module_${selectedModuleId}.json`;
+      } else {
+        toast.error('Please select a module, topic, or persona to export.');
+        return;
+      }
+
+      const data = await apiFetch(path, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exported \u201C${filename}\u201D`);
+    } catch (err) {
+      toast.error(err.message);
     }
-    // Actual export logic will be:
-    // const { data } = await apiFetch(`/export/${selectedPersonaId}`, { headers: { Authorization: `Bearer ${token}` }});
-    // const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    // const url = URL.createObjectURL(blob);
-    // const a = document.createElement('a');
-    // a.href = url;
-    // a.download = `script_${selectedPersonaId}.json`;
-    // document.body.appendChild(a);
-    // a.click();
-    // document.body.removeChild(a);
-    // URL.revokeObjectURL(url);
-    toast.success(`Export for persona ${selectedPersonaId} would start here.`);
   }
 
   // based on what the user has selected in the hierarchy tree.
