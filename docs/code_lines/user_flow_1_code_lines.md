@@ -1264,3 +1264,20 @@ const rspContent = (
    - Swapped `npm install --workspace=<dir>` for `npm install --prefix <dir>` (workspace flag needs a "workspaces" field in root package.json).
    - Lint job now installs deps in both sub-packages and runs `npm run lint` in each, because monorepo root has no lint script.
    - These tweaks fix the "No workspaces found" error during the front-end install step.
+
+147. .github/workflows/ci.yml – PATCH
+   - Updated all Node job steps to use the npm **workspace** flag now that the monorepo root defines workspaces.  Each job:
+     • Installs dependencies once with `npm install` at repository root (works recursively for all workspaces).
+     • Runs Jest/Vitest/ESLint via `npm run <script> --workspace=<workspace-name>` instead of the previous `--prefix` flag.
+   - Step names changed from "Install dependencies (apps/api-server)" etc. to "Install dependencies (all workspaces)" for clarity.
+   - This resolves the *"npm ERR! No workspaces found"* failure seen in CI.
+
+148. package.json (root) – PATCH
+   - Added a new `workspaces` array at the top-level manifest:
+     ```json
+     "workspaces": [
+       "apps/api-server",
+       "apps/frontend"
+     ]
+     ```
+   - This tells npm that both Node projects are first-class workspaces so the `npm --workspace` flag now works in local dev and GitHub Actions.  No other fields were modified.

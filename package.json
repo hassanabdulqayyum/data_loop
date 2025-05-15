@@ -10,5 +10,9 @@
     "neo4j-driver": "^5.28.1",
     "redis": "^4.6.7",
     "cors": "^2.8.5"
-  }
+  },
+  "workspaces": [
+    "apps/api-server",
+    "apps/frontend"
+  ]
 } 

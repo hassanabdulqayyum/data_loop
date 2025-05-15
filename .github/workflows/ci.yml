@@ -42,10 +42,10 @@ jobs:
           node-version: 18
           # cache disabled because repo currently has no package-lock.json
 
-      - name: Install dependencies (apps/api-server)
-        run: npm install --prefix apps/api-server
+      - name: Install dependencies (all workspaces)
+        run: npm install
 
-      # Jest automatically discovers all *.test.js files, including turn_save.test.js
+      # Jest automatically discovers all *.test.js files inside the api-server workspace
       - name: Run Jest tests
         run: npm run test --workspace=apps/api-server
 
@@ -62,8 +62,8 @@ jobs:
           node-version: 18
           # cache disabled because repo currently has no package-lock.json
 
-      - name: Install dependencies (apps/frontend)
-        run: npm install --prefix apps/frontend
+      - name: Install dependencies (all workspaces)
+        run: npm install
 
       - name: Run Vitest
         run: npm run test --workspace=apps/frontend
@@ -103,14 +103,11 @@ jobs:
           node-version: 18
           # cache disabled because repo currently has no package-lock.json
 
-      - name: Install dependencies (api-server)
-        run: npm install --prefix apps/api-server
-
-      - name: Install dependencies (frontend)
-        run: npm install --prefix apps/frontend
+      - name: Install dependencies (all workspaces)
+        run: npm install
 
       - name: Run ESLint – api-server
-        run: npm run lint --prefix apps/api-server
+        run: npm run lint --workspace=apps/api-server
 
       - name: Run ESLint – frontend
-        run: npm run lint --prefix apps/frontend 
+        run: npm run lint --workspace=apps/frontend 
