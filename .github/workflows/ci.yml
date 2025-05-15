@@ -43,7 +43,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies (apps/api-server)
-        run: npm ci --workspace=apps/api-server
+        run: npm install --workspace=apps/api-server
 
       # Jest automatically discovers all *.test.js files, including turn_save.test.js
       - name: Run Jest tests
@@ -63,7 +63,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies (apps/frontend)
-        run: npm ci --workspace=apps/frontend
+        run: npm install --workspace=apps/frontend
 
       - name: Run Vitest
         run: npm run test --workspace=apps/frontend
@@ -104,7 +104,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies (all workspaces)
-        run: npm ci --workspaces
+        run: npm install --workspaces --include-workspace-root
 
       - name: Run ESLint
         run: npm run lint --workspaces 

@@ -1253,3 +1253,6 @@ const rspContent = (
      • lint (Node 18 + ESLint) – enforces consistent code style across all workspaces.
    - Top-of-file comments explain—in simple layman terms—how the workflow protects the `dev` and `prod` branches by blocking merges when any test fails.
    - Branch filters watch `dev`, `prod`, and any `feature/**` branch so contributors get instant feedback during development.
+
+146. .github/workflows/ci.yml – PATCH
+   - Replaced `npm ci` with `npm install` in three steps to avoid lock-file requirement errors on GitHub runners because the repository does not yet commit a `package-lock.json`.  This unblocks the failing backend, frontend, and lint jobs while keeping dependency caching intact.
