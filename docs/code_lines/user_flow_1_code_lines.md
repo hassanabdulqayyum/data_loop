@@ -1355,3 +1355,9 @@ const rspContent = (
 1352. tests/test_focus_persona_turns.py – NEW test ensures Focus persona has script chain (root + ≥1 child).
 
 1353. docs/implementation_plan/user_flow_1_implementation_plan.md – inserted subsection **2.1a Per-Persona Script Seed Files** describing one-Cypher-per-script model and bulk-load command.
+
+1354. apps/frontend/src/components/TurnNode.jsx & apps/frontend/tests/TurnNode.test.jsx
+   - TurnNode now guards against `null` or `undefined` `text` by falling back to an empty string before computing the 40-char preview (lines ~30-35).  This prevents the **Cannot read properties of null (reading 'length')** crash in production.
+   - PropTypes relaxed: `text` is no longer `isRequired`; detailed inline comment explains why (lines ~70-75).
+   - Header docstring updated to mention empty-preview behaviour (lines ~10-15).
+   - Added Jest test `renders safely when text is null` (tests/TurnNode.test.jsx lines ~15-30) verifying the component mounts without throwing and still renders the role badge.

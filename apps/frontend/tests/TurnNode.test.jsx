@@ -21,4 +21,20 @@ describe('<TurnNode />', () => {
     // Role label should be capitalised → Assistant
     expect(screen.getByText(/assistant/i)).toBeInTheDocument();
   });
+
+  it('renders safely when text is null', () => {
+    const sampleTurn = {
+      id: '2',
+      role: 'system',
+      text: null
+    };
+
+    // The render call should not throw.
+    expect(() =>
+      render(<TurnNode id="2" data={{ turn: sampleTurn }} />)
+    ).not.toThrow();
+
+    // We still expect the role badge to be present.
+    expect(screen.getByText(/system/i)).toBeInTheDocument();
+  });
 }); 

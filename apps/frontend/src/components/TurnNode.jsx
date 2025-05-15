@@ -7,7 +7,9 @@ script becomes a draggable, selectable card on the canvas.
 What does it actually show?
 • Author role (system / user / assistant) in a small label.
 • The *first 40 characters* of the turn`s text so editors get a quick glance
-  at what is inside without reading the whole paragraph.
+  at what is inside without reading the whole paragraph.  When the text is
+  missing or `null` (a rare edge-case when placeholder nodes appear) the
+  component simply shows an empty preview instead of crashing.
 
 How is it used?
 The parent <TurnCanvas> registers this component under the node-type key
@@ -45,10 +47,10 @@ function TurnNode({ id, data }) {
   // Destructure the turn for convenience.
   const { turn } = data;
 
-  // Compute a 40-char preview in plain JS.  We add … when truncated so
-  // the user knows there is more text.
+  // Compute a 40-char preview but guard against missing text so we never crash
+  const rawText = typeof turn.text === 'string' ? turn.text : '';
   const preview =
-    turn.text.length > 40 ? `${turn.text.slice(0, 40).trim()}…` : turn.text;
+    rawText.length > 40 ? `${rawText.slice(0, 40).trim()}…` : rawText;
 
   return (
     <div
@@ -82,7 +84,9 @@ TurnNode.propTypes = {
   data: PropTypes.shape({
     turn: PropTypes.shape({
       role: PropTypes.string.isRequired,
-      text: PropTypes.string.isRequired
+      // `text` may be null in edge-cases (e.g. placeholder nodes).
+      // We therefore accept either string **or** null to keep rendering safe.
+      text: PropTypes.string
     }).isRequired
   }).isRequired
 };
