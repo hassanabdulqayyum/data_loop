@@ -27,7 +27,10 @@ module.exports = {
   rules: {
     // Warn when `console.log` slips into committed code – handy during development
     // but something we usually want to tidy up before merging.
-    "no-console": "warn"
+    "no-console": "warn",
+    // Explicitly configure no-unused-vars to ignore underscore-prefixed variables.
+    // This is usually default with "eslint:recommended" but helps ensure consistency.
+    "no-unused-vars": ["error", { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }]
   },
   ignorePatterns: [
     "venv/",          // Python virtual-env – no JavaScript lives here.

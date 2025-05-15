@@ -4,15 +4,19 @@
   "type": "module",
   "description": "Dependency manifest required so Vercel's @vercel/node builder installs libraries used by the api/index.mjs serverless function.",
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "neo4j-driver": "^5.28.1",
-    "redis": "^4.6.7",
-    "cors": "^2.8.5"
+    "redis": "^4.6.7"
   },
   "workspaces": [
     "apps/api-server",
     "apps/frontend"
-  ]
-} 
+  ],
+  "devDependencies": {
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0"
+  }
+}

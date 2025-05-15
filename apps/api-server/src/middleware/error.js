@@ -22,9 +22,19 @@
  * if to a curious non-programmer.
  */
 
-// Express marks a function with *four* parameters as an error handler.  Do not
-// remove the `next` argument even if we don't use it right now.
-const errorHandler = (err, req, res, next) => {
+/**
+ * Centralized error handling middleware.
+ *
+ * This middleware catches errors thrown by route handlers and other middleware.
+ * It logs the error and sends a standardized JSON error response to the client.
+ *
+ * @param {Error} err - The error object.
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next middleware function.
+ */
+// eslint-disable-next-line no-unused-vars
+const errorHandler = (err, req, res, _next) => {
   // Log the full stack trace so developers can debug locally or in staging.
   // In production this still goes to stdout/stderr, which the hosting platform
   // (e.g. Vercel) will capture.

@@ -18,7 +18,7 @@ async function resetDatabaseWithSeed() {
   const fileContents = fs.readFileSync(cypherPath, 'utf8');
   const statements = fileContents
     .split(';')
-    .map(stmt => stmt.trim())
+    .map((stmt) => stmt.trim())
     .filter(Boolean);
 
   const session = driver.session();
@@ -65,7 +65,7 @@ describe('PATCH /turn/:turnId', () => {
 
     const payload = {
       text: 'A brand-new assistant reply',
-      commit_message: 'Initial new version',
+      commit_message: 'Initial new version'
     };
 
     const res = await request(app)
@@ -78,28 +78,23 @@ describe('PATCH /turn/:turnId', () => {
 
     // Confirm we attempted to emit the Redis event exactly once
     expect(redisMock.xAdd).toHaveBeenCalledTimes(1);
-    const [stream, id, fields] = redisMock.xAdd.mock.calls[0];
+    const [stream, _id, fields] = redisMock.xAdd.mock.calls[0];
     expect(stream).toBe('script.turn.updated');
     expect(fields).toMatchObject({
       parent_id: parentId,
       text: payload.text,
-      commit_message: payload.commit_message,
+      commit_message: payload.commit_message
     });
   });
 
   it('returns 400 when text is missing', async () => {
-    const res = await request(app)
-      .patch('/turn/4')
-      .set('Authorization', `Bearer ${jwt}`)
-      .send({});
+    const res = await request(app).patch('/turn/4').set('Authorization', `Bearer ${jwt}`).send({});
 
     expect(res.statusCode).toBe(400);
   });
 
   it('rejects unauthenticated requests', async () => {
-    const res = await request(app)
-      .patch('/turn/4')
-      .send({ text: 'Hi' });
+    const res = await request(app).patch('/turn/4').send({ text: 'Hi' });
     expect(res.statusCode).toBe(401);
   });
 
@@ -113,4 +108,4 @@ describe('PATCH /turn/:turnId', () => {
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBeDefined();
   });
-}); 
+});
