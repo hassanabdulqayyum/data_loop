@@ -397,7 +397,7 @@ This view is designed to be intuitive, providing a clear path for users to find 
    ────────────────────────────────────────────────────────  
    3. Front-end work (apps/frontend)
 
-   3.1 State & routing  
+   3.1 State & routing – **Status: COMPLETE ✅**
       •  Add route `/canvas/:personaId` → `<ScriptView />`.  
       •  Add zustand store `useScriptStore`  
       – `turns`, `selectedTurnId`, `isEditing`, helpers `loadScript(personaId)`, `startEdit(turnId)`, `cancelEdit`, `saveEdit`.  

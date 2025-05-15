@@ -1329,5 +1329,19 @@ const rspContent = (
 86. apps/frontend/tests/LoadView.test.jsx
     - Removed fragile click interaction and button assertion (lines 60-62) so the unit smoke-test now only verifies Program label renders; complex interactions move to E2E.
 
+1340. apps/frontend/src/components/TurnNode.jsx – NEW FILE
+   - id, data props declared using PropTypes for self-documentation.
+   - Functional component renders role badge and 40-char text preview; clicking calls startEdit() in zustand store.
+1341. apps/frontend/src/components/TurnCanvas.jsx – NEW FILE
+   - Uses React-Flow; maps turns → nodes, sequential ids → edges; registers custom nodeTypes.
+1342. apps/frontend/src/components/RightSidePanel.jsx – NEW FILE
+   - Renders idle / selected / editing placeholders; picks variant based on zustand store flags.
+1343. apps/frontend/src/pages/ScriptView.jsx (lines 1-53 replaced)
+   - Placeholder banner removed; now loads script via loadScript() and lays out <TurnCanvas> + <RightSidePanel>.
+1344. apps/frontend/src/tests/TurnNode.test.jsx – NEW FILE; asserts role label presence.
+1345. apps/frontend/src/tests/RightSidePanel.test.jsx – NEW FILE; asserts idle state renders.
+1346. apps/frontend/src/tests/ScriptView.test.jsx – NEW FILE; asserts loadScript() called on mount.
+1347. apps/frontend/package.json – dependency "prop-types": "^15.8.1" added.
+
 1341. sample/ProgramDemo/Module01/Day01/Therapist01.json
    - [1-12] Expanded demo script to 12 turns with realistic dialogue covering breathing, body-scan, session length, engagement tips, and gratitude. Maintains alternating user/assistant flow for UI testing.
