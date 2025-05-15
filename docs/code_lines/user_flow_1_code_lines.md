@@ -1281,3 +1281,7 @@ const rspContent = (
      ]
      ```
    - This tells npm that both Node projects are first-class workspaces so the `npm --workspace` flag now works in local dev and GitHub Actions.  No other fields were modified.
+
+149. apps/api-server/libs/node-shared/db.js – PATCH
+   - Replaced one-shot `initNeo4j` connection check with a **retry-aware** implementation that tries up to 10 times with 1-second delays.
+   - In `NODE_ENV==='test'` the helper no longer calls `process.exit(1)` on failure; it logs the error and returns so Jest can proceed.  Production builds still exit after all retries fail.  This prevents CI from aborting before the Neo4j Docker container is fully ready.

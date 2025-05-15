@@ -39,14 +39,40 @@ async function withSession(callback) {
     }
 }
 
-async function initNeo4j() {
+// -----------------------------  INIT HELPER  -----------------------------
+/**
+ * Verify Neo4j is reachable.  We perform a short retry loop so that automated
+ * test-suites (which spin up Neo4j via Docker just before the tests run) have
+ * a few seconds for the database to accept bolt connections.  In production
+ * we still want a hard fail, because starting the API without its database is
+ * useless – hence the conditional `process.exit(1)` below.
+ *
+ * The function is intentionally forgiving when `NODE_ENV === 'test'` so Jest
+ * can proceed even if the container is still warming up; the individual tests
+ * that need Neo4j will handle their own connection errors or skip as needed.
+ *
+ * Example: await initNeo4j();
+ */
+async function initNeo4j(maxRetries = 10, delayMs = 1_000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const serverInfo = await driver.getServerInfo(); // await driver.verifyConnectivity() is deprecated
+      const serverInfo = await driver.getServerInfo(); // quick ping
       console.log('✅ Connected to Neo4j:', serverInfo);
+      return; // success – exit the loop early
     } catch (error) {
-      console.error('❌ Neo4j connection failed:', error);
-      process.exit(1); // Exit if the DB is not reachable
+      console.warn(`⌛ Neo4j not ready (attempt ${attempt}/${maxRetries})…`);
+      // Final attempt failed → decide based on environment
+      if (attempt === maxRetries) {
+        console.error('❌ Neo4j connection failed after retries:', error);
+        if (process.env.NODE_ENV !== 'test') {
+          process.exit(1); // only crash in non-test environments
+        }
+        return; // In tests: swallow the error so suite can continue
+      }
+      // Wait before next try (simple linear back-off)
+      await new Promise((res) => setTimeout(res, delayMs));
     }
-  }  
+  }
+}
 
 export { driver, withSession, initNeo4j};
