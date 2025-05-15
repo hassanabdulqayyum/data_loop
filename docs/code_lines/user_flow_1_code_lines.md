@@ -1241,3 +1241,26 @@ const rspContent = (
 
 143. apps/api-server/src/routes/script.js
     - Mapping section: depth now coerces to a native number using `.toNumber()` when the driver returns a Neo4j Integer, ensuring equality checks in Jest don't fail (one-liner change).
+
+144. docs/implementation_plan/user_flow_1_implementation_plan.md
+    - Marked item 2.3 "CI – back-end job" as IN PROGRESS 🛠️ to reflect current task focus.
+
+145. .github/workflows/ci.yml – NEW FILE
+   - Introduced full GitHub Actions workflow that runs in **four parallel jobs**:
+     • backend-test (Node 18 + Jest) – executes every API-server test, automatically including the new `turn_save.test.js`.
+     • frontend-test (Node 18 + Vitest) – runs the React unit-test suite for the front-end.
+     • python-test (Python 3.9 + PyTest) – covers the Python AI-worker and helper scripts.
+     • lint (Node 18 + ESLint) – enforces consistent code style across all workspaces.
+   - Top-of-file comments explain—in simple layman terms—how the workflow protects the `dev` and `prod` branches by blocking merges when any test fails.
+   - Branch filters watch `dev`, `prod`, and any `feature/**` branch so contributors get instant feedback during development.
+
+146. .github/workflows/ci.yml – PATCH
+   - Replaced `npm ci` with `npm install` in three steps to avoid lock-file requirement errors on GitHub runners because the repository does not yet commit a `package-lock.json`.  This unblocks the failing backend, frontend, and lint jobs while keeping dependency caching intact.
+
+147. .github/workflows/ci.yml – PATCH
+   - Removed `cache: "npm"` and `cache: "pip"` parameters from all `actions/setup-node/python` steps because GitHub's built-in cache support requires a lock-file (`package-lock.json`, `pip-requirements.txt hash`, etc.).  The repository doesn't store lock-files yet, so the cache step aborted the job.  Disabling cache lets the workflow run successfully until lock-files are introduced.
+
+148. .github/workflows/ci.yml – PATCH
+   - Swapped `npm install --workspace=<dir>` for `npm install --prefix <dir>` (workspace flag needs a "workspaces" field in root package.json).
+   - Lint job now installs deps in both sub-packages and runs `npm run lint` in each, because monorepo root has no lint script.
+   - These tweaks fix the "No workspaces found" error during the front-end install step.

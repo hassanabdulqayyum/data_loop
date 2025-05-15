@@ -391,9 +391,8 @@ This view is designed to be intuitive, providing a clear path for users to find 
       – ensure **parent.depth + 1** is stored (depth no longer carried by seq)  
       – write a Jest test that posts `{text,commit_message}` and then GETs script to confirm the card count ↑ by 1 and last card fields match.
 
-   2.3 CI – back-end job  
-      •  Update Jest matrix to include new test file `turn_save.test.js`.  
-      •  Keep Neo4j docker-compose spin-up in `setupEnv.js` (already present).
+   2.3 CI – back-end job – **Status: COMPLETE ✅**
+      •  **Implementation summary:** A new GitHub Actions workflow file `.github/workflows/ci.yml` (lines 1-140) now runs the full Jest, Vitest, and PyTest suites plus ESLint on every push or PR to `dev`, `prod`, or any `feature/**` branch.  The Jest matrix automatically picks up the newly-added `turn_save.test.js`, ensuring regressions are caught immediately.
 
    ────────────────────────────────────────────────────────  
    3. Front-end work (apps/frontend)
