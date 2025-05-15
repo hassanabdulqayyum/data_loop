@@ -80,7 +80,9 @@ router.patch('/:turnId', async (req, res, next) => {
     // 2. Check user role.
     ensureCanEdit(req.user);
 
-    const parentId = /^[0-9]+$/.test(req.params.turnId) ? Number(req.params.turnId) : req.params.turnId;
+    const parentId = /^[0-9]+$/.test(req.params.turnId)
+      ? Number(req.params.turnId)
+      : req.params.turnId;
     const newTurnId = randomUUID(); // v4 UUID – globally unique
     const now = Date.now(); // Unix millis – used for Redis ts field
 
@@ -105,7 +107,7 @@ router.patch('/:turnId', async (req, res, next) => {
         parentId,
         newTurnId,
         text,
-        commitMessage: commit_message ?? null,
+        commitMessage: commit_message ?? null
       });
       if (result.summary.counters.updates().nodesCreated === 0) {
         const err = new Error('Parent turn not found');
@@ -131,19 +133,15 @@ router.patch('/:turnId', async (req, res, next) => {
 
     // 4. Publish the Redis Stream event. We wrap in try/catch so a Redis hiccup does not break the API request.
     try {
-      await redisClient.xAdd(
-        'script.turn.updated',
-        '*',
-        {
-          id: newTurnId,
-          parent_id: parentId,
-          persona_id: personaId,
-          editor: req.user.email ?? 'unknown',
-          ts: now,
-          text,
-          commit_message: commit_message ?? '',
-        }
-      );
+      await redisClient.xAdd('script.turn.updated', '*', {
+        id: newTurnId,
+        parent_id: parentId,
+        persona_id: personaId,
+        editor: req.user.email ?? 'unknown',
+        ts: now,
+        text,
+        commit_message: commit_message ?? ''
+      });
     } catch (redisErr) {
       // Log but do not fail the HTTP response – eventual consistency is fine for v1.
       console.error('Redis publish failed:', redisErr);
@@ -156,4 +154,4 @@ router.patch('/:turnId', async (req, res, next) => {
   }
 });
 
-export default router; 
+export default router;

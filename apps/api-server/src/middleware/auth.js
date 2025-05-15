@@ -35,26 +35,26 @@
  * ```
  */
 
-import { verify_jwt } from "../../libs/node-shared/jwt.js";
+import { verify_jwt } from '../../libs/node-shared/jwt.js';
 
 const authMiddleware = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        // Early-exit when header is missing or malformed. We keep the wording consistent across the API
-        // so front-end code can rely on it.
-        return res.status(401).json({ error: 'Missing or malformed token' });
-    }
-    
-    const token = authHeader.split(' ')[1];
-    
-    try {
-        const decoded = verify_jwt(token);
-        req.user = decoded; // Attach user info to request
-        next();
-    } catch (err) {
-        // Token failed verification – could be forged, expired or signed with wrong secret.
-        return res.status(401).json({ error: 'Invalid or expired token' });
-    }
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Early-exit when header is missing or malformed. We keep the wording consistent across the API
+    // so front-end code can rely on it.
+    return res.status(401).json({ error: 'Missing or malformed token' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = verify_jwt(token);
+    req.user = decoded; // Attach user info to request
+    next();
+  } catch (err) {
+    // Token failed verification – could be forged, expired or signed with wrong secret.
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
 };
 
 export default authMiddleware;

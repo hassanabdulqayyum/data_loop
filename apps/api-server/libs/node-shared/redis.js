@@ -1,4 +1,4 @@
-import { createClient } from "redis";
+import { createClient } from 'redis';
 
 /**
  * In test runs we don't want to connect to a real Redis instance because that would
@@ -21,7 +21,7 @@ if (process.env.NODE_ENV === 'test') {
     },
     async quit() {
       /* no-op */
-    },
+    }
   };
   redisWrapper = stub;
 } else {
@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === 'test') {
     async xAdd() {
       return 'OK';
     },
-    async quit() {},
+    async quit() {}
   });
 
   try {
@@ -56,7 +56,7 @@ if (process.env.NODE_ENV === 'test') {
       },
       async quit() {
         return client.quit();
-      },
+      }
     };
   } catch (err) {
     console.error('❌ Redis connection failed, falling back to stub:', err.message);

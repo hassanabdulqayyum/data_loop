@@ -42,10 +42,12 @@ describe('/hierarchy endpoint', () => {
   // Test: should return the catalog tree if logged in
   it('returns the catalog tree for a valid user', async () => {
     // Sign a JWT for the demo user (role: editor)
-    const token = jwt.sign({ email: 'demo@acme.test', role: 'editor' }, process.env.JWT_SECRET || 'testsecret', { expiresIn: '1h' });
-    const res = await request(app)
-      .get('/hierarchy')
-      .set('Authorization', `Bearer ${token}`);
+    const token = jwt.sign(
+      { email: 'demo@acme.test', role: 'editor' },
+      process.env.JWT_SECRET || 'testsecret',
+      { expiresIn: '1h' }
+    );
+    const res = await request(app).get('/hierarchy').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('data');
     // The data should be an array of programs, each with modules, days, and personas
@@ -76,4 +78,4 @@ describe('/hierarchy endpoint', () => {
       }
     }
   });
-}); 
+});

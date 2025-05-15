@@ -21,52 +21,57 @@
  * Response on success →
  *   { "token": "<very-long-random-string>" }
  */
-import express from 'express'
+import express from 'express';
 import { sign_jwt } from '../../libs/node-shared/jwt.js';
 
 const router = express.Router(); // creates a mini express app for routing
 
 // Hard-coded demo account – enough for first milestone tests & local dev.
 const DEMO_USER = {
-    email: 'demo@acme.test',
-    password: 'pass123',
-    role: 'editor',
+  email: 'demo@acme.test',
+  password: 'pass123',
+  role: 'editor'
 };
 
 // login route
 router.post('/login', (req, res) => {
-    const { email, password } = req.body;
-  
-    // Extra guard: Both fields **must** be strings containing at least one printable character.
-    // Without this check an attacker could send email as an object or empty string which would
-    // side-step the simple truthy test below. By validating the JavaScript type and trimming
-    // whitespace we ensure the backend only accepts sensible credentials and avoid surprising
-    // runtime errors further down the flow.
-    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password.trim()) {
-      return res.status(400).json({
-        error: 'Email and password are required'
-      });
-    }
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        error: 'Email and password are required'
-      });
-    }
+  // Extra guard: Both fields **must** be strings containing at least one printable character.
+  // Without this check an attacker could send email as an object or empty string which would
+  // side-step the simple truthy test below. By validating the JavaScript type and trimming
+  // whitespace we ensure the backend only accepts sensible credentials and avoid surprising
+  // runtime errors further down the flow.
+  if (
+    typeof email !== 'string' ||
+    typeof password !== 'string' ||
+    !email.trim() ||
+    !password.trim()
+  ) {
+    return res.status(400).json({
+      error: 'Email and password are required'
+    });
+  }
 
-    // Reject wrong credentials right away so callers know they must try again.
-    if (email !== DEMO_USER.email || password !== DEMO_USER.password) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-    }
+  if (!email || !password) {
+    return res.status(400).json({
+      error: 'Email and password are required'
+    });
+  }
 
-    // Create a payload – include user info (never include password!)
-    const payload = { email, role: DEMO_USER.role };
+  // Reject wrong credentials right away so callers know they must try again.
+  if (email !== DEMO_USER.email || password !== DEMO_USER.password) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
 
-    // Sign token (12 h expiry baked into helper)
-    const token = sign_jwt(payload);
-    
-    // If both are present
-    res.status(200).json({token});
-  });
+  // Create a payload – include user info (never include password!)
+  const payload = { email, role: DEMO_USER.role };
+
+  // Sign token (12 h expiry baked into helper)
+  const token = sign_jwt(payload);
+
+  // If both are present
+  res.status(200).json({ token });
+});
 
 export default router;

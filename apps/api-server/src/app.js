@@ -9,20 +9,20 @@
  *
  * All routes, middleware, and error handlers are registered here.
  */
-import * as dotenv from 'dotenv'
-dotenv.config()
+import * as dotenv from 'dotenv';
+dotenv.config();
 
-import express from 'express'
-import cors from 'cors'
-import errorHandler from './middleware/error.js'
-import authRouter from './routes/auth.js'
+import express from 'express';
+import cors from 'cors';
+import errorHandler from './middleware/error.js';
+import authRouter from './routes/auth.js';
 // Import the hierarchy route so we can handle GET /hierarchy requests from logged-in users
-import hierarchyRouter from './routes/hierarchy.js'
-import authMiddleware from './middleware/auth.js'
+import hierarchyRouter from './routes/hierarchy.js';
+import authMiddleware from './middleware/auth.js';
 // Import the script route so we can handle GET /script/:personaId requests from logged-in users
-import scriptRouter from './routes/script.js'
-import turnRouter from './routes/turn.js'
-import exportRouter from './routes/export.js'
+import scriptRouter from './routes/script.js';
+import turnRouter from './routes/turn.js';
+import exportRouter from './routes/export.js';
 
 // ---------------------------------------------------------------------------
 // Early DB connections – so build logs always show whether the tunnels & env
@@ -38,7 +38,7 @@ import '../libs/node-shared/redis.js';
 import { initNeo4j } from '../libs/node-shared/db.js';
 await initNeo4j();
 
-const app = express()
+const app = express();
 
 // ---------------------------------------------------------------------------
 // Final CORS policy – dynamic whitelist based on the CORS_ORIGIN env var.
@@ -110,14 +110,14 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-  res.send({ status: 'ok' })
-})
+  res.send({ status: 'ok' });
+});
 
 // Mount the login router so POST /auth/login is reachable from the front-end.
-app.use('/auth', authRouter)
+app.use('/auth', authRouter);
 
 // Mount the hierarchy router so GET /hierarchy is protected by JWT middleware
-app.use('/hierarchy', authMiddleware, hierarchyRouter)
+app.use('/hierarchy', authMiddleware, hierarchyRouter);
 
 // Mount the script router so GET /script is protected by JWT middleware
 app.use('/script', authMiddleware, scriptRouter);
@@ -130,6 +130,6 @@ app.use('/export', authMiddleware, exportRouter);
 
 // Register the global error handler AFTER all routes so Express only reaches
 // it when something goes wrong in the chain above.
-app.use(errorHandler)
+app.use(errorHandler);
 
-export default app; 
+export default app;

@@ -7,10 +7,10 @@
  * Usage:
  *   node src/index.js   # starts the server for real
  */
-import app from './app.js'
+import app from './app.js';
 
-const port = process.env.PORT || 4000
+const port = process.env.PORT || 4000;
 
 app.listen(port, () => {
-  console.log(`API listening on port ${port}`)
-})
+  console.log(`API listening on port ${port}`);
+});

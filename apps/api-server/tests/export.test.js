@@ -12,9 +12,7 @@ describe('GET /export/:personaId', () => {
   });
 
   it('should respond with 200 and return data array (works with seed DB)', async () => {
-    const res = await request(app)
-      .get('/export/1')
-      .set('Authorization', `Bearer ${validToken}`);
+    const res = await request(app).get('/export/1').set('Authorization', `Bearer ${validToken}`);
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
@@ -34,4 +32,4 @@ describe('GET /export/:personaId', () => {
     expect(res.statusCode).toBe(404);
     expect(res.body).toHaveProperty('error');
   });
-}); 
+});

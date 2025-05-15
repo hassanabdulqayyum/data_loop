@@ -36,4 +36,4 @@ describe('CORS pre-flight', () => {
       })
       .expect('Access-Control-Allow-Methods', /POST/);
   });
-}); 
+});

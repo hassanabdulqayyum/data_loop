@@ -37,7 +37,9 @@ if (!global.__NEO4J_CONTAINER_STARTED) {
       execSync('docker compose up -d neo4j', { stdio: 'inherit' });
       global.__NEO4J_CONTAINER_STARTED = true;
     } catch (err) {
-      console.error('❌ Failed to start Neo4j test container via Docker Compose. Is Docker running?');
+      console.error(
+        '❌ Failed to start Neo4j test container via Docker Compose. Is Docker running?'
+      );
       throw err;
     }
   }
@@ -83,7 +85,9 @@ afterAll(async () => {
       execSync('docker compose down', { stdio: 'inherit' });
       delete global.__NEO4J_CONTAINER_STARTED;
     } catch (err) {
-      console.error('⚠️  Could not stop Docker Compose services. You may need to run `docker compose down` manually.');
+      console.error(
+        '⚠️  Could not stop Docker Compose services. You may need to run `docker compose down` manually.'
+      );
     }
   }
-}); 
+});

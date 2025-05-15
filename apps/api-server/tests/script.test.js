@@ -20,8 +20,8 @@ async function resetDatabaseWithSeed() {
   const cypherPath = path.resolve(__dirname, '../../../docs/scripts/neo4j/002_seed_data.cypher');
   const fileContents = fs.readFileSync(cypherPath, 'utf8');
   const statements = fileContents
-    .split(';')               // Cypher allows multiple statements separated by semicolons
-    .map(stmt => stmt.trim()) // Strip whitespace and empty strings
+    .split(';') // Cypher allows multiple statements separated by semicolons
+    .map((stmt) => stmt.trim()) // Strip whitespace and empty strings
     .filter(Boolean);
 
   const session = driver.session();
@@ -62,9 +62,7 @@ describe('GET /script/:personaId', () => {
   });
 
   it('returns the gold-path turns for a valid persona', async () => {
-    const res = await request(app)
-      .get('/script/1')
-      .set('Authorization', `Bearer ${jwt}`);
+    const res = await request(app).get('/script/1').set('Authorization', `Bearer ${jwt}`);
 
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
@@ -88,20 +86,18 @@ describe('GET /script/:personaId', () => {
 
     // Every subsequent turn must have a strictly increasing version number so
     // the array stays in deterministic order and the UI can trust the badge.
-    const versions = res.body.data.map(t => t.version);
+    const versions = res.body.data.map((t) => t.version);
     for (let i = 1; i < versions.length; ++i) {
       expect(versions[i]).toBe(i + 1);
     }
 
     // Additional guarantee: the order should follow root → system → user → assistant
-    const roles = res.body.data.map(t => t.role);
+    const roles = res.body.data.map((t) => t.role);
     expect(roles.slice(0, 4)).toEqual(['root', 'system', 'user', 'assistant']);
   });
 
   it('responds with 404 when the persona does not exist', async () => {
-    const res = await request(app)
-      .get('/script/9999')
-      .set('Authorization', `Bearer ${jwt}`);
+    const res = await request(app).get('/script/9999').set('Authorization', `Bearer ${jwt}`);
 
     expect(res.statusCode).toBe(404);
     expect(res.body).toHaveProperty('error');
@@ -111,4 +107,4 @@ describe('GET /script/:personaId', () => {
     const res = await request(app).get('/script/1');
     expect(res.statusCode).toBe(401);
   });
-}); 
+});

@@ -29,7 +29,7 @@ async function resetDatabaseWithSeed() {
   const fileContents = fs.readFileSync(cypherPath, 'utf8');
   const statements = fileContents
     .split(';')
-    .map(stmt => stmt.trim())
+    .map((stmt) => stmt.trim())
     .filter(Boolean);
 
   const session = driver.session();
@@ -63,9 +63,7 @@ describe('End-to-end save-new-version flow', () => {
 
   it('PATCHes a new turn and GET /script reflects the change', async () => {
     // 1️⃣ Fetch current gold path – should be 4 cards from seed.
-    const before = await request(app)
-      .get('/script/1')
-      .set('Authorization', `Bearer ${jwt}`);
+    const before = await request(app).get('/script/1').set('Authorization', `Bearer ${jwt}`);
 
     expect(before.statusCode).toBe(200);
     const beforeTurns = before.body.data;
@@ -74,7 +72,7 @@ describe('End-to-end save-new-version flow', () => {
     // 2️⃣ Save a new assistant version underneath the last assistant turn (id 4).
     const payload = {
       text: 'A **brand-new** assistant reply – now with depth 4',
-      commit_message: 'add richer assistant answer',
+      commit_message: 'add richer assistant answer'
     };
 
     const patchRes = await request(app)
@@ -86,9 +84,7 @@ describe('End-to-end save-new-version flow', () => {
     expect(patchRes.body.data).toHaveProperty('id');
 
     // 3️⃣ Re-fetch the script. We expect +1 turn (total 5) and last card equals payload.
-    const after = await request(app)
-      .get('/script/1')
-      .set('Authorization', `Bearer ${jwt}`);
+    const after = await request(app).get('/script/1').set('Authorization', `Bearer ${jwt}`);
 
     expect(after.statusCode).toBe(200);
     const afterTurns = after.body.data;
@@ -100,4 +96,4 @@ describe('End-to-end save-new-version flow', () => {
     // Parent depth is 3 → new card depth should be 4.
     expect(lastTurn.depth).toBe(4);
   });
-}); 
+});
