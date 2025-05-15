@@ -1230,3 +1230,14 @@ const rspContent = (
     - script.js lines 52-63: Added `version` field computed as `idx + 1` during JS mapping; response payload now `{id, role, depth, ts, text, accepted, commit_message, version}`.
     - Updated top-file docstring example to list new fields.
     - tests/script.test.js lines 55-85: Added assertions for `accepted`, `commit_message`, `version` keys plus monotonically increasing `version` sequence check.
+
+141. apps/api-server/src/routes/turn.js
+    - Updated layman docstring bullet (lines 11-15) to state that new turns are now saved with `accepted:true` and store a `depth` property so analytics queries run faster.
+    - Replaced the Cypher `createCypher` string (approx. lines 60-75): single `CREATE (parent)<-[:CHILD_OF]-(new:Turn { … })` block now sets `accepted:true` and `depth: coalesce(parent.depth,0)+1` ensuring the database saves both values atomically.
+
+142. apps/api-server/tests/turn_save.test.js – NEW FILE (lines 1-110)
+    - Adds an end-to-end Jest test covering the **save-new-version** flow: PATCH /turn/4 then GET /script/1.
+    - Asserts the gold-path card count increases by 1, the last card's `text`, `commit_message`, and `depth` match expectations (depth 4).  Provides its own seed-reset helper so the file is self-contained for readers.
+
+143. apps/api-server/src/routes/script.js
+    - Mapping section: depth now coerces to a native number using `.toNumber()` when the driver returns a Neo4j Integer, ensuring equality checks in Jest don't fail (one-liner change).

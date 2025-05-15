@@ -60,7 +60,7 @@ router.get('/:personaId', async (req, res, next) => {
         const turns = result.records.map((record, idx) => ({
             id: record.get('id'),
             role: record.get('role'),
-            depth: record.get('depth'),
+            depth: record.get('depth').toNumber ? record.get('depth').toNumber() : record.get('depth'),
             ts: record.get('ts'),
             text: record.get('text'),
             accepted: record.get('accepted'),

@@ -340,190 +340,190 @@ This view is designed to be intuitive, providing a clear path for users to find 
 
 ##### Detailed Implementation Plan for 2.6.3 – "Script View"
 
-Detailed implementation plan for 2.6.3 – "Script View"  
-(Backend + Front-end, driven by TDD & wired into the existing CI)
+   Detailed implementation plan for 2.6.3 – "Script View"  
+   (Backend + Front-end, driven by TDD & wired into the existing CI)
 
-────────────────────────────────────────────────────────  
-0. Pre-flight check  
-•  All prerequisites from 2 .6 .2 are merged and green in CI.  
-•  GET /hierarchy, GET /export, PATCH /turn and Redis event emission already exist and are covered by tests.  
-•  Figma PNGs of the Script View (vertical stack of Turn chips + right-side panel) are now part of the `docs/ui_ref/` folder so they can be opened during dev‐work and in code reviews.
+   ────────────────────────────────────────────────────────  
+   0. Pre-flight check  
+   •  All prerequisites from 2 .6 .2 are merged and green in CI.  
+   •  GET /hierarchy, GET /export, PATCH /turn and Redis event emission already exist and are covered by tests.  
+   •  Figma PNGs of the Script View (vertical stack of Turn chips + right-side panel) are now part of the `docs/ui_ref/` folder so they can be opened during dev‐work and in code reviews.
 
-────────────────────────────────────────────────────────  
-1. Functional goal (taken from implementation_plan.md § 2.6.3)
+   ────────────────────────────────────────────────────────  
+   1. Functional goal (taken from implementation_plan.md § 2.6.3)
 
-1. Canvas area (centre/left)  
-   •  Render the *current gold path* for the selected Persona as a vertical spine of "Turn cards".  
-   •  Cards show: author badge, v-number, Markdown-rendered text, commit_message tooltip (ℹ︎).  
-   •  Visual alignment must remain perfect when a card's border changes from 1 px (default) → 3 px (selected) → 0 px (ancestor-only "ghost").  
-   •  Double-click on a card opens NodeView/Timeline (2.6.4 – not implemented here but route stub must exist).
+   1. Canvas area (centre/left)  
+      •  Render the *current gold path* for the selected Persona as a vertical spine of "Turn cards".  
+      •  Cards show: author badge, v-number, Markdown-rendered text, commit_message tooltip (ℹ︎).  
+      •  Visual alignment must remain perfect when a card's border changes from 1 px (default) → 3 px (selected) → 0 px (ancestor-only "ghost").  
+      •  Double-click on a card opens NodeView/Timeline (2.6.4 – not implemented here but route stub must exist).
 
-2. Right-Side Panel (RSP) – three mutually exclusive states  
-   a. Nothing selected ⇒ helper text + "Export Script" button  
-   b. Turn selected ⇒ "Edit", "View Timeline" buttons  
-   c. Editing ⇒ textarea (live Markdown preview) + 120-char commit summary + "Save new version" button
+   2. Right-Side Panel (RSP) – three mutually exclusive states  
+      a. Nothing selected ⇒ helper text + "Export Script" button  
+      b. Turn selected ⇒ "Edit", "View Timeline" buttons  
+      c. Editing ⇒ textarea (live Markdown preview) + 120-char commit summary + "Save new version" button
 
-3. Behaviour rules  
-   •  Smart-resume: if `localStorage.lastPersonaOpened` < 7 days, auto-open its Script View after login.  
-   •  First-unedited autofocus: on open, scroll to the first Turn whose latest version is not authored-today-by-the-current-user.  
-   •  PATCH /turn/:id called when saving → the new Turn becomes the **last** card; list re-queries; Redis event already emitted.  
-   •  Toasts:  
-     – after smart-resume ("Resumed ...")  
-     – after save ("vN saved by you")  
-     – after API errors
+   3. Behaviour rules  
+      •  Smart-resume: if `localStorage.lastPersonaOpened` < 7 days, auto-open its Script View after login.  
+      •  First-unedited autofocus: on open, scroll to the first Turn whose latest version is not authored-today-by-the-current-user.  
+      •  PATCH /turn/:id called when saving → the new Turn becomes the **last** card; list re-queries; Redis event already emitted.  
+      •  Toasts:  
+      – after smart-resume ("Resumed ...")  
+      – after save ("vN saved by you")  
+      – after API errors
 
-────────────────────────────────────────────────────────  
-2. Back-end work
+   ────────────────────────────────────────────────────────  
+   2. Back-end work
 
-2.1 Data contract update  
-   •  GET /script/:personaId currently returns `id, role, depth, text, ts`.  
-   ➜ Extend the Cypher + serializer to also return:  
-     – `accepted` (bool)  
-     – `commit_message` (string | null)  
-     – `version` (computed row_number() OVER depth‐asc,ts-asc)  
-   •  Unit test: apps/api-server/tests/script.test.js  
-     – assert new keys exist  
-     – assert order (depth asc, ts asc) still holds after adding a new turn
+   2.1 Data contract update - COMPLETED ✅
+      •  GET /script/:personaId currently returns `id, role, depth, text, ts`.  
+      ➜ Extend the Cypher + serializer to also return:  
+      – `accepted` (bool)  
+      – `commit_message` (string | null)  
+      – `version` (computed row_number() OVER depth‐asc,ts-asc)  
+      •  Unit test: apps/api-server/tests/script.test.js  
+      – assert new keys exist  
+      – assert order (depth asc, ts asc) still holds after adding a new turn
 
-2.2 "Save new version" helper route  
-   •  The existing PATCH /turn/:turnId already creates a child Turn.  
-   •  No extra route needed, but we must:  
-     – ensure **parent.depth + 1** is stored (depth no longer carried by seq)  
-     – write a Jest test that posts `{text,commit_message}` and then GETs script to confirm the card count ↑ by 1 and last card fields match.
+   2.2 "Save new version" helper route - COMPLETE ✅  – depth persisted & happy-path test added
+      •  The existing PATCH /turn/:turnId already creates a child Turn.  
+      •  No extra route needed, but we must:  
+      – ensure **parent.depth + 1** is stored (depth no longer carried by seq)  
+      – write a Jest test that posts `{text,commit_message}` and then GETs script to confirm the card count ↑ by 1 and last card fields match.
 
-2.3 CI – back-end job  
-   •  Update Jest matrix to include new test file `turn_save.test.js`.  
-   •  Keep Neo4j docker-compose spin-up in `setupEnv.js` (already present).
+   2.3 CI – back-end job  
+      •  Update Jest matrix to include new test file `turn_save.test.js`.  
+      •  Keep Neo4j docker-compose spin-up in `setupEnv.js` (already present).
 
-────────────────────────────────────────────────────────  
-3. Front-end work (apps/frontend)
+   ────────────────────────────────────────────────────────  
+   3. Front-end work (apps/frontend)
 
-3.1 State & routing  
-   •  Add route `/canvas/:personaId` → `<ScriptView />`.  
-   •  Add zustand store `useScriptStore`  
-     – `turns`, `selectedTurnId`, `isEditing`, helpers `loadScript(personaId)`, `startEdit(turnId)`, `cancelEdit`, `saveEdit`.  
-     – Persist lastPersonaOpened to localStorage and expose helper `autoResume()`.
+   3.1 State & routing  
+      •  Add route `/canvas/:personaId` → `<ScriptView />`.  
+      •  Add zustand store `useScriptStore`  
+      – `turns`, `selectedTurnId`, `isEditing`, helpers `loadScript(personaId)`, `startEdit(turnId)`, `cancelEdit`, `saveEdit`.  
+      – Persist lastPersonaOpened to localStorage and expose helper `autoResume()`.
 
-3.2        Component tree  
-<ScriptView>  
-  ├── <TopNavBar> (already exists – breadcrumbs update)  
-  ├── <TurnCanvas>  (React-Flow vertical layout)  
-  │     ├─ maps turns → <TurnNode> custom nodes  
-  │     └─ reacts to select/dblclick etc.  
-  └── <RightSidePanel>  
-        ├─ <RSPIdle>           (helper text + Export)  
-        ├─ <RSPSelectedTurn>   (Edit / Timeline)  
-        └── <RSPEditing>        (textarea + preview + save)
+   3.2 Component tree  
+   <ScriptView>  
+   ├── <TopNavBar> (already exists – breadcrumbs update)  
+   ├── <TurnCanvas>  (React-Flow vertical layout)  
+   │     ├─ maps turns → <TurnNode> custom nodes  
+   │     └─ reacts to select/dblclick etc.  
+   └── <RightSidePanel>  
+         ├─ <RSPIdle>           (helper text + Export)  
+         ├─ <RSPSelectedTurn>   (Edit / Timeline)  
+         └── <RSPEditing>        (textarea + preview + save)
 
-3.3 TurnNode component  
-   •  Re-use styling primitives from HierarchyGraph chips for visual consistency.  
-   •  Props: `turn, isSelected, isAncestor`  
-   •  Compute `effectiveBorderWidth` from those flags and offset X accordingly (spec's "border-aware alignment" rule).  
-   •  Markdown rendered by `marked` (already dependency) with CSS clamp for max-height in collapsed view.
+   3.3 TurnNode component  
+      •  Re-use styling primitives from HierarchyGraph chips for visual consistency.  
+      •  Props: `turn, isSelected, isAncestor`  
+      •  Compute `effectiveBorderWidth` from those flags and offset X accordingly (spec's "border-aware alignment" rule).  
+      •  Markdown rendered by `marked` (already dependency) with CSS clamp for max-height in collapsed view.
 
-3.4 Right-Side Panel logic  
-   •  Derived from global store state (selectedTurnId + isEditing).  
-   •  Commit message `<input maxLength={120} onChange…>` shows remaining chars count.
+   3.4 Right-Side Panel logic  
+      •  Derived from global store state (selectedTurnId + isEditing).  
+      •  Commit message `<input maxLength={120} onChange…>` shows remaining chars count.
 
-3.5 API helpers  
-   •  Extend `api.js` with `getScript(personaId)` and `patchTurn(parentId, body)`.
+   3.5 API helpers  
+      •  Extend `api.js` with `getScript(personaId)` and `patchTurn(parentId, body)`.
 
-3.6 Unit tests (Vitest + React-Testing-Library)  
-   1. `<TurnNode>` – renders text, border width changes on selected prop.  
-   2. `<RightSidePanel>` – correct subcomponent for each state.  
-   3. `<ScriptView>` – on mount, fetches script and populates store (mock fetch).  
-   4. Editing flow: click Edit → textarea appears; typing & Save → `patchTurn` called; new card appears.  
+   3.6 Unit tests (Vitest + React-Testing-Library)  
+      1. `<TurnNode>` – renders text, border width changes on selected prop.  
+      2. `<RightSidePanel>` – correct subcomponent for each state.  
+      3. `<ScriptView>` – on mount, fetches script and populates store (mock fetch).  
+      4. Editing flow: click Edit → textarea appears; typing & Save → `patchTurn` called; new card appears.  
 
-3.7 E2E (Cypress, optional for later)  
-   •  Login → smart-resume → edit first turn → toast present → card count +1.
+   3.7 E2E (Cypress, optional for later)  
+      •  Login → smart-resume → edit first turn → toast present → card count +1.
 
-────────────────────────────────────────────────────────  
-4. CI pipeline changes
+   ────────────────────────────────────────────────────────  
+   4. CI pipeline changes
 
-.github/workflows/ci.yml  
-  – Job **backend-test** (jest) already exists.  
-    ➜ no change besides the new test files.  
-  – Job **frontend-test**  
-    •  `npm ci --workspace=apps/frontend`  
-    •  `npm run test` (vitest).  
-  – Job **lint**  
-    •  `npm run lint --workspaces` to cover new TS/JS files.  
-  – Job **build-preview** (Vercel) unchanged – ScriptView code paths are client-side only.
+   .github/workflows/ci.yml  
+   – Job **backend-test** (jest) already exists.  
+      ➜ no change besides the new test files.  
+   – Job **frontend-test**  
+      •  `npm ci --workspace=apps/frontend`  
+      •  `npm run test` (vitest).  
+   – Job **lint**  
+      •  `npm run lint --workspaces` to cover new TS/JS files.  
+   – Job **build-preview** (Vercel) unchanged – ScriptView code paths are client-side only.
 
-────────────────────────────────────────────────────────  
-5. TDD micro-task checklist (≈ 6 PRs)
+   ────────────────────────────────────────────────────────  
+   5. TDD micro-task checklist (≈ 6 PRs)
 
-1️⃣   Back-end: extend /script query + unit test  
-2️⃣   Back-end: save-new-version happy-path test (uses existing PATCH route)  
-3️⃣   Front-end: zustand store + api helpers + failing unit test (no UI yet)  
-4️⃣   Front-end: TurnNode component + tests  
-5️⃣   Front-end: RightSidePanel variants + tests  
-6️⃣   Front-end: ScriptView glue, smart-resume, autofocus + tests → E2E happy path
+   1️⃣   Back-end: extend /script query + unit test  
+   2️⃣   Back-end: save-new-version happy-path test (uses existing PATCH route)  
+   3️⃣   Front-end: zustand store + api helpers + failing unit test (no UI yet)  
+   4️⃣   Front-end: TurnNode component + tests  
+   5️⃣   Front-end: RightSidePanel variants + tests  
+   6️⃣   Front-end: ScriptView glue, smart-resume, autofocus + tests → E2E happy path
 
-Each PR finishes with `npm run test && pytest -q` green; GitHub Actions enforces.
+   Each PR finishes with `npm run test && pytest -q` green; GitHub Actions enforces.
 
-────────────────────────────────────────────────────────  
-6. Documentation & onboarding artefacts  
-   6.1  docs/implementation_plan/user_flow_1_implementation_plan.md  
-        •  Mark item 2 .6 .3 "Script View" as "IN-PROGRESS ➡ COMPLETE ✅" when merged.  
-        •  Append the micro-task checklist (IDs 1–6 above) under the "Milestones" table so reviewers can trace PR coverage.  
-        •  Paste two curl examples:  
-          – GET /script/ :personaId (now shows commit_message & version)  
-          – PATCH /turn/ :turnId with commit_message field.  
-        •  Add a short "Smart-Resume & First-Unedited autofocus" technical note that links to the zustand implementation lines.
+   ────────────────────────────────────────────────────────  
+   6. Documentation & onboarding artefacts  
+      6.1  docs/implementation_plan/user_flow_1_implementation_plan.md  
+         •  Mark item 2 .6 .3 "Script View" as "IN-PROGRESS ➡ COMPLETE ✅" when merged.  
+         •  Append the micro-task checklist (IDs 1–6 above) under the "Milestones" table so reviewers can trace PR coverage.  
+         •  Paste two curl examples:  
+            – GET /script/ :personaId (now shows commit_message & version)  
+            – PATCH /turn/ :turnId with commit_message field.  
+         •  Add a short "Smart-Resume & First-Unedited autofocus" technical note that links to the zustand implementation lines.
 
-   6.2  apps/api-server/README.md  
-        •  New subsection "Script endpoints" with payload examples and field glossary (accepted, version, commit_message).  
+      6.2  apps/api-server/README.md  
+         •  New subsection "Script endpoints" with payload examples and field glossary (accepted, version, commit_message).  
 
-   6.3  apps/frontend/README.md  
-        •  GIF (or PNG sequence) showing: hierarchy → ScriptView → edit → toast → timeline-stub navigation.  
-        •  Local dev instructions:  
-          ```bash  
-          cd apps/frontend  
-          npm run dev   # Vite  
-          # Ensure api-server is on :4000 and docker compose diff profile is running  
-          ```  
+      6.3  apps/frontend/README.md  
+         •  GIF (or PNG sequence) showing: hierarchy → ScriptView → edit → toast → timeline-stub navigation.  
+         •  Local dev instructions:  
+            ```bash  
+            cd apps/frontend  
+            npm run dev   # Vite  
+            # Ensure api-server is on :4000 and docker compose diff profile is running  
+            ```  
 
-   6.4  Storybook (optional but quick win)  
-        •  Add TurnNode stories for default / selected / ancestor / editing states so designers can sign off borders & paddings without running the whole app.  
-        •  Storybook build runs in CI but is not published yet (future work).
+      6.4  Storybook (optional but quick win)  
+         •  Add TurnNode stories for default / selected / ancestor / editing states so designers can sign off borders & paddings without running the whole app.  
+         •  Storybook build runs in CI but is not published yet (future work).
 
-────────────────────────────────────────────────────────  
-7. Roll-out & feature flag
+   ────────────────────────────────────────────────────────  
+   7. Roll-out & feature flag
 
-   •  The new front-end code lives behind `FEATURE_SCRIPT_VIEW` boolean (read from `.env` → Vite define).  
-   •  When `false`, LoadView's "Load script" button shows a toast "Coming soon"; when `true`, navigate to `/canvas/:personaId`.  
-   •  Staging environment: set the flag **true** so QA can test; production stays **false** until sign-off.
+      •  The new front-end code lives behind `FEATURE_SCRIPT_VIEW` boolean (read from `.env` → Vite define).  
+      •  When `false`, LoadView's "Load script" button shows a toast "Coming soon"; when `true`, navigate to `/canvas/:personaId`.  
+      •  Staging environment: set the flag **true** so QA can test; production stays **false** until sign-off.
 
-────────────────────────────────────────────────────────  
-8. Risk & mitigation
+   ────────────────────────────────────────────────────────  
+   8. Risk & mitigation
 
-   •  Large scripts (≫ 300 turns) could cause sluggish React-Flow layout.  
-     – Mitigate by using `proOptions={{ onlyRenderVisible: true }}` and windowing RSP markdown preview.  
-   •  Multiple editors racing to add versions → race condition on accepted flag.  
-     – Not in scope for 2 .6 .3 (handled in later "locking" milestone).  
-   •  CI run-time may grow; keep new Vitest suite under 10 s by mocking marked & react-flow.
+      •  Large scripts (≫ 300 turns) could cause sluggish React-Flow layout.  
+      – Mitigate by using `proOptions={{ onlyRenderVisible: true }}` and windowing RSP markdown preview.  
+      •  Multiple editors racing to add versions → race condition on accepted flag.  
+      – Not in scope for 2 .6 .3 (handled in later "locking" milestone).  
+      •  CI run-time may grow; keep new Vitest suite under 10 s by mocking marked & react-flow.
 
-────────────────────────────────────────────────────────  
-9. Post-merge verification checklist
+   ────────────────────────────────────────────────────────  
+   9. Post-merge verification checklist
 
-   [ ] GH-Actions green on main after squash-merge  
-   [ ] Vercel preview URL renders Script View and can save a new version  
-   [ ] Redis "script.turn.updated" entries show the new commit_message field  
-   [ ] Designer review: borders, spacing match Figma ±1 px  
-   [ ] Psychologist review: editing flow intuitive
+      [ ] GH-Actions green on main after squash-merge  
+      [ ] Vercel preview URL renders Script View and can save a new version  
+      [ ] Redis "script.turn.updated" entries show the new commit_message field  
+      [ ] Designer review: borders, spacing match Figma ±1 px  
+      [ ] Psychologist review: editing flow intuitive
 
-────────────────────────────────────────────────────────  
-10. Tentative timeline (2 devs)
+   ────────────────────────────────────────────────────────  
+   10. Tentative timeline (2 devs)
 
-   •  Day 1 morning   – Back-end query & tests (task 1️⃣, 2️⃣)  
-   •  Day 1 afternoon – Front-end store & API helpers (3️⃣)  
-   •  Day 2       – TurnNode + RSP components (4️⃣, 5️⃣)  
-   •  Day 3       – Glue into ScriptView + autofocus/smart-resume + tests (6️⃣)  
-   •  Day 4       – Polish, Storybook, docs, feature-flag rollout, QA hand-off
+      •  Day 1 morning   – Back-end query & tests (task 1️⃣, 2️⃣)  
+      •  Day 1 afternoon – Front-end store & API helpers (3️⃣)  
+      •  Day 2       – TurnNode + RSP components (4️⃣, 5️⃣)  
+      •  Day 3       – Glue into ScriptView + autofocus/smart-resume + tests (6️⃣)  
+      •  Day 4       – Polish, Storybook, docs, feature-flag rollout, QA hand-off
 
-────────────────────────────────────────────────────────  
-Implementation can now start with micro-task 1️⃣.
+   ────────────────────────────────────────────────────────  
+   Implementation can now start with micro-task 1️⃣.
 
 4. **NodeView/Version Timeline**
    * Route: `/canvas/:personaId/node/:turnId` – opened via double-click from CanvasView.

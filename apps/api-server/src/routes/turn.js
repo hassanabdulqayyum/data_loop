@@ -8,7 +8,8 @@
  * 2. If the request is valid and the user is authorised, we:
  *    a. Create a brand-new Turn node in Neo4j.
  *       • It links back to the parent turn via a CHILD_OF relationship.
- *       • The new turn is NOT automatically accepted – reviewers decide that later – so accepted:false.
+ *       • The new turn is immediately flagged **accepted:true** so the front-end can display it straight away on the gold path. Reviewers can still toggle this later.
+ *       • We also persist a **depth** property equal to `parent.depth + 1` (or `1` when the parent lacks a depth value). Storing depth avoids expensive `length(path)` calculations for huge scripts during analytics queries.
  *    b. Immediately broadcast a Redis Stream event called "script.turn.updated" so the AI diff worker and other services know something changed.
  * 3. The endpoint returns 201 Created together with the new turn ID so the UI can render it.
  *
@@ -86,16 +87,16 @@ router.patch('/:turnId', async (req, res, next) => {
     // 3. Create the Turn in Neo4j inside one session.
     const createCypher = `
       MATCH (parent:Turn {id: $parentId})
-      CREATE (new:Turn {
+      CREATE (parent)<-[:CHILD_OF]-(new:Turn {
         id: $newTurnId,
         role: parent.role,
         text: $text,
-        accepted: false,
+        accepted: true,
         parent_id: $parentId,
+        depth: coalesce(parent.depth, 0) + 1,
         ts: timestamp(),
         commit_message: $commitMessage
       })
-      CREATE (parent)<-[:CHILD_OF]-(new)
     `;
 
     // Run the creation statement. If the MATCH fails we surface 404.
