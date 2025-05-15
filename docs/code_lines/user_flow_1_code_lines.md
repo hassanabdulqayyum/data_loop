@@ -1345,3 +1345,6 @@ const rspContent = (
 
 1341. sample/ProgramDemo/Module01/Day01/Therapist01.json
    - [1-12] Expanded demo script to 12 turns with realistic dialogue covering breathing, body-scan, session length, engagement tips, and gratitude. Maintains alternating user/assistant flow for UI testing.
+
+1348. package.json (root) – added "engines":{"node":"20.x"} to pin Node version for Vercel build compatibility.
+1349. apps/frontend/package.json – same engines pin inserted.

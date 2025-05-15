@@ -4,6 +4,9 @@
   "private": true,
   "description": "React single-page app for Flow 1 dataset editing (Login, Canvas, etc.)",
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

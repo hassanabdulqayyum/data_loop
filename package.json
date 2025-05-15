@@ -2,6 +2,9 @@
   "name": "data-loop-monorepo",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "description": "Dependency manifest required so Vercel's @vercel/node builder installs libraries used by the api/index.mjs serverless function.",
   "dependencies": {
     "cors": "^2.8.5",
