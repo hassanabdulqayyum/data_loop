@@ -66,6 +66,23 @@ function LoadView() {
   const graphRef = useRef(null);
 
   /* ------------------------------------------------------------------
+   * Style for the Load and Export buttons in the RSP
+   * ---------------------------------------------------------------- */
+  const buttonStyle = {
+    fontFamily: '"Inter", sans-serif', // Ensure Inter is in quotes
+    fontWeight: 500, // Medium weight for Inter
+    fontSize: '24px',
+    letterSpacing: '-0.05em', // -5% letter spacing
+    color: '#000000',
+    border: '2px solid #000000',
+    padding: '12px',
+    borderRadius: '6px', // Added a slight border radius for aesthetics, can be removed if not desired
+    cursor: 'pointer',
+    backgroundColor: '#FFFFFF', // Assuming a white background, can be transparent
+    textDecoration: 'none', // For the export button if it's an <a> tag
+  };
+
+  /* ------------------------------------------------------------------
    * Fetch the hierarchy exactly once when the component appears.
    * ---------------------------------------------------------------- */
   useEffect(() => {
@@ -247,6 +264,59 @@ function LoadView() {
   function handleLoad() {
     if (!selectedPersonaId) return; // Guard but button is already disabled.
     navigate(`/canvas/${selectedPersonaId}`);
+  }
+
+  /* ------------------------------------------------------------------
+   * When the user presses "Export" (stub for now).
+   * ---------------------------------------------------------------- */
+  function handleExport() {
+    if (!selectedPersonaId) {
+      toast.error('Please select a persona script to export.');
+      return;
+    }
+    // Actual export logic will be:
+    // const { data } = await apiFetch(`/export/${selectedPersonaId}`, { headers: { Authorization: `Bearer ${token}` }});
+    // const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    // const url = URL.createObjectURL(blob);
+    // const a = document.createElement('a');
+    // a.href = url;
+    // a.download = `script_${selectedPersonaId}.json`;
+    // document.body.appendChild(a);
+    // a.click();
+    // document.body.removeChild(a);
+    // URL.revokeObjectURL(url);
+    toast.success(`Export for persona ${selectedPersonaId} would start here.`);
+  }
+
+  // Determine what message/content to show in the right-side panel (RSP)
+  // based on what the user has selected in the hierarchy tree.
+  let rspContent = <p>Select a module to begin…</p>;
+  if (selectedModuleId && !selectedTopicId) {
+    rspContent = <p>Select a topic…</p>;
+  } else if (selectedTopicId && !selectedPersonaId) {
+    rspContent = <p>Select a script to load…</p>;
+  } else if (selectedPersonaId) {
+    rspContent = (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
+          <button
+            type="button"
+            onClick={handleLoad}
+            style={buttonStyle}
+          >
+            Load script
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            style={buttonStyle}
+            disabled={!selectedPersonaId} // Disable if no persona is selected
+          >
+            Export
+          </button>
+        </div>
+      </div>
+    );
   }
 
   /* ------------------------------------------------------------------

@@ -977,3 +977,83 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 
 885.8 apps/frontend/src/components/HierarchyGraph.jsx
    - Removed tilt diagnostic `useEffect` hook and associated comments now that alignment is fixed.
+
+// --- User Flow 1: 2.6 Front-End --- 
+
+// --- 2.6.1 LoginView --- 
+// ... existing code ...
+
+// --- 2.6.2 LoadView --- 
+// apps/frontend/src/pages/LoadView.jsx, lines 43-59 (new buttonStyle object for RSP buttons)
+/* Style for the Load and Export buttons in the RSP */
+const buttonStyle = {
+  fontFamily: '"Inter", sans-serif', // Ensure Inter is in quotes
+  fontWeight: 500, // Medium weight for Inter
+  fontSize: '24px',
+  letterSpacing: '-0.05em', // -5% letter spacing
+  color: '#000000',
+  border: '2px solid #000000',
+  padding: '12px',
+  borderRadius: '6px', // Added a slight border radius for aesthetics
+  cursor: 'pointer',
+  backgroundColor: '#FFFFFF',
+  textDecoration: 'none',
+};
+
+// apps/frontend/src/pages/LoadView.jsx, lines 262-270 (new handleExport function stub)
+/* When the user presses "Export" (stub for now). */
+function handleExport() {
+  if (!selectedPersonaId) {
+    toast.error('Please select a persona script to export.');
+    return;
+  }
+  toast.success(`Export for persona ${selectedPersonaId} would start here.`);
+}
+
+// apps/frontend/src/pages/LoadView.jsx, lines 272-295 (updated rspContent to include styled and centered Load/Export buttons)
+let rspContent = <p>Select a module to begin…</p>;
+if (selectedModuleId && !selectedTopicId) {
+  rspContent = <p>Select a topic…</p>;
+} else if (selectedTopicId && !selectedPersonaId) {
+  rspContent = <p>Select a script to load…</p>;
+} else if (selectedPersonaId) {
+  rspContent = (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
+        <button
+          type="button"
+          onClick={handleLoad}
+          style={buttonStyle}
+        >
+          Load script
+        </button>
+        <button
+          type="button"
+          onClick={handleExport}
+          style={buttonStyle}
+          disabled={!selectedPersonaId} // Disable if no persona is selected
+        >
+          Export
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// apps/frontend/src/pages/LoadView.jsx, lines 307-315 (updated RSP container div to use flex for centering)
+{/* Right-Side Panel (RSP) */}
+<div style={{
+  width: '33%', // RSP takes 1/3 of the space
+  padding: '20px',
+  borderLeft: '1px solid #E0E0E0', // A light separator
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center', // Center content horizontally in RSP
+  justifyContent: 'center', // Center content vertically in RSP
+}}>
+  {rspContent}
+</div>
+
+
+// --- 2.6.3 CanvasView --- 
+// ... existing code ...
