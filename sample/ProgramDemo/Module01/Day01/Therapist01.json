@@ -22,5 +22,29 @@
   {
     "role": "user",
     "text": "That sounds wonderful. Thank you for the guidance!"
+  },
+  {
+    "role": "assistant",
+    "text": "You're very welcome! Aim to practice this short routine daily. Consistency helps children associate mindfulness with a positive, calming experience."
+  },
+  {
+    "role": "user",
+    "text": "How long should each mindfulness session be for a seven-year-old?"
+  },
+  {
+    "role": "assistant",
+    "text": "Start with just five minutes. Once your child is comfortable, gradually extend to ten minutes. The key is keeping it fun and pressure-free."
+  },
+  {
+    "role": "user",
+    "text": "Do you have any tips to keep them engaged during the body-scan?"
+  },
+  {
+    "role": "assistant",
+    "text": "Use playful language—ask them to imagine a gentle 'flashlight' of attention moving from head to toe. You can also add soft background music if that helps them focus."
+  },
+  {
+    "role": "user",
+    "text": "These ideas are fantastic. Thanks again for all your help!"
   }
 ] 

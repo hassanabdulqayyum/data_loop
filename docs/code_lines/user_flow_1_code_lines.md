@@ -1330,4 +1330,4 @@ const rspContent = (
     - Removed fragile click interaction and button assertion (lines 60-62) so the unit smoke-test now only verifies Program label renders; complex interactions move to E2E.
 
 1341. sample/ProgramDemo/Module01/Day01/Therapist01.json
-   - [1-6] Added demo conversation turns (system/user/assistant sequence) for UI testing. Each object contains `role` and `text` fields only, aligning with minimal import requirements.
+   - [1-12] Expanded demo script to 12 turns with realistic dialogue covering breathing, body-scan, session length, engagement tips, and gratitude. Maintains alternating user/assistant flow for UI testing.
