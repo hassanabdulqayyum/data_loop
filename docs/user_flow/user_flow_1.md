@@ -140,37 +140,27 @@ This section outlines the primary UI views and panel states identified for imple
     *   Standard interface for user authentication (username/password).
 
 **2. Canvas View:**
-    *   Initially empty. The **Contextual Right-Side Panel** (see View #3) will likely show options to "Load Script" or similar initial actions.
-    *   Once a script is loaded (via the Right-Side Panel), it displays the script's "gold path" as a series of interactive nodes on the canvas.
+    *   The Canvas View is displayed **only after a Persona script has been loaded** (either via **LoadView** or Smart-Resume). It immediately renders the script's "gold path" as interactive nodes on the canvas.
     *   Each node on the canvas will feature a visual affordance (e.g., a "+" button) that, when clicked, initiates an edit to create a new version of that node. This action transitions the **Contextual Right-Side Panel** to its "Editing State" (see #3d).
     *   **Single-clicking** a node on the canvas:
         *   The canvas view zooms and centers on the selected node.
         *   The selected node is visually highlighted (e.g., with a distinct border, color, or glow).
         *   The **Contextual Right-Side Panel** updates to the "Selected Node Context State" (see #3b), displaying basic information and actions for that node.
-    *   **Double-clicking** a node on the canvas transitions the **Contextual Right-Side Panel** to the "Node Inspector / Version Timeline State" (see #3c), offering a detailed view of the node's history.
+    *   **Double-clicking** a node on the canvas transitions the **Contextual Right-Side Panel** to the "NodeView / Version Timeline" at the route `/canvas/:personaId/node/:turnId`.
     *   When a script is loaded and active on the canvas, the **Contextual Right-Side Panel** (likely within a general canvas context or menu section, see #3a) provides an "Export Script" option.
     *   The canvas supports basic navigation features such as pan and zoom.
 
 **3. Contextual Right-Side Panel (Dynamic Multi-State Panel):**
     *   This panel is a core part of the UI and changes its content and available actions based on the user's current context and interactions.
-    *   **(a) Initial / Canvas Global Context State:**
-        *   Displayed when no specific node is selected for detailed interaction, or before any script is loaded (i.e., when the application starts or a script is closed).
-        *   This state guides the user through the hierarchical script loading process:
-            *   Initially prompts: "Select a module to begin...". Canvas shows Modules.
-            *   After Module selection: Prompts "Select a topic...". Canvas shows Topics for the selected Module. An "Export Module" button may be available in the RSP for bulk export of the selected module.
-            *   After Topic selection: Prompts "Select a script to load...". Canvas shows Persona tags/script types for the selected Topic.
-            *   After Persona/Script Type selection: Displays a "Load script" button.
-        *   When a script is actively displayed on the canvas (after loading), this state (or a persistent section of the panel) makes the "Export Script" functionality accessible (for exporting the *currently loaded* script's gold path).
+    *   **(a) Script-Level Context (no node selected):**
+        *   Shown when a script is open but **no node is currently selected**.
+        *   Presents lightweight guidance such as "Click a node to view details…" and exposes **script-level actions** – chiefly the **"Export Script"** button.
+        *   There are **no hierarchical "load script" prompts** here; those live exclusively in **LoadView**.
     *   **(b) Selected Node Context State (triggered by a single-click on a canvas node):**
         *   Displays essential information about the selected node, such as a snippet of its current content, the author of the current version, the current version number, and other relevant metadata.
         *   Provides an "Edit this Version" button, which, when clicked, transitions the panel into the "Editing State" (see #3d) for the current version of the selected node.
-        *   May also include a button or link like "View Full Details / Version Timeline," which transitions the panel to the "Node Inspector / Version Timeline State" (see #3c) for a more in-depth look at the node's history.
-    *   **(c) Node Inspector / Version Timeline State (triggered by a double-click on a canvas node, or by navigating from the Selected Node Context State):**
-        *   Features a pinned, non-scrolling card at the top displaying the full text content of the immediate parent turn of the selected node (providing conversational context).
-        *   Below the parent turn, it lists the versions of the *currently selected node* in chronological order (newest version at the top, descending to the oldest).
-        *   The latest/current version (and any other specifically designated "gold" versions, though for Flow 0.1 the latest is typically the only gold) displays its full text content. Older versions might be represented more compactly initially but expandable.
-        *   Provides an "Edit this Version" button for the currently displayed/selected version, which transitions the panel to the "Editing State" (see #3d).
-    *   **(d) Editing State (triggered by clicking "Edit this Version" from states #3b or #3c, or by using the "+" button on a canvas node):**
+        *   May also include a button or link like "View Full Details / Version Timeline," which transitions the panel to the "NodeView / Version Timeline" (see #4) for a more in-depth look at the node's history.
+    *   **(c) Editing State (triggered by clicking "Edit this Version" or by using the "+" button on a canvas node):**
         *   The selected node on the canvas becomes directly editable.
         *   The **Contextual Right-Side Panel** updates to provide tools and controls supporting the in-canvas editing process. This includes:
             *   Markdown formatting controls (e.g., bold, italics, lists).
@@ -179,7 +169,14 @@ This section outlines the primary UI views and panel states identified for imple
             *   A "Cancel" button to discard changes made during the current editing session.
         *   The content of the node being edited (on the canvas) is pre-filled with the text of the version selected for editing.
         *   This newly created version automatically becomes the current "gold" version for that turn in the script for this flow.
-        *   Upon saving, the panel typically updates to reflect this new version (e.g., by refreshing the Node Inspector view to show the new version at the top, or returning to the Selected Node Context view showing the new version details) and a confirmation (e.g., toast notification) is displayed. The canvas node also exits the "Draft" state.
+        *   Upon saving, the panel typically updates to reflect this new version (e.g., by refreshing the NodeView to show the new version at the top, or returning to the Selected Node Context view showing the new version details) and a confirmation (e.g., toast notification) is displayed. The canvas node also exits the "Draft" state.
+
+**4. NodeView / Version Timeline View:**
+    *   **Route:** `/canvas/:personaId/node/:turnId` – opened via double-click from Canvas View.
+    *   **Pinned Parent Turn:** At the very top, the full text of the immediate parent turn is displayed in a fixed card so conversational context is always visible while scrolling.
+    *   **Alternating Version Cards:** Versions of the selected node appear in chronological order along a central spine, newest at the top. Cards alternate left and right to keep the spine centred. The latest ("gold") version shows full Markdown content; older versions may collapse to a summary in later flows.
+    *   An **"Edit this Version"** button on the latest card returns the user to Canvas View in **Editing State** so a new version can be drafted.
+    *   This view is the dedicated home for diff displays, quality grades, and other deep-dive metadata in future user flows.
 
 ## 🔄 Sequence Diagram – High-Level Request/Response Flow
 ```mermaid

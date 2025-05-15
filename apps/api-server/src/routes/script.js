@@ -3,13 +3,15 @@
  *
  * When a logged-in user calls GET /script/:personaId, it returns the list of turns (nodes)
  * that make up the latest "gold path" for the given persona. The gold path is the main
- * sequence of accepted turns for a script, in order. This lets the front-end render the
- * script for editing or review.
+ * sequence of accepted turns for a script, in order. Additional metadata such as
+ * whether each turn sits on the gold path, its human commit summary, and a simple
+ * running *version* number are also returned.  The front-end uses these fields to
+ * decide styling (badges / roll-ups) and to show helpful tooltips.
  *
  * Example usage:
  *   curl -H "Authorization: Bearer <token>" http://localhost:4000/script/1
  * Response:
- *   { "data": [ { id, role, depth, ts, text } ] }
+ *   { "data": [ { id, role, depth, ts, text, accepted, commit_message, version } ] }
  *
  * If the persona does not exist, responds with 404 and a helpful error message.
  */
@@ -37,7 +39,13 @@ router.get('/:personaId', async (req, res, next) => {
                 MATCH path=(root)<-[:CHILD_OF*0..]-(t:Turn)
                 WHERE t = root OR t.accepted = true
                 WITH t, length(path) AS depth
-                RETURN t.id AS id, t.role AS role, depth AS depth, t.text AS text, t.ts AS ts
+                RETURN t.id            AS id,
+                       t.role          AS role,
+                       depth           AS depth,
+                       t.text          AS text,
+                       t.ts            AS ts,
+                       t.accepted      AS accepted,
+                       t.commit_message AS commit_message
                 ORDER BY depth ASC, t.ts ASC
             `;
             return await session.run(query, { personaId });
@@ -49,12 +57,18 @@ router.get('/:personaId', async (req, res, next) => {
             return next(err);
         }
         // Map Neo4j records to plain JS objects
-        const turns = result.records.map(record => ({
+        const turns = result.records.map((record, idx) => ({
             id: record.get('id'),
             role: record.get('role'),
             depth: record.get('depth'),
             ts: record.get('ts'),
             text: record.get('text'),
+            accepted: record.get('accepted'),
+            commit_message: record.get('commit_message'),
+            // The array is already sorted by depth and timestamp so we can
+            // derive a simple running version number by array position.
+            // v1 is the *first* element, v2 the second, and so on.
+            version: idx + 1,
         }));
         // Respond with the gold path turns as JSON
         res.json({ data: turns });

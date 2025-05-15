@@ -1,6 +1,9 @@
 import request from 'supertest';
 import app from '../src/app.js';
 import { sign_jwt } from '../libs/node-shared/jwt.js';
+import { driver } from '../libs/node-shared/db.js';
+import fs from 'fs';
+import path from 'path';
 
 /*
 export_module_day.test.js – Regression tests for the new hierarchical export
@@ -16,6 +19,32 @@ The tiny Neo4j seed (docs/scripts/neo4j/002_seed_data.cypher) creates:
   Module id 1 → Day id 1 → Persona id 1.
 That's enough to exercise the happy-path for both routes.
 */
+
+// Helper that wipes the DB then applies the tiny seed so every test runs against
+// the same predictable graph.  We only do it **once** for this file to keep the
+// runtime low (Cypher executes in <100 ms on the CI size DB).
+async function seedDatabase() {
+  const cypherPath = path.resolve(process.cwd(), '../../docs/scripts/neo4j/002_seed_data.cypher');
+  const fileContents = fs.readFileSync(cypherPath, 'utf8');
+  const statements = fileContents
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const session = driver.session();
+  try {
+    await session.run('MATCH (n) DETACH DELETE n');
+    for (const stmt of statements) {
+      await session.run(stmt);
+    }
+  } finally {
+    await session.close();
+  }
+}
+
+beforeAll(async () => {
+  await seedDatabase();
+});
 
 describe('Hierarchical export endpoints', () => {
   const token = sign_jwt({ email: 'demo@acme.test', role: 'editor' });

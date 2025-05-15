@@ -70,13 +70,28 @@ describe('GET /script/:personaId', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBeGreaterThan(0);
 
-    // Validate the shape of the first returned turn – new depth-based schema.
+    // Validate the shape of the first returned turn – the endpoint should now
+    // expose *three* extra keys so the front-end can badge cards correctly.
     const firstTurn = res.body.data[0];
     expect(firstTurn).toHaveProperty('id');
     expect(firstTurn).toHaveProperty('role');
     expect(firstTurn).toHaveProperty('depth');
     expect(firstTurn).toHaveProperty('ts');
     expect(firstTurn).toHaveProperty('text');
+    expect(firstTurn).toHaveProperty('accepted');
+    expect(firstTurn).toHaveProperty('commit_message');
+    expect(firstTurn).toHaveProperty('version');
+
+    // The version field should be a positive integer starting from 1.
+    expect(typeof firstTurn.version).toBe('number');
+    expect(firstTurn.version).toBeGreaterThanOrEqual(1);
+
+    // Every subsequent turn must have a strictly increasing version number so
+    // the array stays in deterministic order and the UI can trust the badge.
+    const versions = res.body.data.map(t => t.version);
+    for (let i = 1; i < versions.length; ++i) {
+      expect(versions[i]).toBe(i + 1);
+    }
 
     // Additional guarantee: the order should follow root → system → user → assistant
     const roles = res.body.data.map(t => t.role);

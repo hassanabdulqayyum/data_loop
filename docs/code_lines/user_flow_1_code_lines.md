@@ -891,14 +891,14 @@
 859. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
    - Added `anchorRootToCorner` helper to pin Program node 80×80 px from the top-left, ensuring it never drifts off-screen when wide persona grids expand; updated `HierarchyGraph` to use it and reverted grid centring sign bug.
 
-860. apps/frontend/src/lib/viewport.js & tests
-   - Added `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.
+860. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
+   - Introduced `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.
 
 861. apps/frontend/src/components/HierarchyGraph.jsx
    - Guarded call to `reactFlowInstance.getWrapper()` with typeof check to avoid TypeError in production build; falls back to `window.innerWidth` when method not present.
 
-862. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
-   - `anchorRootToTopCenter` now accepts `nodeWidth`; HierarchyGraph passes actual Program node width (fallback 120) to ensure true centring. Updated tests.
+862. apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
+   - Added `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.
 
 863. apps/frontend/src/lib/viewport.js
    - anchorRootToTopCenter now computes node centre in screen coords and sets desiredX to wrapper midpoint, fixing right-shift when node width was underestimated.
@@ -1094,14 +1094,139 @@ const rspContent = (
 // ... existing code ...
 
 // --- 2.6.2 LoadView (Export enhancements) ---
-885.9 apps/frontend/src/pages/LoadView.jsx
+106. (Old number for reference: 885.9) apps/frontend/src/pages/LoadView.jsx
    - Replaced stub `handleExport` (lines ~160–200) with full implementation that detects selection level and calls `/export/module/:id`, `/export/day/:id` or `/export/:id` then triggers a file download.
 
 // --- 2.3 API-Server Export routes ---
-62.1 apps/api-server/src/routes/export.js
+107. (Old number for reference: 62.1) apps/api-server/src/routes/export.js
    - Added new route `GET /export/module/:moduleId` (lines 10–58) generating nested `{days:[{personas:[…]}]}` JSON.
-62.2 apps/api-server/src/routes/export.js
+108. (Old number for reference: 62.2) apps/api-server/src/routes/export.js
    - Added new route `GET /export/day/:dayId` (lines 60–104) returning `{personas:[…]}` JSON.
 
 // --- Tests ---
-105.0 apps/api-server/tests/export_module_day.test.js – new test file covering both new endpoints (auth required, happy path, 404).
+109. (Old number for reference: 105.0) apps/api-server/tests/export_module_day.test.js – new test file covering both new endpoints (auth required, happy path, 404).
+
+110. (Old number for reference: 384) docs/user_flow/user_flow_1.md – Updated Canvas View description (lines ~140-220) to remove LoadView and Node-Inspector details, replaced RSP list with three states, added double-click navigation note, and inserted new **NodeView / Version Timeline View** section (lines ~310-340).
+
+111. (Old number for reference: 385) docs/implementation_plan/user_flow_1_implementation_plan.md – Replaced RSP bullet list in CanvasView/ScriptView (lines ~315-330) with three-state version and populated **NodeView/Version Timeline** subsection with new details (lines ~335-350).
+
+// --- Continuing Renumbering for Missed 800-Series Entries --- 
+
+112. (Old number for reference: 850) apps/frontend/src/lib/viewport.js
+   - export function anchorRootToTop(viewport, rootNode, topMargin = 60) {  # Pure helper pans the camera so the Program node sits at a fixed margin.
+   - const currentScreenY = rootNode.position.y * viewport.zoom + viewport.y;  # Converts flow coordinates to on-screen Y.
+   - const requiredDelta = topMargin - currentScreenY;  # Calculates how much to move the camera.
+   - return { ...viewport, y: viewport.y + requiredDelta };  # Returns a new viewport with adjusted translation.
+
+113. (Old number for reference: 851) apps/frontend/src/components/HierarchyGraph.jsx
+   - import { anchorRootToTop } from '../lib/viewport.js';  # Pull in new helper.
+   - const reactFlowInstance = useReactFlow();  # Access Flow instance for viewport control.
+   - useEffect(() => { /* smart fit & nudge logic */ }, [nodes, nodesInitialised]);  # Automatically fits & pins Program node every time children expand.
+   - reactFlowInstance.fitView({ padding: 0.1 });  # Lets React-Flow choose a sane zoom.
+   - const nudgedVp = anchorRootToTop(currentVp, programNode, 80);  # Moves camera down so Program sits 80 px from top.
+   - reactFlowInstance.setViewport(nudgedVp, { duration: 300 });  # Smooth 300 ms glide.
+
+114. (Old number for reference: 852) apps/frontend/tests/viewport.test.js
+   - import { anchorRootToTop } from '../src/lib/viewport.js';  # Unit-test imports helper.
+   - const adjusted = anchorRootToTop(viewport, rootNode, 60);  # Calls helper under test.
+   - expect(screenY).toBe(60);  # Asserts node lands exactly 60 px from top.
+
+115. (Old number for reference: 853) apps/frontend/src/pages/LoadView.jsx
+   - import { ReactFlowProvider } from 'reactflow';  # Brings in provider needed by ReactFlow hooks.
+   - Wrapped <HierarchyGraph> with <ReactFlowProvider> so zustand store exists before useReactFlow hook; fixes error 001.
+
+116. (Old number for reference: 854) apps/frontend/tests/LoadView.test.jsx
+   - import { ReactFlowProvider } from 'reactflow';  # Added to test helper.
+   - Render hierarchy inside provider to satisfy hooks during testing.
+
+117. (Old number for reference: 855) apps/frontend/src/lib/viewport.js
+   - export function clampZoom(viewport, minZoom = 0.4, maxZoom = 1.5) {  # New helper that keeps the `zoom` value between sensible bounds (0.4–1.5) so auto-fit never zooms comically in or out.
+
+118. (Old number for reference: 856) apps/frontend/src/components/HierarchyGraph.jsx
+   - Switched persona placement to a *grid* (max 6 per row, 140 px row-gap).  Added `clampZoom` call after `anchorRootToTop`, so final viewport never passes comfort limits.
+
+119. (Old number for reference: 857) apps/frontend/tests/viewport.test.js
+   - Added three unit-tests for `clampZoom`: leaves zoom unchanged inside range, bumps up when too low, caps when too high.
+
+120. (Old number for reference: 858) apps/frontend/src/components/HierarchyGraph.jsx
+   - Introduced `colGap` 60 px and `rowGap` 160 px constants; increased `baseNodeWidth` to 220 and adjusted grid-centering maths so persona nodes are evenly spaced and no longer crowd each other.
+
+121. (Old number for reference: 859) apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx
+   - Added `anchorRootToCorner` helper to pin Program node 80×80 px from the top-left, ensuring it never drifts off-screen when wide persona grids expand; updated `HierarchyGraph` to use it and reverted grid centring sign bug.
+
+122. (Old number for reference: 860) apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
+   - Introduced `anchorRootToTopCenter` helper; replaced previous corner logic; updated tests to assert root centres horizontally given wrapper width.
+
+123. (Old number for reference: 861) apps/frontend/src/components/HierarchyGraph.jsx
+   - Guarded call to `reactFlowInstance.getWrapper()` with typeof check to avoid TypeError in production build; falls back to `window.innerWidth` when method not present.
+
+124. (Old number for reference: 862) apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
+   - `anchorRootToTopCenter` now accepts `nodeWidth`; HierarchyGraph passes actual Program node width (fallback 120) to ensure true centring. Updated tests.
+
+125. (Old number for reference: 863) apps/frontend/src/lib/viewport.js
+   - anchorRootToTopCenter now computes node centre in screen coords and sets desiredX to wrapper midpoint, fixing right-shift when node width was underestimated.
+
+126. (Old number for reference: 864) apps/frontend/src/lib/viewport.js & HierarchyGraph.jsx & tests
+   - Introduced `computeViewportForRoot` rectangle-based centring, replaces cascaded fixes; HierarchyGraph now uses this single calculation. Added test ensuring centre maths.
+
+127. (Old number for reference: 865) apps/frontend/src/pages/LoadView.jsx
+   - Added `graphRef` to measure canvas rectangle and passed `graphRect` prop to HierarchyGraph so centring uses true canvas bounds.
+
+128. (Old number for reference: 866) apps/frontend/src/components/HierarchyGraph.jsx
+   - lines ~160-190 replaced inside useEffect: instead of using the *declared* Program node (which lacks runtime size), we now fetch the **hydrated** node via `reactFlowInstance.getNodes()` so `width` and `height` are available. These values are passed into `computeViewportForRoot` ensuring the Program node stays centered and stops sliding right after render.
+
+129. (Old number for reference: 882) apps/frontend/src/components/HierarchyGraph.jsx
+   - Updated `CustomNode` width logic (approx. lines 50-70): boxes now use `width:'max-content'` so the chip fits its text; only persona nodes keep a `minWidth` safety. Added explanatory layman comments.
+   - Added zoom lock props to `<ReactFlow>` element (approx. lines 340-350): `zoomOnScroll={false}`, `zoomOnPinch={false}`, `zoomOnDoubleClick={false}`, `minZoom={1}`, `maxZoom={1}`.
+   - Replaced the previous `useLayoutEffect` viewport logic (approx. lines 250-310) with a new version that forces `zoom:1` and just recentres the Program node, removing the old zoom-calculation maths.
+
+130. (Old number for reference: 883) apps/frontend/src/components/HierarchyGraph.jsx
+    - Replaced old fixed-grid persona algorithm with dynamic row-wrapping based on chip text width (lines ~150-240 inside isTopicSelected block).
+    - Constants updated: yGap 74, colGap 21, rowGap 33; removed REF_PERSONA_WIDTH constant; node padding now 8 px all round.
+    - Edges from Topic → Persona omitted for cleaner UI.
+    - Program centering margin changed from 80 px to 50 px (viewport effect lines ~310).
+
+131. (Old number for reference: 884) apps/frontend/src/components/HierarchyGraph.jsx
+    - Persona row vertical spacing now uses chipHeight 44 px plus rowGap to avoid overlap (lines ~210).
+    - Vertical tier gaps now use CHIP_HEIGHT44 + whiteGap74 to match border-to-border spacing (lines ~120,140,200).
+
+132. (Old number for reference: 885.6) apps/frontend/src/components/HierarchyGraph.jsx
+   - Fixed misalignment: subtract full borderWidth (not half) for Module, Day, and Persona positions so visual centres align regardless of 1 px vs 3 px outline.
+
+133. (Old number for reference: 885.7) apps/frontend/src/components/HierarchyGraph.jsx
+   - Refined border logic: `effectiveBorderWidth` calculated for Module and Day nodes based on `isTrulySelected` vs `isAncestor` state (0px for ancestor, 3px for selected, 1px otherwise). This ensures positioning X-offset matches the border rendered by CustomNode, fixing all slants.
+
+134. (Old number for reference: 885.8) apps/frontend/src/components/HierarchyGraph.jsx
+   - Removed tilt diagnostic `useEffect` hook and associated comments now that alignment is fixed.
+
+// --- The following multi-part entries were part of a large refactor and are grouped --- 
+// --- Their original numbers (97-A, 101-B etc.) were part of an internal scheme for that refactor --- 
+
+135. (Old number for reference: 97-A) apps/frontend/src/lib/layout.js  – NEW (lines 1-110)
+    Added generic `packIntoRows` helper that greedily wraps chips into rows and returns `{chips,rowWidth}` objects.  The logic is fully documented in layman's terms so anyone can grasp the maths in one read-through.
+
+136. (Old number for reference: 101-B) apps/frontend/src/components/HierarchyGraph.jsx  – REPLACED (approx. lines 40-250)
+    Replaced bespoke X/Y maths with a call to `packIntoRows`.  All tiers (Module, Day/Topic, every Persona row) now:
+    • measure their own chip widths,
+    • wrap opportunistically when the row would overflow the graph width,
+    • centre each row by subtracting `rowWidth / 2` from the graph midpoint.
+    Constants `CHIP_GAP` = 21 px and `ROW_GAP` = 33 px are now single-source of truth per design spec.  Persona placement no longer offsets under the parent Topic – instead it too aligns to the canvas midpoint keeping the whole tree visually balanced.
+
+137. (Old number for reference: 102-C) apps/frontend/src/lib/textMeasurer.js  – NEW (lines 1-90)
+    Added hidden-span based `measureChipWidth` helper that returns exact rendered width, eliminating 5 % error from canvas measurement.
+
+138. (Old number for reference: 101-D) apps/frontend/src/components/HierarchyGraph.jsx  – PATCH
+    • Program chip now placed at `x = -width/2` so its centre is on spine.
+    • All width calculations swapped to `measureChipWidth`, ensuring Module/Topic single-chip rows sit exactly under Program and multi-chip rows straddle the spine evenly.
+
+139. (Old number for reference: 101-E) apps/frontend/src/components/HierarchyGraph.jsx  – PATCH
+    • Removed redundant `+ CHIP_HEIGHT` when calculating dayTierStartY and personaTierStartY so Program→Module→Topic gaps are now 74 px as spec.
+    • Added `borderWidth / 2` compensation to X-position for selected Topic and Persona chips so their centres align on the spine even with 3-px outline.
+
+// ... existing code ... // This comment should be removed if it's the last line, or ensure there's content after it.
+
+140. apps/api-server/src/routes/script.js & apps/api-server/tests/script.test.js
+    - script.js lines 17-35: Extended Cypher query to RETURN `accepted`, `commit_message`, and kept order; updated inline layman comments.
+    - script.js lines 52-63: Added `version` field computed as `idx + 1` during JS mapping; response payload now `{id, role, depth, ts, text, accepted, commit_message, version}`.
+    - Updated top-file docstring example to list new fields.
+    - tests/script.test.js lines 55-85: Added assertions for `accepted`, `commit_message`, `version` keys plus monotonically increasing `version` sequence check.

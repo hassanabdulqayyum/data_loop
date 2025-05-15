@@ -271,19 +271,52 @@ Components & Pages
    • Document title set to **"Data Loop"** for browser tabs.
 
 2. **LoadView** – walks `/hierarchy`; closes on "Load script".
-3. **CanvasView**
+ **Status: COMPLETE ✅** – visual and functional implementation matches the Figma spec.
+After logging in, the user is taken to the **LoadView**. This screen serves as the main navigation hub for accessing and managing scripts. Here's a breakdown of its key features:
+
+*   **Interactive Hierarchy Tree:**
+    *   The main part of the screen displays a visual tree of all available content, starting from `Program` at the top, then branching down into `Module`s, `Topic`s (referred to as `Day`s in the backend schema), and finally individual `Persona` scripts.
+    *   This tree is fetched from the `/hierarchy` API endpoint.
+    *   Users can click on each level (Program, Module, Topic) to expand or collapse its children, allowing them to drill down to the specific Persona script they want to work with.
+    *   The selected item at each level is highlighted.
+
+*   **Top Navigation Bar (Breadcrumbs):**
+    *   As the user navigates the hierarchy tree, the `TopNavBar` (the bar at the very top of the page) dynamically updates to show a breadcrumb trail of their current location (e.g., `Program > Module 1: Defusion > Topic 1: Intro`).
+    *   Clicking on a breadcrumb segment (e.g., "Module 1: Defusion") will take the user back to that level in the hierarchy, deselecting any deeper items.
+
+*   **Right-Side Panel (RSP) – Contextual Actions:**
+    *   The panel on the right side of the screen changes based on what the user has selected in the hierarchy tree:
+        *   **Nothing selected (or only Program selected):** Displays a prompt like "Select a module to begin…".
+        *   **Module selected:** Displays "Select a topic…" and enables an "Export" button for the selected Module.
+        *   **Topic/Day selected:** Displays "Select a script to load…" and enables an "Export" button for the selected Topic.
+        *   **Persona selected:** Shows two main action buttons:
+            *   **"Load script":** Takes the user to the `CanvasView` for that specific Persona, allowing them to view or edit the script content.
+            *   **"Export":** Allows the user to download the selected Persona's script.
+
+*   **Export Functionality:**
+    *   The "Export" button in the RSP is a key feature. It allows users to download the content of the currently selected hierarchy level (Module, Topic/Day, or Persona) as a JSON file.
+    *   If a Module is selected, the JSON will contain all Days within that Module, each Day containing its Personas, and each Persona containing its script Turns.
+    *   If a Topic/Day is selected, the JSON will contain all Personas within that Topic, and their Turns.
+    *   If a Persona is selected, the JSON will contain just that Persona's script Turns.
+    *   The system checks if there's actual script content (Turns with `accepted:true` status) to export. If a selected Module or Day has no exportable script content underneath it (e.g., because Personas exist but have no Turns, or no Turns are marked `accepted`), the user will see a "Module not found" or "Day not found" message respectively, indicating there's nothing to download for that selection yet.
+
+*   **Loading a Script:**
+    *   Once a Persona is selected in the tree, the "Load script" button in the RSP becomes active.
+    *   Clicking this button navigates the user to the `CanvasView` (`/canvas/:personaId`), where they can see and interact with the actual turns of the selected script.
+
+This view is designed to be intuitive, providing a clear path for users to find and access the specific scripts they need, and to export data at various levels of granularity.
+
+3. **CanvasView/ScriptView**
    * Header: breadcrumb path + **"Change script"** control (allows opt-out from Smart-Resume).
    * React-Flow canvas: gold path nodes render Markdown text & badge `vN`.
      * **Key Principle: Border-Aware Alignment:** For both the Script View (linear stack of turns) and the Node Inspector/Version Timeline View (alternating cards on a central spine), ensure all elements maintain perfect vertical alignment despite dynamic border changes (e.g., when selected or in a draft state). This involves:
        1. Determining the element's current state (selected, editing, ancestor, default).
        2. Calculating an `effectiveBorderWidth` that precisely matches what CSS will render for that state (e.g., 0px for an ancestor with no border, 3px for a selected item's thick outline, 1px for a default thin border).
        3. Adjusting the element's horizontal positioning (e.g., its `x` offset, `marginLeft`, or internal content width if it's an alternating card) by this `effectiveBorderWidth`. This keeps the *visual center* of the element (or its relevant edge for alternating layouts) consistently aligned to the intended spine, preventing jitter or perceived misalignment as borders change thickness.
-   * **Right-Side Pan
-   el (RSP)** — four states:
-     a. *Selector* – shows prompts + "Load script" button.  
-     b. *Selected-node context* – single-click view with actions.  
-     c. *Node inspector / version timeline* – double-click view; shows parent turn + alternating timeline cards.  
-     d. *Editing* – textarea, Markdown toolbar, **"Save New Version"** + **commit summary** input.
+   * **Right-Side Panel (RSP)** — three states:
+     a. *Script-level context* (no node selected) – shows guidance text and the **"Export Script"** action.  
+     b. *Selected-node context* – single-click view with actions (Edit, View timeline).  
+     c. *Editing* – textarea, Markdown toolbar, **"Save New Version"** + **commit summary** input.
    * Toasts:
      – On Smart-Resume load: "Resumed last script: …" (non-blocking).  
      – After save: "v{N} saved by {user}".
@@ -304,6 +337,200 @@ Components & Pages
 *Action:* call `/export/:personaId`, trigger hidden `<a download>` with returned blob.
 
 *Cypress tests* – selector flow, edit flow (commit summary visible), export flow.
+
+##### Detailed Implementation Plan for 2.6.3 – "Script View"
+
+Detailed implementation plan for 2.6.3 – "Script View"  
+(Backend + Front-end, driven by TDD & wired into the existing CI)
+
+────────────────────────────────────────────────────────  
+0. Pre-flight check  
+•  All prerequisites from 2 .6 .2 are merged and green in CI.  
+•  GET /hierarchy, GET /export, PATCH /turn and Redis event emission already exist and are covered by tests.  
+•  Figma PNGs of the Script View (vertical stack of Turn chips + right-side panel) are now part of the `docs/ui_ref/` folder so they can be opened during dev‐work and in code reviews.
+
+────────────────────────────────────────────────────────  
+1. Functional goal (taken from implementation_plan.md § 2.6.3)
+
+1. Canvas area (centre/left)  
+   •  Render the *current gold path* for the selected Persona as a vertical spine of "Turn cards".  
+   •  Cards show: author badge, v-number, Markdown-rendered text, commit_message tooltip (ℹ︎).  
+   •  Visual alignment must remain perfect when a card's border changes from 1 px (default) → 3 px (selected) → 0 px (ancestor-only "ghost").  
+   •  Double-click on a card opens NodeView/Timeline (2.6.4 – not implemented here but route stub must exist).
+
+2. Right-Side Panel (RSP) – three mutually exclusive states  
+   a. Nothing selected ⇒ helper text + "Export Script" button  
+   b. Turn selected ⇒ "Edit", "View Timeline" buttons  
+   c. Editing ⇒ textarea (live Markdown preview) + 120-char commit summary + "Save new version" button
+
+3. Behaviour rules  
+   •  Smart-resume: if `localStorage.lastPersonaOpened` < 7 days, auto-open its Script View after login.  
+   •  First-unedited autofocus: on open, scroll to the first Turn whose latest version is not authored-today-by-the-current-user.  
+   •  PATCH /turn/:id called when saving → the new Turn becomes the **last** card; list re-queries; Redis event already emitted.  
+   •  Toasts:  
+     – after smart-resume ("Resumed ...")  
+     – after save ("vN saved by you")  
+     – after API errors
+
+────────────────────────────────────────────────────────  
+2. Back-end work
+
+2.1 Data contract update  
+   •  GET /script/:personaId currently returns `id, role, depth, text, ts`.  
+   ➜ Extend the Cypher + serializer to also return:  
+     – `accepted` (bool)  
+     – `commit_message` (string | null)  
+     – `version` (computed row_number() OVER depth‐asc,ts-asc)  
+   •  Unit test: apps/api-server/tests/script.test.js  
+     – assert new keys exist  
+     – assert order (depth asc, ts asc) still holds after adding a new turn
+
+2.2 "Save new version" helper route  
+   •  The existing PATCH /turn/:turnId already creates a child Turn.  
+   •  No extra route needed, but we must:  
+     – ensure **parent.depth + 1** is stored (depth no longer carried by seq)  
+     – write a Jest test that posts `{text,commit_message}` and then GETs script to confirm the card count ↑ by 1 and last card fields match.
+
+2.3 CI – back-end job  
+   •  Update Jest matrix to include new test file `turn_save.test.js`.  
+   •  Keep Neo4j docker-compose spin-up in `setupEnv.js` (already present).
+
+────────────────────────────────────────────────────────  
+3. Front-end work (apps/frontend)
+
+3.1 State & routing  
+   •  Add route `/canvas/:personaId` → `<ScriptView />`.  
+   •  Add zustand store `useScriptStore`  
+     – `turns`, `selectedTurnId`, `isEditing`, helpers `loadScript(personaId)`, `startEdit(turnId)`, `cancelEdit`, `saveEdit`.  
+     – Persist lastPersonaOpened to localStorage and expose helper `autoResume()`.
+
+3.2        Component tree  
+<ScriptView>  
+  ├── <TopNavBar> (already exists – breadcrumbs update)  
+  ├── <TurnCanvas>  (React-Flow vertical layout)  
+  │     ├─ maps turns → <TurnNode> custom nodes  
+  │     └─ reacts to select/dblclick etc.  
+  └── <RightSidePanel>  
+        ├─ <RSPIdle>           (helper text + Export)  
+        ├─ <RSPSelectedTurn>   (Edit / Timeline)  
+        └── <RSPEditing>        (textarea + preview + save)
+
+3.3 TurnNode component  
+   •  Re-use styling primitives from HierarchyGraph chips for visual consistency.  
+   •  Props: `turn, isSelected, isAncestor`  
+   •  Compute `effectiveBorderWidth` from those flags and offset X accordingly (spec's "border-aware alignment" rule).  
+   •  Markdown rendered by `marked` (already dependency) with CSS clamp for max-height in collapsed view.
+
+3.4 Right-Side Panel logic  
+   •  Derived from global store state (selectedTurnId + isEditing).  
+   •  Commit message `<input maxLength={120} onChange…>` shows remaining chars count.
+
+3.5 API helpers  
+   •  Extend `api.js` with `getScript(personaId)` and `patchTurn(parentId, body)`.
+
+3.6 Unit tests (Vitest + React-Testing-Library)  
+   1. `<TurnNode>` – renders text, border width changes on selected prop.  
+   2. `<RightSidePanel>` – correct subcomponent for each state.  
+   3. `<ScriptView>` – on mount, fetches script and populates store (mock fetch).  
+   4. Editing flow: click Edit → textarea appears; typing & Save → `patchTurn` called; new card appears.  
+
+3.7 E2E (Cypress, optional for later)  
+   •  Login → smart-resume → edit first turn → toast present → card count +1.
+
+────────────────────────────────────────────────────────  
+4. CI pipeline changes
+
+.github/workflows/ci.yml  
+  – Job **backend-test** (jest) already exists.  
+    ➜ no change besides the new test files.  
+  – Job **frontend-test**  
+    •  `npm ci --workspace=apps/frontend`  
+    •  `npm run test` (vitest).  
+  – Job **lint**  
+    •  `npm run lint --workspaces` to cover new TS/JS files.  
+  – Job **build-preview** (Vercel) unchanged – ScriptView code paths are client-side only.
+
+────────────────────────────────────────────────────────  
+5. TDD micro-task checklist (≈ 6 PRs)
+
+1️⃣   Back-end: extend /script query + unit test  
+2️⃣   Back-end: save-new-version happy-path test (uses existing PATCH route)  
+3️⃣   Front-end: zustand store + api helpers + failing unit test (no UI yet)  
+4️⃣   Front-end: TurnNode component + tests  
+5️⃣   Front-end: RightSidePanel variants + tests  
+6️⃣   Front-end: ScriptView glue, smart-resume, autofocus + tests → E2E happy path
+
+Each PR finishes with `npm run test && pytest -q` green; GitHub Actions enforces.
+
+────────────────────────────────────────────────────────  
+6. Documentation & onboarding artefacts  
+   6.1  docs/implementation_plan/user_flow_1_implementation_plan.md  
+        •  Mark item 2 .6 .3 "Script View" as "IN-PROGRESS ➡ COMPLETE ✅" when merged.  
+        •  Append the micro-task checklist (IDs 1–6 above) under the "Milestones" table so reviewers can trace PR coverage.  
+        •  Paste two curl examples:  
+          – GET /script/ :personaId (now shows commit_message & version)  
+          – PATCH /turn/ :turnId with commit_message field.  
+        •  Add a short "Smart-Resume & First-Unedited autofocus" technical note that links to the zustand implementation lines.
+
+   6.2  apps/api-server/README.md  
+        •  New subsection "Script endpoints" with payload examples and field glossary (accepted, version, commit_message).  
+
+   6.3  apps/frontend/README.md  
+        •  GIF (or PNG sequence) showing: hierarchy → ScriptView → edit → toast → timeline-stub navigation.  
+        •  Local dev instructions:  
+          ```bash  
+          cd apps/frontend  
+          npm run dev   # Vite  
+          # Ensure api-server is on :4000 and docker compose diff profile is running  
+          ```  
+
+   6.4  Storybook (optional but quick win)  
+        •  Add TurnNode stories for default / selected / ancestor / editing states so designers can sign off borders & paddings without running the whole app.  
+        •  Storybook build runs in CI but is not published yet (future work).
+
+────────────────────────────────────────────────────────  
+7. Roll-out & feature flag
+
+   •  The new front-end code lives behind `FEATURE_SCRIPT_VIEW` boolean (read from `.env` → Vite define).  
+   •  When `false`, LoadView's "Load script" button shows a toast "Coming soon"; when `true`, navigate to `/canvas/:personaId`.  
+   •  Staging environment: set the flag **true** so QA can test; production stays **false** until sign-off.
+
+────────────────────────────────────────────────────────  
+8. Risk & mitigation
+
+   •  Large scripts (≫ 300 turns) could cause sluggish React-Flow layout.  
+     – Mitigate by using `proOptions={{ onlyRenderVisible: true }}` and windowing RSP markdown preview.  
+   •  Multiple editors racing to add versions → race condition on accepted flag.  
+     – Not in scope for 2 .6 .3 (handled in later "locking" milestone).  
+   •  CI run-time may grow; keep new Vitest suite under 10 s by mocking marked & react-flow.
+
+────────────────────────────────────────────────────────  
+9. Post-merge verification checklist
+
+   [ ] GH-Actions green on main after squash-merge  
+   [ ] Vercel preview URL renders Script View and can save a new version  
+   [ ] Redis "script.turn.updated" entries show the new commit_message field  
+   [ ] Designer review: borders, spacing match Figma ±1 px  
+   [ ] Psychologist review: editing flow intuitive
+
+────────────────────────────────────────────────────────  
+10. Tentative timeline (2 devs)
+
+   •  Day 1 morning   – Back-end query & tests (task 1️⃣, 2️⃣)  
+   •  Day 1 afternoon – Front-end store & API helpers (3️⃣)  
+   •  Day 2       – TurnNode + RSP components (4️⃣, 5️⃣)  
+   •  Day 3       – Glue into ScriptView + autofocus/smart-resume + tests (6️⃣)  
+   •  Day 4       – Polish, Storybook, docs, feature-flag rollout, QA hand-off
+
+────────────────────────────────────────────────────────  
+Implementation can now start with micro-task 1️⃣.
+
+4. **NodeView/Version Timeline**
+   * Route: `/canvas/:personaId/node/:turnId` – opened via double-click from CanvasView.
+   * **Pinned Parent Turn** – shows the immediate parent turn in a fixed (non-scrolling) card for context.
+   * **Alternating Version Cards** – versions of the selected node are rendered along a central spine, newest at the top, cards alternating left/right. Latest ("gold") version is fully expanded; older ones may collapse in later flows.
+   * Provides an **"Edit this Version"** button that drops the user back into CanvasView in *Editing* state so they can draft a new version.
+   * This is where diff visualisations and quality grades will surface in future milestones.
 
 ### 2.7  Staging & Verification
 
