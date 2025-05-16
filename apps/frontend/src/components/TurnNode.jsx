@@ -4,19 +4,26 @@ TurnNode.jsx – A single card in the vertical script view
 This **custom node** is consumed by React-Flow so each turn inside the
 script becomes a draggable, selectable card on the canvas.
 
-What does it actually show?
-• Author role (system / user / assistant) in a small label.
-• The *first 40 characters* of the turn`s text so editors get a quick glance
-  at what is inside without reading the whole paragraph.  When the text is
-  missing or `null` (a rare edge-case when placeholder nodes appear) the
-  component simply shows an empty preview instead of crashing.
+Plain-English overview
+----------------------
+• Renders the *text* of one system/user/assistant turn as a rounded
+  "speech-bubble" card.
+• Styling strictly follows the Figma spec (Script view – 1.png):
+  – Unselected assistant/system → 2 px #CCCCCC outline, white fill.
+  – Unselected user            → no outline, #C8C8C8 fill.
+  – Selected (user or assistant) → 2.5 px #6C80DA outline.
+• The component no longer shows explicit "user" / "assistant" labels – the
+  colour cues alone communicate the speaker.
+• Text is set in **Inter Medium 26 px** with −5 % letter-spacing and wraps
+  inside a max width of 172 px; 8 px padding hugs the content.
 
-How is it used?
+How to use it?
 The parent <TurnCanvas> registers this component under the node-type key
-`turnNode`.  React-Flow will render <TurnNode data={…} /> whenever it sees
-`type: 'turnNode'` inside a node object.
+`turnNode`.  React-Flow will therefore render
+`<TurnNode data={{ turn }} />` whenever it encounters
+`type: 'turnNode'` in the nodes array.
 
-Example – none of the routing logic here, purely visual:
+Example (non-interactive excerpt):
 ```jsx
 import TurnNode from './TurnNode.jsx';
 
@@ -27,9 +34,8 @@ const node = {
     turn: {
       id: '123',
       role: 'assistant',
-      text: 'Hello world this is a long assistant answer…'
-    },
-    isSelected: false
+      text: 'Hello world – a concise preview…'
+    }
   },
   position: { x: 0, y: 0 }
 };
@@ -42,46 +48,67 @@ import useScriptStore from '../store/useScriptStore.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
 function TurnNode({ id, data }) {
-  // Pull helper so clicking on a card can mark it selected.
+  // Pull helpers so clicking on a card can mark it selected and read selected id.
   const selectTurn = useScriptStore((s) => s.selectTurn);
+  const selectedTurnId = useScriptStore((s) => s.selectedTurnId);
+
   const navigate = useNavigate();
   const { personaId } = useParams();
 
   // Destructure the turn for convenience.
   const { turn } = data;
 
-  // Compute a 40-char preview but guard against missing text so we never crash
+  // ---------------------------------------------------------------------------
+  // Visual style calculations (all numbers / colours come straight from Figma)
+  // ---------------------------------------------------------------------------
+  const isSelected = selectedTurnId === id;
+  const isUser = turn.role === 'user';
+
+  // Border rules – assistant/system have grey outline by default; user has none.
+  const baseBorderWidth = isUser ? 0 : 2; // px
+  const borderWidth = isSelected ? 2.5 : baseBorderWidth; // px
+  const borderColour = isSelected ? '#6C80DA' : '#CCCCCC';
+
+  // Fill rules – user cards are grey so editors instantly know who spoke.
+  const backgroundColour = isUser ? '#C8C8C8' : '#FFFFFF';
+
+  /* -------------------------------------------------------------------------
+   * Typography – Inter Medium 26 px with −5 % letter-spacing (Figma exact).
+   * We clamp the *width* to 172 px so when longer sentences arrive they wrap
+   * onto a new line _inside_ the bubble instead of stretching horizontally.
+   * ----------------------------------------------------------------------- */
+  const bubbleStyle = {
+    border: `${borderWidth}px solid ${borderColour}`,
+    borderRadius: 4,
+    background: backgroundColour,
+    padding: 8,
+    fontFamily: 'Inter, sans-serif',
+    fontWeight: 500, // "Medium" weight
+    fontSize: 26,
+    letterSpacing: '-0.05em', // −5 %
+    lineHeight: 1.25,
+    cursor: 'pointer',
+    maxWidth: 172,
+    width: 'fit-content',
+    whiteSpace: 'pre-wrap',
+    wordWrap: 'break-word'
+  };
+
+  // ---------------------------------------------------------------------------
+  // The preview shows the *entire* text wrapped; no role badge per new spec.
+  // ---------------------------------------------------------------------------
   const rawText = typeof turn.text === 'string' ? turn.text : '';
-  const preview =
-    rawText.length > 40 ? `${rawText.slice(0, 40).trim()}…` : rawText;
 
   return (
     <div
-      /*
-      A very bare-bones card – later micro-tasks will replace inline styles
-      with proper CSS modules.  For now we just need *something* visible so
-      the canvas is not blank.
-      */
-      style={{
-        border: '1px solid #ccc',
-        borderRadius: 4,
-        padding: 8,
-        background: '#fff',
-        minWidth: 180,
-        cursor: 'pointer',
-        fontSize: 12
-      }}
+      style={bubbleStyle}
       onClick={() => selectTurn(id)}
       onDoubleClick={() => {
-        /* Navigates to the timeline stub route as per spec item 5. */
+        /* Navigates to the timeline view (stub route) */
         navigate(`/canvas/${personaId}/node/${id}`);
       }}
     >
-      {/* Role badge */}
-      <strong style={{ textTransform: 'capitalize', color: '#555' }}>
-        {turn.role}
-      </strong>
-      <div style={{ marginTop: 4 }}>{preview}</div>
+      {rawText}
     </div>
   );
 }
@@ -91,8 +118,6 @@ TurnNode.propTypes = {
   data: PropTypes.shape({
     turn: PropTypes.shape({
       role: PropTypes.string.isRequired,
-      // `text` may be null in edge-cases (e.g. placeholder nodes).
-      // We therefore accept either string **or** null to keep rendering safe.
       text: PropTypes.string
     }).isRequired
   }).isRequired
