@@ -99,7 +99,8 @@ function TurnCanvas() {
       ref={containerRef}
       data-testid="turn-canvas-wrapper"
       style={{
-        flex: 1,
+        /* 2 parts of the available width so canvas ≈ two-thirds */
+        flex: '2 1 0%',
         height: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',

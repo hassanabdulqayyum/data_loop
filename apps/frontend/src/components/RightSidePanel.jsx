@@ -241,9 +241,9 @@ function RightSidePanel() {
     */
     <aside
       style={{
-        /* Fixed width so the TurnCanvas can reliably calculate its size */
-        width: '420px',
-        flex: '0 0 420px',
+        /* 1 part of available width so panel ≈ one-third (min 320 px for usability) */
+        flex: '1 1 0%',
+        minWidth: '320px',
         borderLeft: '3px solid #D1D1D1', // subtle divider – consistent with LoadView
         background: '#fff',
         height: '100%',

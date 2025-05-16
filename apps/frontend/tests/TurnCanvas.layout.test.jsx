@@ -6,7 +6,7 @@ The bug fixed in this commit caused the React-Flow viewport to re-centre on
 Panel.  The root cause was React-Flow panning; we have now:
   • disabled `panOnScroll`,
   • moved vertical scrolling to the wrapper div via `overflow-y:auto`, and
-  • locked the panel width at 420 px.
+  • switched to flex 2:1 ratio with min-width safeguard on panel.
 
 This test asserts that the wrapper element exposes the correct overflow rule
 so future refactors cannot regress the behaviour.
