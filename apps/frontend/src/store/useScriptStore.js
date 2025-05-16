@@ -70,6 +70,19 @@ const useScriptStore = create((set, get) => ({
   async loadScript(personaId, token) {
     if (!personaId || !token) throw new Error('personaId and token are required');
 
+    /* Early-exit optimisation ------------------------------------------------
+     * If the store already holds turns for THIS persona we can return
+     * immediately so the UI does not flicker through a loading state when
+     * users bounce back and forth between Script ↔︎ Node views.
+     *
+     * We only skip the call when **some** turns are present – an empty array
+     * means we have either never fetched or the list was purposely cleared.
+     */
+    const existingTurns = get().turns;
+    if (existingTurns.length && existingTurns[0].persona_id === personaId) {
+      return; // No network round-trip required – data already fresh enough.
+    }
+
     // 1. Call the back-end – returns { data: [...] }
     const { data } = await getScript(personaId, token);
 
