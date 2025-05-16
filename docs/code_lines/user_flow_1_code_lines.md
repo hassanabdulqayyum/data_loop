@@ -1365,3 +1365,13 @@ const rspContent = (
 1355. docs/scripts/neo4j/005_remove_legacy_demo.cypher & apps/api-server/tests/remove_legacy_demo.test.js
    - Added one-off maintenance Cypher that DETACH DELETEs obsolete `(Program {id:'ProgramDemo'})` and every connected node/edge.  The script is idempotent so running it twice is safe.
    - New Jest test inserts a dummy ProgramDemo node, runs the script, then asserts the node no longer exists, ensuring CI alerts if the legacy branch ever sneaks back in.
+
+172. apps/frontend/src/pages/ScriptView.jsx – PATCH
+   - Embedded existing TopNavBar into the ScriptView so the breadcrumb bar now appears above the turn canvas (lines X-Y).
+   - Added hierarchy fetch with apiFetch to derive Module / Topic / Persona nodes for the breadcrumb, storing them in local state.
+   - Introduced 72-px top padding and retained flex layout so content no longer hides under the fixed bar.
+   - Inline comments explain traversal logic and why failures are non-fatal.
+
+173. apps/frontend/tests/ScriptView.test.jsx – PATCH
+   - Mocked apiFetch to stub /hierarchy call and added assertion that the persona id breadcrumb renders (lines A-B).
+   - Extended import list to include `screen` helper from RTL.

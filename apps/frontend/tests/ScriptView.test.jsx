@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ScriptView from '../src/pages/ScriptView.jsx';
 import useScriptStore, { initialState } from '../src/store/useScriptStore.js';
@@ -14,6 +14,43 @@ Unit-test – Ensure that mounting <ScriptView /> triggers the zustand
 We avoid any live network call by swapping the `loadScript` method with a Jest
 mock implementation that resolves immediately.
 */
+
+// Small helper copied from useScriptStore tests so we can build fake Responses.
+function buildResponse(jsonBody) {
+  return {
+    ok: true,
+    json: async () => jsonBody
+  };
+}
+
+beforeEach(() => {
+  // Reset any previous mocks so tests stay isolated.
+  jest.clearAllMocks();
+
+  // Stub the *browser* fetch that apiFetch relies on.  We only care about the
+  // /hierarchy call here so we can return a minimal tree that contains the
+  // persona under test.
+  global.fetch = jest.fn().mockResolvedValue(
+    buildResponse({
+      data: [
+        {
+          id: 'Program1',
+          modules: [
+            {
+              id: 'm1',
+              days: [
+                {
+                  id: 'd1',
+                  personas: [{ id: 'p-123' }]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })
+  );
+});
 
 describe('<ScriptView />', () => {
   it('calls loadScript for the given personaId', async () => {
@@ -36,6 +73,11 @@ describe('<ScriptView />', () => {
     // 4. Wait until useEffect flushes.
     await waitFor(() => {
       expect(loadMock).toHaveBeenCalledWith('p-123', 'test-jwt');
+    });
+
+    // 5. Breadcrumb should show the persona id once hierarchy fetch resolves.
+    await waitFor(() => {
+      expect(screen.getByText('p-123')).toBeInTheDocument();
     });
   });
 }); 
