@@ -1409,3 +1409,9 @@ const rspContent = (
 180. apps/frontend/src/components/TurnCanvas.jsx
    - Added explanatory comment block (approx. lines 30-45) detailing the 43-px joining line requirement and why the new `verticalGap = 143` value approximates it.
    - Replaced old `const verticalGap = 150` with **143** (100-px average bubble height + 43-px connector).
+
+181. apps/frontend/src/components/TurnNode.jsx
+   - Increased internal `padding` from 8 px → **14 px** for both user and assistant bubbles (makes text breathing room consistent with updated spec). Updated docstring line accordingly.
+
+182. apps/frontend/src/components/TurnCanvas.jsx
+   - New `verticalGap` recalculated to **157 px** (100 avg height + 28 padding + 43 line) and node `x` position set to **−362 px** so 724-px max-width bubbles centre on the spine. Added explanatory comment block.

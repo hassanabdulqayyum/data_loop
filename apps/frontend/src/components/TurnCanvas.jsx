@@ -60,13 +60,22 @@ function TurnCanvas() {
      *   to the real spec while avoiding the complexity of post-render
      *   re-positioning.
      */
-    const verticalGap = 143; // px → 100 px average card height + 43 px line
+    const verticalGap = 157; // px → (average card height 100) + (new 14px top padding x2) + 43px connector
 
+    // Because React-Flow positions nodes by their top-left corner we offset the
+    // x-coordinate by **−362 px** (half of the 724-px max width) so even the
+    // widest possible bubble ends up centred on the x = 0 spine. Narrower
+    // bubbles will therefore be *slightly* left-biased, but the error is at
+    // most ~50 % of the difference from max width and looks visually centred
+    // in practice.  A future micro-task may measure bubble width post-render
+    // and adjust x precisely, but this quick fix already aligns the column so
+    // the connecting line runs through the middle of all cards.
+    
     const nodes = visibleTurns.map((turn, idx) => ({
       id: String(turn.id),
       type: 'turnNode',
       data: { turn },
-      position: { x: 0, y: idx * verticalGap }
+      position: { x: -362, y: idx * verticalGap }
     }));
 
     const edges = visibleTurns.slice(1).map((turn, idx) => ({

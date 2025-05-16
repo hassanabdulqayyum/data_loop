@@ -15,7 +15,7 @@ Plain-English overview
 • The component no longer shows explicit "user" / "assistant" labels – the
   colour cues alone communicate the speaker.
 • Text is set in **Inter Medium 26 px** with −5 % letter-spacing and wraps
-  inside a max width of 724 px; 8 px padding hugs the content. Cards can
+  inside a max width of 724 px; 14 px padding hugs the content. Cards can
   therefore grow quite wide on desktop before wrapping, matching the new
   high-fidelity Figma revision.  Corner radius also increases to 16 px so
   the bubble looks softer and friendlier.
@@ -84,7 +84,7 @@ function TurnNode({ id, data }) {
     border: `${borderWidth}px solid ${borderColour}`,
     borderRadius: 16,
     background: backgroundColour,
-    padding: 8,
+    padding: 14,
     fontFamily: 'Inter, sans-serif',
     fontWeight: 500, // "Medium" weight
     fontSize: 26,
