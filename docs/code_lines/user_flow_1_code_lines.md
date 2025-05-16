@@ -1445,3 +1445,6 @@ const rspContent = (
 
 190. apps/frontend/tests/TurnCanvas.layout.test.jsx – NEW FILE (lines 1-70)
      • Regression test asserts the TurnCanvas wrapper exposes `overflow-y:auto` and `overflow-x:hidden` styles, preventing any future re-introduction of the scroll-shift bug.
+
+193. apps/frontend/src/components/TurnCanvas.jsx – PATCH
+     • Re-enabled vertical panning by adding `panOnScroll` with `panOnScrollMode="vertical"`; added dynamic `translateExtent` using `centreX` to lock horizontal drift; scroll wheel now moves viewport down/up as expected while X stays fixed.

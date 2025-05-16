@@ -129,8 +129,14 @@ function TurnCanvas() {
         zoomOnScroll={false}
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
-        panOnScroll={false}
+        panOnScroll
+        panOnScrollMode="vertical"
         panOnDrag={false}
+        /* Clamp horizontal movement to keep nodes centred; allow large vertical range */
+        translateExtent={[
+          [centreX, -100000],
+          [centreX, 100000]
+        ]}
       >
         {/* Subtle dotted background so users see canvas area boundaries */}
         <Background gap={16} size={0.5} />
