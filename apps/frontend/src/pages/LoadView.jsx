@@ -47,14 +47,18 @@ import { apiFetch } from '../lib/api.js';
 import HierarchyGraph from '../components/HierarchyGraph.jsx';
 import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
 import { ReactFlowProvider } from 'reactflow';
+import useHierarchyStore from '../store/useHierarchyStore.js';
 
 function LoadView() {
   /* ------------------------------------------------------------------
    * Local state – keeps track of the hierarchy, loading flag, and which
    * persona (if any) the user has clicked on.
    * ---------------------------------------------------------------- */
-  const [tree, setTree] = useState(null); // The nested Program → Persona data
-  const [loading, setLoading] = useState(true); // While we wait for /hierarchy
+  const cachedHierarchy = useHierarchyStore((s) => s.tree);
+  const setHierarchyCache = useHierarchyStore((s) => s.setTree);
+
+  const [tree, setTree] = useState(cachedHierarchy); // Local copy for this view
+  const [loading, setLoading] = useState(!cachedHierarchy); // true only when we genuinely need a fetch
   const [selectedModuleId, setSelectedModuleId] = useState(null); // Store ID
   const [selectedTopicId, setSelectedTopicId] = useState(null);   // Store ID
   const [selectedPersonaId, setSelectedPersonaId] = useState(null); // Store ID
@@ -92,11 +96,9 @@ function LoadView() {
         const { data } = await apiFetch('/hierarchy', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        // Assuming data is an array of programs, and each program has a 'name'
-        // For TopNavBar, we might need the program name if no module is selected.
-        // However, current TopNavBar logic defaults to "Data Loop".
-        // The tree structure is: [{ id: 'ProgramName', name: 'ProgramName', modules: [...] }]
+        // Cache globally so subsequent route switches reuse the same array.
         setTree(data);
+        setHierarchyCache(data);
       } catch (err) {
         toast.error(err.message);
       } finally {
@@ -104,8 +106,15 @@ function LoadView() {
       }
     }
 
+    // If we already have the catalogue cached we can skip the network round-
+    // trip entirely – setLoading(false) immediately so UI renders.
+    if (cachedHierarchy) {
+      setLoading(false);
+      return; // Early exit – no fetch needed
+    }
+
     if (token) fetchHierarchy();
-  }, [token]);
+  }, [token, cachedHierarchy]);
 
   /* ------------------------------------------------------------------
    * Pre-selection support – when ScriptView sends the user back with a
