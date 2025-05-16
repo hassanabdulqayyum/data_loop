@@ -91,7 +91,7 @@ function TurnCanvas() {
   return (
     /* The wrapper ref lets us read clientWidth so nodes stay centred even when
        the user resizes their browser window. */
-    <div ref={containerRef} style={{ flex: 1, height: '100%', background: '#fafafa' }}>
+    <div ref={containerRef} style={{ flex: 2, height: '100%', background: '#fafafa' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

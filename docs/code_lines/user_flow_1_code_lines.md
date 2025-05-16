@@ -1432,3 +1432,6 @@ const rspContent = (
 
 186. apps/frontend/tests/TurnCanvas.utils.test.js – NEW FILE (lines 1-70)
      • Unit-tests verify first node offset, constant 143-px vertical gap, and 2.5-px grey edge styling so maths regressions surface instantly.
+
+187. apps/frontend/src/components/TurnCanvas.jsx – PATCH
+     • Outer wrapper `div` flex value changed from **1** → **2** so the canvas occupies twice the horizontal space of the Right-Side Panel, matching the 2:1 ratio already used in LoadView.
