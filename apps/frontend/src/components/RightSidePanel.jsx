@@ -241,10 +241,14 @@ function RightSidePanel() {
     */
     <aside
       style={{
-        width: 260,
-        borderLeft: '1px solid #e0e0e0',
+        /* Match LoadView – flex grow so the left canvas decides overall split */
+        flex: 1,
+        borderLeft: '3px solid #D1D1D1', // same subtle divider as LoadView
         background: '#fff',
-        height: '100%'
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
       }}
     >
       <Content />

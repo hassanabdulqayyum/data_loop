@@ -1415,3 +1415,20 @@ const rspContent = (
 
 182. apps/frontend/src/components/TurnCanvas.jsx
    - New `verticalGap` recalculated to **157 px** (100 avg height + 28 padding + 43 line) and node `x` position set to **−362 px** so 724-px max-width bubbles centre on the spine. Added explanatory comment block.
+
+183. apps/frontend/src/components/TurnCanvas.utils.js – NEW FILE (lines 1-100)
+     • Pure function `calculateNodesAndEdges()` converts visible turns → React-Flow nodes & edges.
+     • Constants `FIRST_NODE_OFFSET_Y = 44`, `VERTICAL_GAP = 143`, and `DEFAULT_CENTER_OFFSET_X = -362` defined so layout maths is single-source of truth.
+     • Inline docstring explains 2.5-px spine, 43-px connector gap, 44-px first-node offset, and includes example usage.
+
+184. apps/frontend/src/components/TurnCanvas.jsx – PATCH
+     • Replaced ad-hoc node/edge maths with call to new util, keeping component lean (≈ lines 20-70).
+     • Added ResizeObserver logic that measures wrapper width and centres nodes regardless of viewport size (≈ lines 30-55).
+     • Disabled horizontal panning by passing `translateExtent={[[0,-100000],[0,100000]]}` and `panOnDrag={false}` (≈ line 70).
+     • Header docstring rewritten to list *all* new spec points (2.5-px spine, 44-px offset, no sideways pan).
+
+185. apps/frontend/src/components/RightSidePanel.jsx – PATCH
+     • Outer `<aside>` now uses `flex:1` width and 3-px `#D1D1D1` divider to match LoadView (≈ lines 190-205).
+
+186. apps/frontend/tests/TurnCanvas.utils.test.js – NEW FILE (lines 1-70)
+     • Unit-tests verify first node offset, constant 143-px vertical gap, and 2.5-px grey edge styling so maths regressions surface instantly.
