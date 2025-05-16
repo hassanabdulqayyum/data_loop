@@ -23,10 +23,72 @@ preview, etc.
 */
 
 import React from 'react';
+import { useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import useScriptStore from '../store/useScriptStore.js';
+import useAuthStore from '../store/useAuthStore.js';
+import { apiFetch } from '../lib/api.js';
 
-// Tiny helper components so we keep JSX readable.
-function RSPIdle() {
+/* ------------------------------------------------------------------
+ * Shared styling – copied 1-for-1 from <LoadView /> so the Edit and Export
+ * buttons look absolutely identical across the entire application.  This will
+ * eventually live in a central CSS module but inline is fine for now.
+ * ---------------------------------------------------------------- */
+const buttonStyle = {
+  fontFamily: '"Inter", sans-serif',
+  fontWeight: 500,
+  fontSize: '24px',
+  letterSpacing: '-0.05em',
+  color: '#000000',
+  border: '2px solid #000000',
+  padding: '8px',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  backgroundColor: '#FFFFFF',
+  textDecoration: 'none'
+};
+
+/* ------------------------------------------------------------------
+ * Helper – exports the *entire* script (gold path) regardless of which node
+ * is selected.  Mirrors LoadView behaviour but scoped to the personaId route
+ * param so we do not rely on parent components passing props.
+ * ---------------------------------------------------------------- */
+function useExportHandler(personaId) {
+  const { token } = useAuthStore();
+
+  return async function handleExport() {
+    try {
+      if (!personaId) {
+        toast.error('Script not loaded yet – cannot export.');
+        return;
+      }
+
+      const data = await apiFetch(`/export/${encodeURIComponent(personaId)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const filename = `script_${personaId}.json`;
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exported \u201C${filename}\u201D`);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+}
+
+function RSPIdle({ onExport }) {
   /**
    * RSPIdle – Script-level helper view
    * ----------------------------------
@@ -45,21 +107,6 @@ function RSPIdle() {
    *
    * NOTE: All inline-styles are temporary until step **3.3 CSS modules**.
    */
-
-  // ⤵ A single shared style object prevents repetition and keeps overrides easy.
-  const buttonStyle = {
-    fontFamily: 'Inter, sans-serif',
-    fontWeight: 500,
-    fontSize: 18,
-    letterSpacing: '-0.05em',
-    color: '#6B6B6B', // greyed-out label to indicate disabled state
-    border: '2px solid #D1D1D1',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 6,
-    padding: '6px 12px',
-    cursor: 'not-allowed', // ensure OS displays the *disabled* cursor
-    opacity: 0.6 // extra visual cue
-  };
 
   return (
     <div
@@ -88,12 +135,7 @@ function RSPIdle() {
       {/* Disabled Export button – hooks up to real handler later */}
       <button
         type="button"
-        disabled
-        onClick={() => {
-          /* Stub handler – will call /export once implemented (see spec 3.2) */
-          /* eslint-disable-next-line no-console */
-          console.log('TODO: Export Script – stub');
-        }}
+        onClick={onExport}
         style={buttonStyle}
       >
         Export Script
@@ -102,11 +144,65 @@ function RSPIdle() {
   );
 }
 
-function RSPSelected() {
+function RSPSelected({ onExport, onEdit }) {
+  /**
+   * Shows metadata for the selected turn plus the Edit + Export buttons.
+   */
+
+  const { selectedTurnId, turns } = useScriptStore();
+
+  // Find the turn object so we can display its details.
+  const turn = turns.find((t) => t.id === selectedTurnId) || {};
+  const createdDate = turn.ts
+    ? new Date(turn.ts).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    : 'Unknown';
+
+  const author = turn.author || turn.editor || turn.role || 'Unknown';
+
   return (
-    <div style={{ padding: 16 }}>
-      <h3>Turn selected</h3>
-      <p>Buttons (Edit / View timeline) will appear here in a later task.</p>
+    <div
+      style={{
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 24
+      }}
+    >
+      {/* Metadata block */}
+      <div style={{ fontSize: 16, lineHeight: 1.4 }}>
+        <div style={{ marginBottom: 4 }}>
+          <strong>Created</strong>
+          <br />
+          {createdDate}
+        </div>
+        <div>
+          <strong>Author</strong>
+          <br />
+          {author}
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          gap: 14
+        }}
+      >
+        <button type="button" onClick={onEdit} style={buttonStyle}>
+          Edit
+        </button>
+        <button type="button" onClick={onExport} style={buttonStyle}>
+          Export
+        </button>
+      </div>
     </div>
   );
 }
@@ -121,12 +217,21 @@ function RSPEditing() {
 }
 
 function RightSidePanel() {
-  const { selectedTurnId, isEditing } = useScriptStore();
+  const { selectedTurnId, isEditing, startEdit } = useScriptStore();
+  const { personaId } = useParams();
+
+  const handleExport = useExportHandler(personaId);
 
   let Content;
-  if (isEditing) Content = RSPEditing;
-  else if (selectedTurnId) Content = RSPSelected;
-  else Content = RSPIdle;
+  if (isEditing) {
+    Content = RSPEditing;
+  } else if (selectedTurnId) {
+    Content = (props) => (
+      <RSPSelected {...props} onExport={handleExport} onEdit={() => startEdit(selectedTurnId)} />
+    );
+  } else {
+    Content = (props) => <RSPIdle {...props} onExport={handleExport} />;
+  }
 
   return (
     /*

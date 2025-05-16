@@ -1375,3 +1375,16 @@ const rspContent = (
 173. apps/frontend/tests/ScriptView.test.jsx – PATCH
    - Mocked apiFetch to stub /hierarchy call and added assertion that the persona id breadcrumb renders (lines A-B).
    - Extended import list to include `screen` helper from RTL.
+
+174. apps/frontend/src/components/RightSidePanel.jsx
+    - Overhauled RSP Idle & Selected states (lines 1-180):
+      • Introduced shared `buttonStyle` identical to LoadView buttons so UI is consistent.
+      • Idle now shows helper text + *active* **Export Script** button that exports the whole script.
+      • Selected state now displays Created date & Author metadata plus **Edit** + **Export** buttons.
+      • Added `useExportHandler` helper that calls `/export/:personaId` using JWT from zustand store, mirroring LoadView logic.
+      • Pulls `personaId` from route params via `useParams` so no prop drilling is needed.
+      • Rich layman comments added explaining every block.
+
+175. apps/frontend/tests/RightSidePanel.test.jsx
+    - Updated idle test to expect an *enabled* Export button.
+    - Added new test "renders metadata and action buttons when a turn is selected" that primes the zustand store and asserts presence of Created/Author labels plus Edit + Export buttons.
