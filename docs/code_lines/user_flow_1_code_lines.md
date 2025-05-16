@@ -1388,3 +1388,15 @@ const rspContent = (
 175. apps/frontend/tests/RightSidePanel.test.jsx
     - Updated idle test to expect an *enabled* Export button.
     - Added new test "renders metadata and action buttons when a turn is selected" that primes the zustand store and asserts presence of Created/Author labels plus Edit + Export buttons.
+
+176. apps/frontend/src/components/TurnNode.jsx
+    - Lines 1-37: Header docstring rewritten to describe new Figma-accurate visuals (colour cues, 26 px Inter, max-width 172 px, no role label).
+    - Lines 45-95: Replaced entire render logic – component now pulls `selectedTurnId` from zustand to calculate `isSelected`, applies dynamic `borderWidth`, `borderColour`, and `backgroundColour` rules (grey outline for assistant/system, grey fill for user, blue outline when selected). Removed role badge, text wraps with `pre-wrap`.
+
+177. apps/frontend/src/components/TurnCanvas.jsx
+    - Lines 14-25: Added `visibleTurns` memo that filters out `role === 'root'` so the invisible root node never renders.
+    - Lines 26-55: Vertical layout gap now 150 px and edges use `type:'straight'` plus `{stroke:'#CCCCCC',strokeWidth:2.5}` to match 2.5 px joining line spec.
+    - `<ReactFlow>` props updated: `minZoom={1}`, `maxZoom={1}`, and zoom interactions all disabled so font stays 26 px on every screen.
+
+178. apps/frontend/tests/TurnNode.test.jsx  – REPLACED
+    - Old role-label assertions removed.  New tests verify: (1) assistant card shows 2 px outline; (2) user card shows grey fill & no border; (3) clicking the card updates zustand and renders 2.5 px blue outline.
