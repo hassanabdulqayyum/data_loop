@@ -241,14 +241,16 @@ function RightSidePanel() {
     */
     <aside
       style={{
-        /* Match LoadView – flex grow so the left canvas decides overall split */
-        flex: 1,
-        borderLeft: '3px solid #D1D1D1', // same subtle divider as LoadView
+        /* Fixed width so the TurnCanvas can reliably calculate its size */
+        width: '420px',
+        flex: '0 0 420px',
+        borderLeft: '3px solid #D1D1D1', // subtle divider – consistent with LoadView
         background: '#fff',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        overflowY: 'auto'
       }}
     >
       <Content />

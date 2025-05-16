@@ -88,29 +88,48 @@ function TurnCanvas() {
   // React-Flow needs to know our custom node component.
   const nodeTypes = useMemo(() => ({ turnNode: TurnNode }), []);
 
+  // ---------------------------------------------------------------------
+  // Wrapper takes the remaining width after the Right-Side Panel (fixed
+  // 420 px) so the canvas never leaks underneath.  We enable **vertical**
+  // scrolling via `overflowY:auto` – React-Flow no longer pans the viewport.
+  // ---------------------------------------------------------------------
+
   return (
-    /* The wrapper ref lets us read clientWidth so nodes stay centred even when
-       the user resizes their browser window. */
-    <div ref={containerRef} style={{ flex: 2, height: '100%', background: '#fafafa' }}>
+    <div
+      ref={containerRef}
+      data-testid="turn-canvas-wrapper"
+      style={{
+        flex: 1,
+        height: '100%',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        background: '#fafafa'
+      }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        fitView
+        /* -----------------------------------------------------------------
+         * View-port behaviour tweaks (bug-fix – nodes jumped under RSP on scroll)
+         * -----------------------------------------------------------------
+         * 1. `proOptions.fitViewOnInit` guarantees the gold-path is centred *once*
+         *    when the component mounts.  Afterwards we leave the viewport
+         *    untouched so horizontal position remains rock-solid.
+         * 2. We turn *off* React-Flow driven panning (`panOnScroll`,
+         *    `panOnDrag`) so vertical movement now relies on the wrapper
+         *    div's natural `overflow-y: auto` scroll bar.  This removes the
+         *    accidental X-reset that previously shoved half the cards under
+         *    the right-side panel.
+         * ---------------------------------------------------------------- */
+        proOptions={{ fitViewOnInit: true }}
         minZoom={1}
         maxZoom={1}
         zoomOnScroll={false}
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
-        panOnScroll
-        panOnDrag={false} // forbid drag-panning so horizontal motion never occurs
-        /* Lock horizontal translation – x-extent min == max == 0.
-           We allow an enormous vertical range so long scripts can still pan
-           freely up/down. */
-        translateExtent={[
-          [0, -100000],
-          [0, 100000]
-        ]}
+        panOnScroll={false}
+        panOnDrag={false}
       >
         {/* Subtle dotted background so users see canvas area boundaries */}
         <Background gap={16} size={0.5} />

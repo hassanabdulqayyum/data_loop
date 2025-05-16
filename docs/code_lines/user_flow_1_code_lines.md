@@ -1435,3 +1435,13 @@ const rspContent = (
 
 187. apps/frontend/src/components/TurnCanvas.jsx – PATCH
      • Outer wrapper `div` flex value changed from **1** → **2** so the canvas occupies twice the horizontal space of the Right-Side Panel, matching the 2:1 ratio already used in LoadView.
+
+188. apps/frontend/src/components/TurnCanvas.jsx – PATCH
+     • Switched to wrapper `overflowY: 'auto'` + `overflowX: 'hidden'` and set `data-testid="turn-canvas-wrapper"` so vertical scrolling now relies on native DOM scroll instead of React-Flow panning (≈ lines 70-110).
+     • Replaced `fitView`/`translateExtent`/`panOnScroll` props with `proOptions={{fitViewOnInit:true}}` and `panOnScroll={false}` to lock horizontal position after first render (≈ lines 110-135).
+
+189. apps/frontend/src/components/RightSidePanel.jsx – PATCH
+     • Panel now has fixed width `420px` via `flex:'0 0 420px'` and `width:'420px'`; added `overflowY:'auto'` so long metadata blocks scroll inside the panel instead of shrinking canvas (≈ lines 210-225).
+
+190. apps/frontend/tests/TurnCanvas.layout.test.jsx – NEW FILE (lines 1-70)
+     • Regression test asserts the TurnCanvas wrapper exposes `overflow-y:auto` and `overflow-x:hidden` styles, preventing any future re-introduction of the scroll-shift bug.
