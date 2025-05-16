@@ -173,6 +173,30 @@ function LoadView() {
     selectedPersonaNode = findNodeById(selectedTopicNode.personas, selectedPersonaId);
   }
 
+  /**
+   * ------------------------------------------------------------------
+   * Fallback breadcrumb nodes – prevents the temporary "Mindfulness Program"
+   * flash ------------------------------------------------------------------
+   * If we navigated here via the breadcrumb *before* the /hierarchy request
+   * finishes, we already know the IDs the user had selected (they were passed
+   * in `location.state.preselect`).  The real node objects are only available
+   * once `tree` is fetched, therefore – for the short in-between render – we
+   * fabricate **minimal** placeholder objects so <TopNavBar /> can display the
+   * correct IDs immediately instead of the default title.  The placeholders
+   * are automatically replaced on the next render because the real nodes will
+   * resolve once `tree` is set.
+   * ------------------------------------------------------------------
+   */
+  if (!selectedModuleNode && selectedModuleId) {
+    selectedModuleNode = { id: selectedModuleId, name: selectedModuleId };
+  }
+  if (!selectedTopicNode && selectedTopicId) {
+    selectedTopicNode = { id: selectedTopicId, name: selectedTopicId };
+  }
+  if (!selectedPersonaNode && selectedPersonaId) {
+    selectedPersonaNode = { id: selectedPersonaId, name: selectedPersonaId };
+  }
+
   /* ------------------------------------------------------------------
    * Recursive helper – prints one level of the tree.  The layout is kept
    * deliberately minimal at this stage – we only indent using `marginLeft`
