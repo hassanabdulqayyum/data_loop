@@ -17,6 +17,7 @@
 import neo4j from 'neo4j-driver';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 function envRequired(key) {
   const value = process.env[key];
@@ -81,16 +82,38 @@ async function ensureDemoCatalog() {
   try {
     if (process.env.NODE_ENV === 'test') return; // Tests expect empty DB
 
-    const cypherPath = path.resolve(
-      process.cwd(),
+    // Resolve against repository root regardless of where the process was
+    // started (`process.cwd()` can be apps/api-server/ when running via nodemon).
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const repoRoot = path.resolve(__dirname, '../../..');
+    const cypherPath = path.join(
+      repoRoot,
       'docs/scripts/neo4j/004_demo_catalog.cypher'
     );
     if (!fs.existsSync(cypherPath)) return;
 
-    const demoCypher = fs.readFileSync(cypherPath, 'utf8');
+    await withSession(async (session) => {
+      // Skip seeding if Program node already present to avoid duplicates.
+      const exists = await session.run(
+        "MATCH (p:Program {id:'Program'}) RETURN p LIMIT 1"
+      );
+      if (exists.records.length > 0) {
+        return; // nothing to do – catalog already loaded
+      }
 
-    await withSession((session) => session.run(demoCypher));
-    console.log('✅ Demo catalog ensured');
+      const fileTxt = fs.readFileSync(cypherPath, 'utf8');
+      // Split on semicolons **followed by a newline** so we keep Cypher
+      // comments and avoid empty trailing statements.
+      const statements = fileTxt
+        .split(/;\s*\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      for (const stmt of statements) {
+        await session.run(stmt);
+      }
+      console.log('✅ Demo catalog seeded');
+    });
   } catch (err) {
     console.warn('⚠️  Failed to seed demo catalog:', err.message);
   }
