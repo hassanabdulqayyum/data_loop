@@ -21,7 +21,7 @@ describe('<RightSidePanel />', () => {
     // Expect the new helper guidance copy
     expect(screen.getByText(/click a node to view details…/i)).toBeInTheDocument();
     // The Export Script button should be present *and* disabled until a node is selected
-    const exportBtn = screen.getByRole('button', { name: /export script/i });
+    const exportBtn = screen.getByRole('button', { name: /^export$/i });
     expect(exportBtn).toBeEnabled();
   });
 
@@ -48,6 +48,6 @@ describe('<RightSidePanel />', () => {
 
     // Action buttons present
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /export/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^export$/i })).toBeInTheDocument();
   });
 }); 

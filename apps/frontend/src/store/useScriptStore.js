@@ -153,6 +153,15 @@ const useScriptStore = create((set, get) => ({
    * ----------------------------------------------------------- */
   reset() {
     set(initialState); // merge so action methods stay intact
+  },
+
+  /* -------------------------------------------------------------
+   * Action: selectTurn – highlight a card without entering editing
+   * ----------------------------------------------------------- */
+  selectTurn(turnId) {
+    // Only update the currently highlighted card – do NOT toggle editing.
+    if (!turnId) return;
+    set({ selectedTurnId: turnId, isEditing: false });
   }
 }));
 

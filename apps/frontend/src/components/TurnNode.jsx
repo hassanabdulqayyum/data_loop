@@ -39,10 +39,13 @@ const node = {
 import React from 'react';
 import PropTypes from 'prop-types';
 import useScriptStore from '../store/useScriptStore.js';
+import { useNavigate, useParams } from 'react-router-dom';
 
 function TurnNode({ id, data }) {
   // Pull helper so clicking on a card can mark it selected.
-  const setSelected = useScriptStore((s) => s.startEdit);
+  const selectTurn = useScriptStore((s) => s.selectTurn);
+  const navigate = useNavigate();
+  const { personaId } = useParams();
 
   // Destructure the turn for convenience.
   const { turn } = data;
@@ -68,7 +71,11 @@ function TurnNode({ id, data }) {
         cursor: 'pointer',
         fontSize: 12
       }}
-      onClick={() => setSelected(id)}
+      onClick={() => selectTurn(id)}
+      onDoubleClick={() => {
+        /* Navigates to the timeline stub route as per spec item 5. */
+        navigate(`/canvas/${personaId}/node/${id}`);
+      }}
     >
       {/* Role badge */}
       <strong style={{ textTransform: 'capitalize', color: '#555' }}>

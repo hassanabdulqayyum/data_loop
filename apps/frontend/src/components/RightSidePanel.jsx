@@ -115,8 +115,9 @@ function RSPIdle({ onExport }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        justifyContent: 'center',
         textAlign: 'center',
-        gap: 16
+        gap: 20
       }}
     >
       {/* Helper text */}
@@ -138,7 +139,7 @@ function RSPIdle({ onExport }) {
         onClick={onExport}
         style={buttonStyle}
       >
-        Export Script
+        Export
       </button>
     </div>
   );

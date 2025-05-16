@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import TurnNode from '../src/components/TurnNode.jsx';
 import '@testing-library/jest-dom';
 
@@ -16,7 +17,11 @@ describe('<TurnNode />', () => {
       text: 'Hello world, this is a fairly long assistant answer used in tests.'
     };
 
-    render(<TurnNode id="1" data={{ turn: sampleTurn }} />);
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/canvas/p-123' }]}> 
+        <TurnNode id="1" data={{ turn: sampleTurn }} />
+      </MemoryRouter>
+    );
 
     // Role label should be capitalised → Assistant
     expect(screen.getByText(/assistant/i)).toBeInTheDocument();
@@ -31,7 +36,11 @@ describe('<TurnNode />', () => {
 
     // The render call should not throw.
     expect(() =>
-      render(<TurnNode id="2" data={{ turn: sampleTurn }} />)
+      render(
+        <MemoryRouter initialEntries={[{ pathname: '/canvas/p-123' }]}> 
+          <TurnNode id="2" data={{ turn: sampleTurn }} />
+        </MemoryRouter>
+      )
     ).not.toThrow();
 
     // We still expect the role badge to be present.
