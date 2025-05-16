@@ -40,7 +40,7 @@ Example usage:
 */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore.js';
 import { apiFetch } from '../lib/api.js';
@@ -62,6 +62,7 @@ function LoadView() {
   // Grab the JWT so we can call protected endpoints safely.
   const { token } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const graphRef = useRef(null);
 
@@ -105,6 +106,22 @@ function LoadView() {
 
     if (token) fetchHierarchy();
   }, [token]);
+
+  /* ------------------------------------------------------------------
+   * Pre-selection support – when ScriptView sends the user back with a
+   * `state.preselect` object we auto-select the requested Module/Topic so
+   * the hierarchy tree reopens at the same depth the user left.
+   * ------------------------------------------------------------------ */
+  useEffect(() => {
+    if (!location.state || !location.state.preselect) return;
+
+    const { moduleId: preModule, topicId: preTopic, personaId: prePersona } =
+      location.state.preselect;
+
+    if (preModule) setSelectedModuleId(preModule);
+    if (preTopic) setSelectedTopicId(preTopic);
+    if (prePersona) setSelectedPersonaId(prePersona);
+  }, [location.state]);
 
   /* ------------------------------------------------------------------
    * Helper functions to find full node objects from IDs.
@@ -263,7 +280,12 @@ function LoadView() {
    * ---------------------------------------------------------------- */
   function handleLoad() {
     if (!selectedPersonaId) return; // Guard but button is already disabled.
-    navigate(`/canvas/${selectedPersonaId}`);
+    const navState = {
+      moduleNode: selectedModuleNode,
+      topicNode: selectedTopicNode,
+      personaNode: selectedPersonaNode
+    };
+    navigate(`/canvas/${selectedPersonaId}`, { state: navState });
   }
 
   /* ------------------------------------------------------------------

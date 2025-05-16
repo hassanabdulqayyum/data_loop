@@ -20,7 +20,7 @@ Route declaration (already done in App.jsx):
 */
 
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import TurnCanvas from '../components/TurnCanvas.jsx';
 import RightSidePanel from '../components/RightSidePanel.jsx';
 import useScriptStore from '../store/useScriptStore.js';
@@ -30,6 +30,8 @@ import { apiFetch } from '../lib/api.js';
 
 function ScriptView() {
   const { personaId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const loadScript = useScriptStore((s) => s.loadScript);
   const token = useAuthStore((s) => s.token);
 
@@ -39,12 +41,22 @@ function ScriptView() {
   // parents; the entire object stays in state in case future micro-tasks
   // (e.g. Turn-level breadcrumbs) require extra information.
   // ------------------------------------------------------------------
+  const initialCrumbs = React.useMemo(() => {
+    if (location.state) {
+      const { moduleNode, topicNode, personaNode } = location.state;
+      if (moduleNode || topicNode || personaNode) {
+        return {
+          module: moduleNode ?? null,
+          topic: topicNode ?? null,
+          persona: personaNode ?? null
+        };
+      }
+    }
+    return { module: null, topic: null, persona: null };
+  }, [location.state]);
+
   const [hierarchyTree, setHierarchyTree] = React.useState(null);
-  const [crumbNodes, setCrumbNodes] = React.useState({
-    module: null,
-    topic: null,
-    persona: null
-  });
+  const [crumbNodes, setCrumbNodes] = React.useState(initialCrumbs);
 
   /* ------------------------------------------------------------------
    * Effect: fetch /hierarchy so the breadcrumb can display Module/Topic/Persona
@@ -111,16 +123,25 @@ function ScriptView() {
         selectedModuleNode={crumbNodes.module}
         selectedTopicNode={crumbNodes.topic}
         selectedPersonaNode={crumbNodes.persona}
-        /* The callbacks simply scroll to top for now – real behaviour will be
-         * implemented in later micro-tasks. */
+        /* Clicking breadcrumbs sends the user back to LoadView with
+         * pre-selection so they land exactly where they expect. */
         onModuleClick={() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (!crumbNodes.module) return;
+          navigate('/load', { state: { preselect: { moduleId: crumbNodes.module.id } } });
         }}
         onTopicClick={() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (!crumbNodes.module || !crumbNodes.topic) return;
+          navigate('/load', {
+            state: {
+              preselect: {
+                moduleId: crumbNodes.module.id,
+                topicId: crumbNodes.topic.id
+              }
+            }
+          });
         }}
         onPersonaClick={() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          // No-op for now; already on persona script.
         }}
       />
 

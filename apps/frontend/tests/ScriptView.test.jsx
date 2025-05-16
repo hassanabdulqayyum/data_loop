@@ -63,7 +63,16 @@ describe('<ScriptView />', () => {
 
     // 3. Render component inside a MemoryRouter so route params work.
     render(
-      <MemoryRouter initialEntries={["/canvas/p-123"]}>
+      <MemoryRouter initialEntries={[
+        {
+          pathname: "/canvas/p-123",
+          state: {
+            moduleNode: { id: "m1", name: "Module 1" },
+            topicNode: { id: "d1", name: "Topic 1" },
+            personaNode: { id: "p-123", name: "Focus" }
+          }
+        }
+      ]}>
         <Routes>
           <Route path="/canvas/:personaId" element={<ScriptView />} />
         </Routes>
