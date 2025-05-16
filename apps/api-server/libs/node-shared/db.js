@@ -93,21 +93,13 @@ async function ensureDemoCatalog() {
     if (!fs.existsSync(cypherPath)) return;
 
     await withSession(async (session) => {
-      // Skip seeding if Program node already present to avoid duplicates.
-      const exists = await session.run(
-        "MATCH (p:Program {id:'Program'}) RETURN p LIMIT 1"
-      );
-      if (exists.records.length > 0) {
-        return; // nothing to do – catalog already loaded
-      }
-
       const fileTxt = fs.readFileSync(cypherPath, 'utf8');
       // Split on semicolons **followed by a newline** so we keep Cypher
       // comments and avoid empty trailing statements.
       const statements = fileTxt
         .split(/;\s*\n/)
         .map((s) => s.trim())
-        .filter(Boolean);
+        .filter((s) => s && !s.startsWith('//'));
 
       for (const stmt of statements) {
         await session.run(stmt);

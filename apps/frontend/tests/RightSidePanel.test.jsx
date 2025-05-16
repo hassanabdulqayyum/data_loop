@@ -5,8 +5,9 @@ import RightSidePanel from '../src/components/RightSidePanel.jsx';
 import useScriptStore, { initialState } from '../src/store/useScriptStore.js';
 
 /*
-Tests that the panel shows the *idle* placeholder when no turn is selected and
-we are not editing.
+Tests that the panel shows the *idle* guidance message plus a disabled
+"Export Script" button when no turn is selected and we are not in editing
+mode.  This covers component-tree item **2** from the implementation plan.
 */
 
 describe('<RightSidePanel />', () => {
@@ -15,8 +16,12 @@ describe('<RightSidePanel />', () => {
     useScriptStore.setState(initialState);
   });
 
-  it('renders idle stub by default', () => {
+  it('renders idle helper text and disabled Export button by default', () => {
     render(<RightSidePanel />);
-    expect(screen.getByText(/nothing selected/i)).toBeInTheDocument();
+    // Expect the new helper guidance copy
+    expect(screen.getByText(/click a node to view details…/i)).toBeInTheDocument();
+    // The Export Script button should be present *and* disabled until a node is selected
+    const exportBtn = screen.getByRole('button', { name: /export script/i });
+    expect(exportBtn).toBeDisabled();
   });
 }); 
