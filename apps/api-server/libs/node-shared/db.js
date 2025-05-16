@@ -15,6 +15,8 @@
  */
 
 import neo4j from 'neo4j-driver';
+import fs from 'fs';
+import path from 'path';
 
 function envRequired(key) {
   const value = process.env[key];
@@ -73,6 +75,30 @@ async function initNeo4j(maxRetries = 10, delayMs = 1_000) {
       await new Promise((res) => setTimeout(res, delayMs));
     }
   }
+}
+
+async function ensureDemoCatalog() {
+  try {
+    if (process.env.NODE_ENV === 'test') return; // Tests expect empty DB
+
+    const cypherPath = path.resolve(
+      process.cwd(),
+      'docs/scripts/neo4j/004_demo_catalog.cypher'
+    );
+    if (!fs.existsSync(cypherPath)) return;
+
+    const demoCypher = fs.readFileSync(cypherPath, 'utf8');
+
+    await withSession((session) => session.run(demoCypher));
+    console.log('✅ Demo catalog ensured');
+  } catch (err) {
+    console.warn('⚠️  Failed to seed demo catalog:', err.message);
+  }
+}
+
+// Call on startup (development only)
+if (process.env.NODE_ENV !== 'test') {
+  ensureDemoCatalog();
 }
 
 export { driver, withSession, initNeo4j };
