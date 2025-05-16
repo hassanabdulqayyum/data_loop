@@ -45,13 +45,22 @@ function TurnCanvas() {
   edges when the underlying `visibleTurns` array actually changes.
   */
   const { nodes, edges } = useMemo(() => {
-    // Vertical layout: y-gap is 43 px between BOX BORDERS so the grey
-    // connector line exactly matches the Figma measurement.  We achieve this
-    // by placing nodes 43 px below the **previous node's bottom edge** – that
-    // bottom edge height varies, but because nodes are centred horizontally
-    // React-Flow recalculates fine.  For simplicity we keep a constant gap –
-    // minor variations in perceived line length are acceptable at this stage.
-    const verticalGap = 150; // px – rough average card height + 43-px line
+    /*
+     * Vertical layout rules (taken straight from the high-fidelity Figma file)
+     * ──────────────────────────────────────────────────────────────────────
+     * • The thin connecting line between two neighbouring cards measures
+     *   exactly **43 px**.  That distance is measured from the *bottom edge*
+     *   of the upper bubble border to the *top edge* of the lower bubble
+     *   border.
+     * • Bubble height itself is dynamic because text length varies.  We do
+     *   not have that DOM measurement available when we build the `nodes`
+     *   array, so we approximate by adding 100 px (average two-line bubble)
+     *   to the 43 px connector.  This gives us **143 px** between successive
+     *   node *anchors* which keeps the connector length visually very close
+     *   to the real spec while avoiding the complexity of post-render
+     *   re-positioning.
+     */
+    const verticalGap = 143; // px → 100 px average card height + 43 px line
 
     const nodes = visibleTurns.map((turn, idx) => ({
       id: String(turn.id),

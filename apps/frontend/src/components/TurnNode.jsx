@@ -15,7 +15,10 @@ Plain-English overview
 • The component no longer shows explicit "user" / "assistant" labels – the
   colour cues alone communicate the speaker.
 • Text is set in **Inter Medium 26 px** with −5 % letter-spacing and wraps
-  inside a max width of 172 px; 8 px padding hugs the content.
+  inside a max width of 724 px; 8 px padding hugs the content. Cards can
+  therefore grow quite wide on desktop before wrapping, matching the new
+  high-fidelity Figma revision.  Corner radius also increases to 16 px so
+  the bubble looks softer and friendlier.
 
 How to use it?
 The parent <TurnCanvas> registers this component under the node-type key
@@ -79,7 +82,7 @@ function TurnNode({ id, data }) {
    * ----------------------------------------------------------------------- */
   const bubbleStyle = {
     border: `${borderWidth}px solid ${borderColour}`,
-    borderRadius: 4,
+    borderRadius: 16,
     background: backgroundColour,
     padding: 8,
     fontFamily: 'Inter, sans-serif',
@@ -88,7 +91,7 @@ function TurnNode({ id, data }) {
     letterSpacing: '-0.05em', // −5 %
     lineHeight: 1.25,
     cursor: 'pointer',
-    maxWidth: 172,
+    maxWidth: 724,
     width: 'fit-content',
     whiteSpace: 'pre-wrap',
     wordWrap: 'break-word'

@@ -1400,3 +1400,12 @@ const rspContent = (
 
 178. apps/frontend/tests/TurnNode.test.jsx  – REPLACED
     - Old role-label assertions removed.  New tests verify: (1) assistant card shows 2 px outline; (2) user card shows grey fill & no border; (3) clicking the card updates zustand and renders 2.5 px blue outline.
+
+179. apps/frontend/src/components/TurnNode.jsx
+   - `borderRadius` increased from 4 px → **16 px** so the bubble corners match the latest Figma spec.
+   - `maxWidth` raised from 172 px → **724 px** allowing the card to grow horizontally before wrapping text.
+   - Docstring updated: mentions new 724-px width limit and 16-px radius; explains that cards look wider and softer now.
+
+180. apps/frontend/src/components/TurnCanvas.jsx
+   - Added explanatory comment block (approx. lines 30-45) detailing the 43-px joining line requirement and why the new `verticalGap = 143` value approximates it.
+   - Replaced old `const verticalGap = 150` with **143** (100-px average bubble height + 43-px connector).
