@@ -149,15 +149,19 @@ function ScriptView() {
       <div
         style={{
           display: 'flex',
-          height: '100vh',
-          paddingTop: '72px', // Keeps canvas below the navbar
+          height: 'calc(100vh - 72px)',
           boxSizing: 'border-box'
         }}
       >
-        {/* Left – the React-Flow canvas renders turns */}
-        <TurnCanvas />
-        {/* Right – contextual actions */}
-        <RightSidePanel />
+        {/* Left – the React-Flow canvas renders turns. Wrapper takes 2/3 of space */}
+        <div style={{ flex: '2 1 0%', height: '100%', overflow: 'hidden', position: 'relative' }}>
+          <TurnCanvas />
+        </div>
+        
+        {/* Right – contextual actions. Wrapper takes 1/3 of space */}
+        <div style={{ flex: '1 1 0%', height: '100%', overflowY: 'auto', position: 'relative' /* RSP's internal <aside> handles border and bg */ }}>
+          <RightSidePanel />
+        </div>
       </div>
     </>
   );

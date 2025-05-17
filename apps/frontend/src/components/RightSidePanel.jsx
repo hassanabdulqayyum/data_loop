@@ -245,8 +245,6 @@ function RightSidePanel() {
            viewport, and cap at 440 px so ultra-wide monitors do not waste
            space.  `flex:0 0 auto` stops the panel from *growing*, we want it
            to keep the exact clamp() width. */
-        flex: '0 0 auto',
-        width: 'clamp(300px, 33.33vw, 440px)',
         borderLeft: '3px solid #D1D1D1', // subtle divider – consistent with LoadView
         background: '#fff',
         height: '100%',

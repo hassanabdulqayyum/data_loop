@@ -1481,3 +1481,18 @@ const rspContent = (
 ### 202. apps/frontend/src/lib/textMeasurer.js (dynamic ruler styling)
 -   `createRuler` now accepts `font` and `paddingX` arguments.
 -   `measureTextWidth` updates the global ruler's style (font, padding) on *every call* before measuring, ensuring accuracy if called with different styles. Cache key now includes font and padding to prevent collisions.
+
+102. apps/frontend/src/components/RightSidePanel.jsx (Layout Fix - Item 2.6.3.3.2)
+    - // flex: '0 0 auto', // Removed to allow parent flex to control width
+    - // width: 'clamp(300px, 33.33vw, 440px)', // Removed to allow parent flex to control width (was at line ~251)
+
+103. apps/frontend/src/pages/ScriptView.jsx (Layout Fix - Item 2.6.3.3.2)
+    - // style.height changed from '100vh' to 'calc(100vh - 72px)' (line ~141)
+    - // style.paddingTop: '72px' was removed (line ~142)
+    - // Original <TurnCanvas /> and <RightSidePanel /> direct children replaced by styled divs (lines ~146-153)
+    - <div style={{ flex: '2 1 0%', height: '100%', overflow: 'hidden', position: 'relative' }}>
+    -   <TurnCanvas />
+    - </div>
+    - <div style={{ flex: '1 1 0%', height: '100%', overflowY: 'auto', position: 'relative' /* RSP's internal <aside> handles border and bg */ }}>
+    -   <RightSidePanel />
+    - </div>
