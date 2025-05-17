@@ -99,8 +99,12 @@ function TurnCanvas() {
       ref={containerRef}
       data-testid="turn-canvas-wrapper"
       style={{
-        /* 2 parts of the available width so canvas ≈ two-thirds */
-        flex: '2 1 0%',
+        /* Take *all* remaining space after the Right-Side Panel so the
+           canvas auto-expands on large monitors and shrinks gracefully on
+           small ones.  The sibling <RightSidePanel> now has an explicit
+           `width:clamp(...)` so using `flex:1 1 0` here means: "grow to fill
+           whatever is left". */
+        flex: '1 1 0%',
         height: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -112,18 +116,18 @@ function TurnCanvas() {
         edges={edges}
         nodeTypes={nodeTypes}
         /* -----------------------------------------------------------------
-         * View-port behaviour tweaks (bug-fix – nodes jumped under RSP on scroll)
+         * Scroll/zoom behaviour tweaks
          * -----------------------------------------------------------------
-         * 1. `proOptions.fitViewOnInit` guarantees the gold-path is centred *once*
-         *    when the component mounts.  Afterwards we leave the viewport
-         *    untouched so horizontal position remains rock-solid.
-         * 2. We turn *off* React-Flow driven panning (`panOnScroll`,
-         *    `panOnDrag`) so vertical movement now relies on the wrapper
-         *    div's natural `overflow-y: auto` scroll bar.  This removes the
-         *    accidental X-reset that previously shoved half the cards under
-         *    the right-side panel.
+         * 1. We **disable** React-Flow's automatic fit-to-view logic because it
+         *    centres the graph inside the *entire* window, ignoring the fixed
+         *    Right-Side Panel.  Our ResizeObserver-driven maths already place
+         *    the nodes correctly, so we only need a neutral starting
+         *    viewport `{x:0,y:0,zoom:1}` (see `defaultViewport` prop below).
+         * 2. React-Flow driven panning is switched off (`panOnScroll=false` &
+         *    `panOnDrag` left false by default).  Vertical movement now relies
+         *    on the wrapper's native `overflow-y:auto` scroll bar.
          * ---------------------------------------------------------------- */
-        proOptions={{ fitViewOnInit: true }}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         minZoom={1}
         maxZoom={1}
         zoomOnScroll={false}

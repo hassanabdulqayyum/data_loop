@@ -1451,3 +1451,14 @@ const rspContent = (
 
 194. apps/frontend/src/components/TurnCanvas.jsx – PATCH
      • Disabled React-Flow panning by setting `panOnScroll={false}` and enabled native wrapper scrolling with `preventScrolling={false}`. This restores smooth wheel scrolling while clamps horizontal drift via unchanged translateExtent.
+
+### 195. apps/frontend/src/components/TurnCanvas.jsx (responsive fix)
+-   Removed `proOptions={{ fitViewOnInit: true }}` and replaced with a detailed comment block explaining why automatic fit-view was disabled.
+-   Added `defaultViewport={{ x:0, y:0, zoom:1 }}` so the graph shows on first paint without a click.
+-   Wrapper `flex` style changed from `'2 1 0%'` → `'1 1 0%'` so the canvas simply takes whatever horizontal space remains after the RSP.
+
+### 196. apps/frontend/src/components/RightSidePanel.jsx (responsive width)
+-   Replaced fixed width rules with responsive clamp:
+    – `flex:'0 0 auto'`
+    – `width:'clamp(300px, 30vw, 440px)'`
+-   Removed the old `minWidth: '320px'` so the panel can shrink on narrow screens.

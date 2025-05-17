@@ -241,9 +241,12 @@ function RightSidePanel() {
     */
     <aside
       style={{
-        /* 1 part of available width so panel ≈ one-third (min 320 px for usability) */
-        flex: '1 1 0%',
-        minWidth: '320px',
+        /* Responsive width – never smaller than 300 px, prefer ~30 % of the
+           viewport, and cap at 440 px so ultra-wide monitors do not waste
+           space.  `flex:0 0 auto` stops the panel from *growing*, we want it
+           to keep the exact clamp() width. */
+        flex: '0 0 auto',
+        width: 'clamp(300px, 30vw, 440px)',
         borderLeft: '3px solid #D1D1D1', // subtle divider – consistent with LoadView
         background: '#fff',
         height: '100%',
