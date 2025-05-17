@@ -39,43 +39,53 @@ const { nodes, edges } = calculateNodesAndEdges(turns);
 ```
 */
 
+import { measureTextWidth } from '../lib/textMeasurer.js';
+
 export const FIRST_NODE_OFFSET_Y = 44; // px
 export const VERTICAL_GAP = 143; // px (≈ 100 bubble + 43 connector)
-export const DEFAULT_CENTER_OFFSET_X = -362; // px (−½ × 724-px max width)
 
 /**
- * calculateNodesAndEdges – deterministic layout builder
- * @param {Array<Object>} turns – *visible* turns – must exclude the root.
- * @param {number} [centreOffsetX=DEFAULT_CENTER_OFFSET_X] – x-coordinate for
- *        the *left* border of each node so their **visual centre** aligns on
- *        the vertical spine.
- * @returns {{nodes:Array, edges:Array}} – ready for React-Flow.
+ * calculateNodesAndEdges – deterministic layout builder that centres nodes
+ * horizontally based on the **widest bubble** so the grey spine never moves.
+ *
+ * @param {Array<Object>} turns  Visible turns (root excluded)
+ * @param {number} containerW   Width of the canvas column in px
+ * @returns {{nodes:Array, edges:Array}}
  */
-export function calculateNodesAndEdges(turns, centreOffsetX = DEFAULT_CENTER_OFFSET_X) {
-  if (!Array.isArray(turns)) {
-    throw new TypeError('turns must be an array');
-  }
+export function calculateNodesAndEdges(turns, containerW) {
+  if (!Array.isArray(turns)) throw new TypeError('turns must be an array');
 
-  // -------------------------------------------------------------------------
-  // Build nodes – each one carries the original turn inside data.turn so the
-  // custom <TurnNode> component can render role, text and metadata.
-  // -------------------------------------------------------------------------
+  if (!containerW) return { nodes: [], edges: [], leftOffset: 0 };
+
+  // --------------------------------------------------------------
+  // 1️⃣  Figure out the widest bubble so we can anchor all nodes on
+  //     a common centre.  Real rendered width = text + 28-px padding
+  //     (14 px each side) + outline thickness (worst-case 3-px).
+  // --------------------------------------------------------------
+  const MAX_W = 724;
+  const PADDING_X = 28; // matches TurnNode padding 14-px each side
+  const FONT = '500 26px Inter';
+
+  const widest = Math.min(
+    MAX_W,
+    Math.max(...turns.map((t) => measureTextWidth(t.text || '', FONT, PADDING_X)))
+  );
+
+  // Constant left offset shared by every node so their **centres** line up
+  const leftOffset = containerW / 2 - widest / 2;
+
+  // ----------------------- Build nodes --------------------------
   const nodes = turns.map((turn, idx) => ({
     id: String(turn.id),
     type: 'turnNode',
-    data: { turn },
+    data: { turn, widest },
     position: {
-      x: centreOffsetX,
+      x: leftOffset,
       y: FIRST_NODE_OFFSET_Y + idx * VERTICAL_GAP
     }
   }));
 
-  // -------------------------------------------------------------------------
-  // Build edges – simple parent→child straight line with the mandated 2.5-px
-  // #CCCCCC stroke.  We assume the input `turns` array is already in the
-  // correct parent-first order (depth asc, ts asc) because the API guarantees
-  // that ordering.
-  // -------------------------------------------------------------------------
+  // ----------------------- Build edges --------------------------
   const edges = turns.slice(1).map((turn, idx) => ({
     id: `e${turns[idx].id}-${turn.id}`,
     source: String(turns[idx].id),
@@ -87,5 +97,8 @@ export function calculateNodesAndEdges(turns, centreOffsetX = DEFAULT_CENTER_OFF
     }
   }));
 
-  return { nodes, edges };
-} 
+  return { nodes, edges, leftOffset };
+}
+
+// keep export of DEFAULT_CENTER_OFFSET_X only for legacy imports
+export const DEFAULT_CENTER_OFFSET_X = 0; 

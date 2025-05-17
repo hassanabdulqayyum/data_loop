@@ -37,10 +37,7 @@ import ReactFlow, { Background, Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 import useScriptStore from '../store/useScriptStore.js';
 import TurnNode from './TurnNode.jsx';
-import {
-  calculateNodesAndEdges,
-  DEFAULT_CENTER_OFFSET_X
-} from './TurnCanvas.utils.js';
+import { calculateNodesAndEdges } from './TurnCanvas.utils.js';
 
 function TurnCanvas() {
   // -----------------------------------------------------------------------
@@ -50,7 +47,7 @@ function TurnCanvas() {
   // deterministic.
   // -----------------------------------------------------------------------
   const containerRef = useRef(null);
-  const [centreX, setCentreX] = useState(DEFAULT_CENTER_OFFSET_X);
+  const [containerW, setContainerW] = useState(0);
 
   // ResizeObserver keeps the centre aligned on window resizes without the
   // need for expensive re-layouts – we only update the state when the width
@@ -60,9 +57,7 @@ function TurnCanvas() {
 
     const handle = () => {
       const { clientWidth } = containerRef.current;
-      // Centre x = (available width / 2) − (maxBubbleWidth / 2)
-      const calculated = clientWidth / 2 - 362; // 362 = ½ × 724-px bubble
-      setCentreX(calculated);
+      setContainerW(clientWidth);
     };
 
     handle(); // Initial calculation
@@ -80,9 +75,9 @@ function TurnCanvas() {
 
   // Build nodes & edges once inputs change.  The helper keeps the file tidy
   // and 100 % unit-testable.
-  const { nodes, edges } = useMemo(
-    () => calculateNodesAndEdges(visibleTurns, centreX),
-    [visibleTurns, centreX]
+  const { nodes, edges, leftOffset } = useMemo(
+    () => calculateNodesAndEdges(visibleTurns, containerW),
+    [visibleTurns, containerW]
   );
 
   // React-Flow needs to know our custom node component.
@@ -113,11 +108,11 @@ function TurnCanvas() {
     >
       <ReactFlow
         /* Changing the `key` forces React-Flow to fully re-mount whenever
-           `centreX` changes.  This ensures the new `translateExtent` min/max X
+           `leftOffset` changes.  This ensures the new `translateExtent` min/max X
            values take effect – otherwise the library only reads the prop on
            first mount, which is why the graph kept centring inside the *full*
            window until the user clicked. */
-        key={centreX}
+        key={leftOffset}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -145,8 +140,8 @@ function TurnCanvas() {
         preventScrolling={false}
         /* Clamp horizontal movement to keep nodes centred; allow large vertical range */
         translateExtent={[
-          [centreX, -100000],
-          [centreX, 100000]
+          [leftOffset, -100000],
+          [leftOffset, 100000]
         ]}
       >
         {/* Subtle dotted background so users see canvas area boundaries */}

@@ -515,11 +515,10 @@ function LoadView() {
         {/* Right column – placeholder panel */}
         <div
           style={{
-            flex: 1,
+            flex: '0 0 auto',
+            width: 'clamp(300px, 33.33vw, 440px)',
             padding: '1rem',
-            /* Divider between graph and RSP: 3-px grey (#D1D1D1) per design */
             borderLeft: '3px solid #D1D1D1',
-            /* Positioning context so the floating Export button anchors correctly */
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',

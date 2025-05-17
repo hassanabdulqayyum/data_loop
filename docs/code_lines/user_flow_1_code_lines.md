@@ -1465,3 +1465,15 @@ const rspContent = (
 
 ### 197. apps/frontend/src/components/TurnCanvas.jsx (ReactFlow remount)
 -   Added `key={centreX}` prop so React-Flow re-initialises whenever the canvas width changes; this lets the updated `translateExtent` take effect immediately and fixes the hidden-until-click bug.
+
+### 198. apps/frontend/src/lib/textMeasurer.js
+-   Generalised `measureTextWidth()` (font + padding params) and kept `measureChipWidth` wrapper.
+
+### 199. apps/frontend/src/components/TurnCanvas.utils.js
+-   Now centres nodes using **widest bubble** logic and dynamic container width. Added guard for containerW===0.
+
+### 200. apps/frontend/src/components/TurnCanvas.jsx
+-   Reworked to pass container width to util, removed constant offsets, updated translateExtent and ReactFlow `key`.
+
+### 201. apps/frontend/src/components/RightSidePanel.jsx & pages/LoadView.jsx
+-   Both Right-Side Panels now use `width: clamp(300px, 33.33vw, 440px)` ensuring consistent 1/3 screen width across views.

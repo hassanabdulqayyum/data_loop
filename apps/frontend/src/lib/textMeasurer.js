@@ -44,7 +44,7 @@ function createRuler() {
   document.body.appendChild(ruler);
 }
 
-export function measureChipWidth(label = '') {
+export function measureTextWidth(label = '', font = '500 28px Inter', paddingX = 16) {
   if (widthCache.has(label)) return widthCache.get(label);
 
   // Lazily create the ruler the first time we're called *in the browser*.
@@ -56,13 +56,13 @@ export function measureChipWidth(label = '') {
   if (typeof document === 'undefined') {
     if (typeof OffscreenCanvas !== 'undefined') {
       const ctx = new OffscreenCanvas(1, 1).getContext('2d');
-      ctx.font = '500 28px Inter';
-      const w = ctx.measureText(label).width + 16; // + padding
+      ctx.font = font;
+      const w = ctx.measureText(label).width + paddingX;
       widthCache.set(label, w);
       return w;
     }
     // Last-ditch: assume 10 px per character.
-    const w = label.length * 10 + 16;
+    const w = label.length * 10 + paddingX;
     widthCache.set(label, w);
     return w;
   }
@@ -71,4 +71,9 @@ export function measureChipWidth(label = '') {
   const width = ruler.getBoundingClientRect().width;
   widthCache.set(label, width);
   return width;
+}
+
+// Backwards-compat wrapper for existing calls
+export function measureChipWidth(label='') {
+  return measureTextWidth(label);
 } 
