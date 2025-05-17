@@ -112,6 +112,12 @@ function TurnCanvas() {
       }}
     >
       <ReactFlow
+        /* Changing the `key` forces React-Flow to fully re-mount whenever
+           `centreX` changes.  This ensures the new `translateExtent` min/max X
+           values take effect – otherwise the library only reads the prop on
+           first mount, which is why the graph kept centring inside the *full*
+           window until the user clicked. */
+        key={centreX}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}

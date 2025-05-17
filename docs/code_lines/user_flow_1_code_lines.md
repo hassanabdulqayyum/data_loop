@@ -1462,3 +1462,6 @@ const rspContent = (
     – `flex:'0 0 auto'`
     – `width:'clamp(300px, 30vw, 440px)'`
 -   Removed the old `minWidth: '320px'` so the panel can shrink on narrow screens.
+
+### 197. apps/frontend/src/components/TurnCanvas.jsx (ReactFlow remount)
+-   Added `key={centreX}` prop so React-Flow re-initialises whenever the canvas width changes; this lets the updated `translateExtent` take effect immediately and fixes the hidden-until-click bug.
