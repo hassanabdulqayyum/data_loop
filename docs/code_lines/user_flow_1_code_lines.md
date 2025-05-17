@@ -1518,3 +1518,9 @@ const rspContent = (
 
 205. apps/frontend/tests/TurnCanvas.utils.test.js – PATCH
    - Updated all three calls to `calculateNodesAndEdges()` to pass a dummy container width of `1000` px (lines 10, 15, 22).  Tests now match the updated util signature and pass again.
+
+206. apps/frontend/src/components/TurnCanvas.utils.js – PATCH
+   - Reworked centring math: each node now measures its own bubble width and sets `position.x` to `containerW/2 - width/2` instead of sharing a single leftOffset.  Added `bubbleWidths` array, per-node width in `data`, and computes `leftOffset` as the minimum X for translateExtent.  This puts *every* card (wide or skinny) dead-centre on the spine.
+
+207. apps/frontend/src/components/HierarchyGraph.jsx – PATCH
+   - Changed call `computeViewportForRoot(…, 50)` → `computeViewportForRoot(…, 43)` and explanatory comment so the Program chip sits exactly 43 px below the breadcrumb bar, preventing it from hiding under the NavBar in Load View.

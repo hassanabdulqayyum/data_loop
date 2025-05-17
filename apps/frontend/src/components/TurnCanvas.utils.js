@@ -63,27 +63,35 @@ export function calculateNodesAndEdges(turns, containerW) {
   //     (14 px each side) + outline thickness (worst-case 3-px).
   // --------------------------------------------------------------
   const MAX_W = 724;
-  const PADDING_X = 28; // matches TurnNode padding 14-px each side
+  const PADDING_X = 28; // matches TurnNode horizontal padding (14 px each side)
   const FONT = '500 26px Inter';
 
-  const widest = Math.min(
-    MAX_W,
-    Math.max(...turns.map((t) => measureTextWidth(t.text || '', FONT, PADDING_X)))
+  // Pre-measure every bubble so we can centre each *individually* instead of
+  // forcing *all* nodes to share the same leftOffset (which left skinny nodes
+  // looking off-centre).
+  const bubbleWidths = turns.map((t) =>
+    Math.min(MAX_W, measureTextWidth(t.text || '', FONT, PADDING_X))
   );
 
-  // Constant left offset shared by every node so their **centres** line up
-  const leftOffset = containerW / 2 - widest / 2;
+  // Helper to centre any given width inside the container.
+  const centreX = (width) => containerW / 2 - width / 2;
 
   // ----------------------- Build nodes --------------------------
-  const nodes = turns.map((turn, idx) => ({
-    id: String(turn.id),
-    type: 'turnNode',
-    data: { turn, widest },
-    position: {
-      x: leftOffset,
-      y: FIRST_NODE_OFFSET_Y + idx * VERTICAL_GAP
-    }
-  }));
+  const nodes = turns.map((turn, idx) => {
+    const width = bubbleWidths[idx];
+    return {
+      id: String(turn.id),
+      type: 'turnNode',
+      data: { turn, width },
+      position: {
+        x: centreX(width),
+        y: FIRST_NODE_OFFSET_Y + idx * VERTICAL_GAP
+      }
+    };
+  });
+
+  // Calculate the **left-most** X so the caller can clamp horizontal panning.
+  const leftOffset = Math.min(...nodes.map((n) => n.position.x));
 
   // ----------------------- Build edges --------------------------
   const edges = turns.slice(1).map((turn, idx) => ({

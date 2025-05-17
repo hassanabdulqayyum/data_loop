@@ -394,7 +394,10 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
         : [];
 
     const programNode = hydratedNodes.find((n) => n.type === 'programNode');
-    vp = computeViewportForRoot(vp, programNode, graphRect, 50);
+    // The design calls for the Program chip to sit ~43 px below the breadcrumb bar.
+    // Because computeViewportForRoot expects the *distance from wrapper top to
+    // node top*, we pass exactly 43 so the root never hides under the NavBar.
+    vp = computeViewportForRoot(vp, programNode, graphRect, 43);
 
     // 3. Apply the viewport instantly (no animation) so the load feels snappy.
     reactFlowInstance.setViewport(vp, { duration: 0 });
