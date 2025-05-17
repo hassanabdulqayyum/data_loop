@@ -1477,3 +1477,7 @@ const rspContent = (
 
 ### 201. apps/frontend/src/components/RightSidePanel.jsx & pages/LoadView.jsx
 -   Both Right-Side Panels now use `width: clamp(300px, 33.33vw, 440px)` ensuring consistent 1/3 screen width across views.
+
+### 202. apps/frontend/src/lib/textMeasurer.js (dynamic ruler styling)
+-   `createRuler` now accepts `font` and `paddingX` arguments.
+-   `measureTextWidth` updates the global ruler's style (font, padding) on *every call* before measuring, ensuring accuracy if called with different styles. Cache key now includes font and padding to prevent collisions.

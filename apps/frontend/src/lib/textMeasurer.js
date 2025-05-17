@@ -27,7 +27,7 @@
 const widthCache = new Map();
 let ruler; // DOM span created lazily.
 
-function createRuler() {
+function createRuler(font = '500 28px Inter', paddingX = 16) {
   ruler = document.createElement('span');
   ruler.style.position = 'absolute';
   ruler.style.visibility = 'hidden';
@@ -35,41 +35,52 @@ function createRuler() {
   // ------------------------------------------------------------------
   // Mirror **exactly** the chip's typography so the width matches 1-for-1.
   // ------------------------------------------------------------------
-  ruler.style.fontFamily = 'Inter, sans-serif';
-  ruler.style.fontSize = '28px';
-  ruler.style.fontWeight = '500';
+  const [weight, size, ...familyParts] = font.split(' ');
+  ruler.style.fontFamily = familyParts.join(' ');
+  ruler.style.fontSize = size;
+  ruler.style.fontWeight = weight;
   ruler.style.letterSpacing = '-0.05em';
-  // Horizontal padding (8 px each side) is part of what the user sees.
-  ruler.style.padding = '0 8px';
+  ruler.style.padding = `0 ${paddingX / 2}px`; // Apply half to each side
   document.body.appendChild(ruler);
 }
 
 export function measureTextWidth(label = '', font = '500 28px Inter', paddingX = 16) {
-  if (widthCache.has(label)) return widthCache.get(label);
+  const cacheKey = `${label}_${font}_${paddingX}`;
+  if (widthCache.has(cacheKey)) return widthCache.get(cacheKey);
 
   // Lazily create the ruler the first time we're called *in the browser*.
-  if (typeof document !== 'undefined' && !ruler) createRuler();
+  if (typeof document !== 'undefined') {
+    if (!ruler) {
+      createRuler(font, paddingX);
+    } else {
+      // Update existing ruler's style to match current parameters
+      const [weight, size, ...familyParts] = font.split(' ');
+      ruler.style.fontFamily = familyParts.join(' ');
+      ruler.style.fontSize = size;
+      ruler.style.fontWeight = weight;
+      ruler.style.padding = `0 ${paddingX / 2}px`;
+    }
+  }
 
   // During SSR or Jest tests there is no `document`.  Fall back to a rough
   // canvas estimate so unit-tests don't explode – slight centring error is OK
-  // in that environment.
   if (typeof document === 'undefined') {
     if (typeof OffscreenCanvas !== 'undefined') {
       const ctx = new OffscreenCanvas(1, 1).getContext('2d');
       ctx.font = font;
       const w = ctx.measureText(label).width + paddingX;
-      widthCache.set(label, w);
+      widthCache.set(cacheKey, w);
       return w;
     }
     // Last-ditch: assume 10 px per character.
     const w = label.length * 10 + paddingX;
-    widthCache.set(label, w);
+    widthCache.set(cacheKey, w);
     return w;
   }
 
   ruler.textContent = label;
   const width = ruler.getBoundingClientRect().width;
-  widthCache.set(label, width);
+  widthCache.set(cacheKey, width);
   return width;
 }
 
