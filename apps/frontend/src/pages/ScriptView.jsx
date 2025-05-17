@@ -23,6 +23,7 @@ import React, { useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import TurnCanvas from '../components/TurnCanvas.jsx';
 import RightSidePanel from '../components/RightSidePanel.jsx';
+import EditorShell from '../components/layout/EditorShell.jsx';
 import useScriptStore from '../store/useScriptStore.js';
 import useAuthStore from '../store/useAuthStore.js';
 import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
@@ -118,51 +119,31 @@ function ScriptView() {
    * padding in one place avoids magic numbers sprinkled across siblings. */
   return (
     <>
-      {/* Fixed breadcrumb bar re-used from LoadView so the visual language is consistent */}
-      <TopNavBar
-        selectedModuleNode={crumbNodes.module}
-        selectedTopicNode={crumbNodes.topic}
-        selectedPersonaNode={crumbNodes.persona}
-        /* Clicking breadcrumbs sends the user back to LoadView with
-         * pre-selection so they land exactly where they expect. */
-        onModuleClick={() => {
-          if (!crumbNodes.module) return;
-          navigate('/load', { state: { preselect: { moduleId: crumbNodes.module.id } } });
-        }}
-        onTopicClick={() => {
-          if (!crumbNodes.module || !crumbNodes.topic) return;
-          navigate('/load', {
-            state: {
-              preselect: {
-                moduleId: crumbNodes.module.id,
-                topicId: crumbNodes.topic.id
+      <EditorShell
+        navBarProps={{
+          selectedModuleNode: crumbNodes.module,
+          selectedTopicNode: crumbNodes.topic,
+          selectedPersonaNode: crumbNodes.persona,
+          onModuleClick: () => {
+            if (!crumbNodes.module) return;
+            navigate('/load', { state: { preselect: { moduleId: crumbNodes.module.id } } });
+          },
+          onTopicClick: () => {
+            if (!crumbNodes.module || !crumbNodes.topic) return;
+            navigate('/load', {
+              state: {
+                preselect: {
+                  moduleId: crumbNodes.module.id,
+                  topicId: crumbNodes.topic.id
+                }
               }
-            }
-          });
+            });
+          },
+          onPersonaClick: () => {}
         }}
-        onPersonaClick={() => {
-          // No-op for now; already on persona script.
-        }}
+        MainComponent={<TurnCanvas />}
+        SideComponent={<RightSidePanel />}
       />
-
-      {/* Main area: Turn canvas + contextual panel */}
-      <div
-        style={{
-          display: 'flex',
-          height: 'calc(100vh - 72px)',
-          boxSizing: 'border-box'
-        }}
-      >
-        {/* Left – the React-Flow canvas renders turns. Wrapper takes 2/3 of space */}
-        <div style={{ flex: '2 1 0%', height: '100%', overflow: 'hidden', position: 'relative' }}>
-          <TurnCanvas />
-        </div>
-        
-        {/* Right – contextual actions. Wrapper takes 1/3 of space */}
-        <div style={{ flex: '1 1 0%', height: '100%', overflowY: 'auto', position: 'relative' /* RSP's internal <aside> handles border and bg */ }}>
-          <RightSidePanel />
-        </div>
-      </div>
     </>
   );
 }

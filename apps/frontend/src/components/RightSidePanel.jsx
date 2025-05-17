@@ -235,27 +235,9 @@ function RightSidePanel() {
   }
 
   return (
-    /*
-    Panel gets a fixed width so the canvas can flex.  We keep borders subtle so
-    the overall UI is pleasant even before full styling.
-    */
-    <aside
-      style={{
-        /* Responsive width – never smaller than 300 px, prefer ~30 % of the
-           viewport, and cap at 440 px so ultra-wide monitors do not waste
-           space.  `flex:0 0 auto` stops the panel from *growing*, we want it
-           to keep the exact clamp() width. */
-        borderLeft: '3px solid #D1D1D1', // subtle divider – consistent with LoadView
-        background: '#fff',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        overflowY: 'auto'
-      }}
-    >
+    <div style={{ padding: 16, minHeight: '100%' }}>
       <Content />
-    </aside>
+    </div>
   );
 }
 

@@ -1496,3 +1496,11 @@ const rspContent = (
     - <div style={{ flex: '1 1 0%', height: '100%', overflowY: 'auto', position: 'relative' /* RSP's internal <aside> handles border and bg */ }}>
     -   <RightSidePanel />
     - </div>
+
+104. apps/frontend/src/components/layout/EditorShell.jsx – NEW FILE (lines 1-110)
+    • Introduces shared two-column layout (TopNavBar + 2:1 flex) so LoadView / ScriptView / NodeView stay in sync.
+    • Handles 72-px top offset, draws 3-px divider, owns overflow scroll for RSP.
+
+105. apps/frontend/src/components/RightSidePanel.jsx & pages/ScriptView.jsx – Layout refactor
+    • RightSidePanel: removed outer <aside>, border & overflow styles; now content-only (lines ~190-225 replaced).
+    • ScriptView: deleted bespoke flex wrapper and inlined TopNavBar; now renders <EditorShell MainComponent={<TurnCanvas/>} SideComponent={<RightSidePanel/>}> (lines ~110-170 replaced).
