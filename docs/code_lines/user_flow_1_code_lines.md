@@ -1448,3 +1448,6 @@ const rspContent = (
 
 193. apps/frontend/src/components/TurnCanvas.jsx – PATCH
      • Re-enabled vertical panning by adding `panOnScroll` with `panOnScrollMode="vertical"`; added dynamic `translateExtent` using `centreX` to lock horizontal drift; scroll wheel now moves viewport down/up as expected while X stays fixed.
+
+194. apps/frontend/src/components/TurnCanvas.jsx – PATCH
+     • Disabled React-Flow panning by setting `panOnScroll={false}` and enabled native wrapper scrolling with `preventScrolling={false}`. This restores smooth wheel scrolling while clamps horizontal drift via unchanged translateExtent.

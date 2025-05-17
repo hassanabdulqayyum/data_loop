@@ -129,9 +129,10 @@ function TurnCanvas() {
         zoomOnScroll={false}
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
-        panOnScroll
-        panOnScrollMode="vertical"
-        panOnDrag={false}
+        panOnScroll={false}
+        /* Allow wheel events to bubble so the wrapper div (overflow-y:auto)
+           handles scrolling instead of React-Flow swallowing them. */
+        preventScrolling={false}
         /* Clamp horizontal movement to keep nodes centred; allow large vertical range */
         translateExtent={[
           [centreX, -100000],
