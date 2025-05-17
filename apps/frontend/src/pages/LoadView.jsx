@@ -45,9 +45,9 @@ import toast from 'react-hot-toast';
 import useAuthStore from '../store/useAuthStore.js';
 import { apiFetch } from '../lib/api.js';
 import HierarchyGraph from '../components/HierarchyGraph.jsx';
-import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
 import { ReactFlowProvider } from 'reactflow';
 import useHierarchyStore from '../store/useHierarchyStore.js';
+import EditorShell from '../components/layout/EditorShell.jsx';
 
 function LoadView() {
   /* ------------------------------------------------------------------
@@ -445,92 +445,66 @@ function LoadView() {
   );
 
   /* ------------------------------------------------------------------
-   * Two-column flex layout: tree on the left, placeholder / action on right.
+   * Shared EditorShell layout: hierarchy on the left, Right-Side Panel on right.
    * ---------------------------------------------------------------- */
-  return (
-    <>
-      <TopNavBar
-        selectedModuleNode={selectedModuleNode}
-        selectedTopicNode={selectedTopicNode}
-        selectedPersonaNode={selectedPersonaNode}
-        /* Clicking module crumb resets deeper selections so user jumps back */
-        onModuleClick={() => {
-          if (!selectedModuleId) return; // no module selected yet
-          setSelectedTopicId(null);
-          setSelectedPersonaId(null);
-        }}
-        /* Clicking topic crumb clears persona selection */
-        onTopicClick={() => {
-          if (!selectedTopicId) return;
-          setSelectedPersonaId(null);
-        }}
-        onPersonaClick={() => {
-          /* At the moment clicking the persona breadcrumb does nothing extra,
-             but we include the handler so future tasks can hook in analytics.
-          */
-        }}
-      />
-      <div style={{ display: 'flex', height: '100vh', paddingTop: '72px', boxSizing: 'border-box' }}>
-        {/* Left column – the hierarchy */}
-        <div
-          ref={graphRef}
-          style={{
-            flex: 2,
-            /* Removed 1-rem padding so the graph can span edge-to-edge.  The
-               nav bar already sits above and the right panel has its own
-               divider, so additional padding only wastes space. */
-            padding: 0,
-            height: 'calc(100% - 0px)',
-            overflow: 'auto'
-          }}
-        >
-          {loading && <p>Loading hierarchy…</p>}
-          {!loading && tree && (
-            <ReactFlowProvider>
-              <HierarchyGraph
-                tree={tree}
-                selectedIds={{ moduleId: selectedModuleId, topicId: selectedTopicId, personaId: selectedPersonaId }}
-                graphRect={graphRef.current ? graphRef.current.getBoundingClientRect() : null}
-                onSelect={(id, nodeType, nodeData) => {
-                  if (nodeType === 'program') {
-                    setSelectedModuleId(null);
-                    setSelectedTopicId(null);
-                    setSelectedPersonaId(null);
-                  } else if (nodeType === 'module') {
-                    setSelectedModuleId(id);
-                    setSelectedTopicId(null);
-                    setSelectedPersonaId(null);
-                  } else if (nodeType === 'day') {
-                    setSelectedTopicId(id);
-                    setSelectedPersonaId(null);
-                  } else if (nodeType === 'persona') {
-                    setSelectedPersonaId(id);
-                  }
-                }}
-              />
-            </ReactFlowProvider>
-          )}
-        </div>
 
-        {/* Right column – placeholder panel */}
-        <div
-          style={{
-            flex: '0 0 auto',
-            width: 'clamp(300px, 33.33vw, 440px)',
-            padding: '1rem',
-            borderLeft: '3px solid #D1D1D1',
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          {/* Render the new rspContent which handles all states */}
-          {rspContent}
-        </div>
-      </div>
-    </>
+  const navBarProps = {
+    selectedModuleNode: selectedModuleNode,
+    selectedTopicNode: selectedTopicNode,
+    selectedPersonaNode: selectedPersonaNode,
+    onModuleClick: () => {
+      if (!selectedModuleId) return;
+      setSelectedTopicId(null);
+      setSelectedPersonaId(null);
+    },
+    onTopicClick: () => {
+      if (!selectedTopicId) return;
+      setSelectedPersonaId(null);
+    },
+    onPersonaClick: () => {}
+  };
+
+  const mainContent = (
+    <div
+      ref={graphRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'auto',
+        padding: 0
+      }}
+    >
+      {loading && <p>Loading hierarchy…</p>}
+      {!loading && tree && (
+        <ReactFlowProvider>
+          <HierarchyGraph
+            tree={tree}
+            selectedIds={{ moduleId: selectedModuleId, topicId: selectedTopicId, personaId: selectedPersonaId }}
+            graphRect={graphRef.current ? graphRef.current.getBoundingClientRect() : null}
+            onSelect={(id, nodeType) => {
+              if (nodeType === 'program') {
+                setSelectedModuleId(null);
+                setSelectedTopicId(null);
+                setSelectedPersonaId(null);
+              } else if (nodeType === 'module') {
+                setSelectedModuleId(id);
+                setSelectedTopicId(null);
+                setSelectedPersonaId(null);
+              } else if (nodeType === 'day') {
+                setSelectedTopicId(id);
+                setSelectedPersonaId(null);
+              } else if (nodeType === 'persona') {
+                setSelectedPersonaId(id);
+              }
+            }}
+          />
+        </ReactFlowProvider>
+      )}
+    </div>
+  );
+
+  return (
+    <EditorShell navBarProps={navBarProps} MainComponent={mainContent} SideComponent={rspContent} />
   );
 }
 

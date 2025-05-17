@@ -37,7 +37,8 @@ function EditorShell({ navBarProps, MainComponent, SideComponent }) {
         style={{
           display: 'flex',
           height: 'calc(100vh - 72px)', // Below the bar
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }}
       >
         {/* Centre canvas – the view that actually changes per page */}

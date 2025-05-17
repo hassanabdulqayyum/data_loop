@@ -1504,3 +1504,17 @@ const rspContent = (
 105. apps/frontend/src/components/RightSidePanel.jsx & pages/ScriptView.jsx – Layout refactor
     • RightSidePanel: removed outer <aside>, border & overflow styles; now content-only (lines ~190-225 replaced).
     • ScriptView: deleted bespoke flex wrapper and inlined TopNavBar; now renders <EditorShell MainComponent={<TurnCanvas/>} SideComponent={<RightSidePanel/>}> (lines ~110-170 replaced).
+
+203. apps/frontend/src/components/layout/EditorShell.jsx – PATCH
+   - Added `overflow: 'hidden'` to the outer flex-row style object (approx. line 35) so mouse-wheel scrolling now affects **only** the centre canvas. This locks the Right-Side Panel in place and eliminates the remaining layout-drift bug described in the saga.
+
+204. apps/frontend/src/pages/LoadView.jsx – REFACTORED
+   - Removed bespoke flex wrapper + duplicate TopNavBar rendering (≈ lines 450-520 deleted).
+   - Imported shared `EditorShell` and now returns:
+     ```jsx
+     <EditorShell navBarProps={navBarProps} MainComponent={mainContent} SideComponent={rspContent} />
+     ```
+     where `mainContent` wraps the `HierarchyGraph` inside a scrollable div.  This brings LoadView in line with ScriptView, giving both screens the exact same 2 : 1 split and 3-px divider.
+
+205. apps/frontend/tests/TurnCanvas.utils.test.js – PATCH
+   - Updated all three calls to `calculateNodesAndEdges()` to pass a dummy container width of `1000` px (lines 10, 15, 22).  Tests now match the updated util signature and pass again.
