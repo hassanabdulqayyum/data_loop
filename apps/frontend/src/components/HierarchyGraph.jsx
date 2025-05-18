@@ -375,6 +375,11 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
     }
   };
 
+  // Handler for React Flow's onPaneClick (for debugging)
+  const handlePaneClick = (event) => {
+    console.log('[HierarchyGraph] handlePaneClick triggered. Event:', event);
+  };
+
   if (!programs || programs.length === 0) {
     return <div style={{ textAlign: 'center', padding: '20px' }}>Loading hierarchy or no data...</div>;
   }
@@ -385,6 +390,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
       edges={edges}
       nodeTypes={nodeTypes}
       onNodeClick={handleNodeClick} // Pass the adapted click handler to React Flow
+      onPaneClick={handlePaneClick} // Added for debugging
       fitView
       fitViewOptions={{ padding: 0.1 }}
       nodesDraggable={false}
