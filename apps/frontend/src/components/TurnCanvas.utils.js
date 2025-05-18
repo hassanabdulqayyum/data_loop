@@ -45,68 +45,60 @@ export const FIRST_NODE_OFFSET_Y = 44; // px
 export const VERTICAL_GAP = 143; // px (≈ 100 bubble + 43 connector)
 
 /**
- * calculateNodesAndEdges – deterministic layout builder that centres nodes
- * horizontally based on the **widest bubble** so the grey spine never moves.
+ * calculateNodesAndEdges – deterministic layout builder.
  *
- * @param {Array<Object>} turns  Visible turns (root excluded)
- * @param {number} containerW   Width of the canvas column in px
- * @returns {{nodes:Array, edges:Array}}
+ * This function calculates the positions for script turn nodes and the edges connecting them.
+ * Node X positions are set to a common baseline (0), as horizontal centering of the entire
+ * group of nodes is handled by the parent CanvasWrapper component using React Flow's fitView.
+ * Vertical positioning is based on a defined starting offset and a consistent gap between turns.
+ * The actual width of each node is calculated and included in the node data, which can be
+ * used by the TurnNode component for its rendering.
+ *
+ * @param {Array<Object>} turns - Array of visible turn objects (root excluded).
+ * @returns {{nodes: Array<Object>, edges: Array<Object>}} Object containing arrays of nodes and edges for React Flow.
+ * @throws {TypeError} If the `turns` argument is not an array.
  */
-export function calculateNodesAndEdges(turns, containerW) {
+export function calculateNodesAndEdges(turns) {
   if (!Array.isArray(turns)) throw new TypeError('turns must be an array');
 
-  if (!containerW) return { nodes: [], edges: [], leftOffset: 0 };
+  const MAX_W = 724; // Maximum width for a turn node
+  const PADDING_X = 28; // Horizontal padding within a turn node (14px each side)
+  const FONT = '500 26px Inter'; // Font used for text measurement
 
-  // --------------------------------------------------------------
-  // 1️⃣  Figure out the widest bubble so we can anchor all nodes on
-  //     a common centre.  Real rendered width = text + 28-px padding
-  //     (14 px each side) + outline thickness (worst-case 3-px).
-  // --------------------------------------------------------------
-  const MAX_W = 724;
-  const PADDING_X = 28; // matches TurnNode horizontal padding (14 px each side)
-  const FONT = '500 26px Inter';
-
-  // Pre-measure every bubble so we can centre each *individually* instead of
-  // forcing *all* nodes to share the same leftOffset (which left skinny nodes
-  // looking off-centre).
+  // Pre-measure every bubble to determine its intrinsic width.
+  // This width is passed to the TurnNode and can be used for its styling.
   const bubbleWidths = turns.map((t) =>
     Math.min(MAX_W, measureTextWidth(t.text || '', FONT, PADDING_X))
   );
 
-  // Helper to centre any given width inside the container.
-  const centreX = (width) => containerW / 2 - width / 2;
-
-  // ----------------------- Build nodes --------------------------
   const nodes = turns.map((turn, idx) => {
     const width = bubbleWidths[idx];
     return {
       id: String(turn.id),
-      type: 'turnNode',
-      data: { turn, width },
+      type: 'turnNode', // Specifies the custom node component to use
+      data: { turn, width }, // Data passed to the TurnNode component
       position: {
-        x: centreX(width),
-        y: FIRST_NODE_OFFSET_Y + idx * VERTICAL_GAP
+        x: 0, // X position is now 0; CanvasWrapper handles group centering via fitView.
+        y: FIRST_NODE_OFFSET_Y + idx * VERTICAL_GAP // Vertical stacking logic remains
       }
     };
   });
 
-  // Calculate the **left-most** X so the caller can clamp horizontal panning.
-  const leftOffset = Math.min(...nodes.map((n) => n.position.x));
-
-  // ----------------------- Build edges --------------------------
   const edges = turns.slice(1).map((turn, idx) => ({
     id: `e${turns[idx].id}-${turn.id}`,
-    source: String(turns[idx].id),
-    target: String(turn.id),
-    type: 'straight',
+    source: String(turns[idx].id), // ID of the source node for the edge
+    target: String(turn.id), // ID of the target node for the edge
+    type: 'straight', // Type of edge (React Flow built-in)
     style: {
-      stroke: '#CCCCCC',
-      strokeWidth: 2.5
+      stroke: '#CCCCCC', // Edge color
+      strokeWidth: 2.5 // Edge thickness
     }
   }));
 
-  return { nodes, edges, leftOffset };
+  return { nodes, edges }; // Return only nodes and edges
 }
 
 // keep export of DEFAULT_CENTER_OFFSET_X only for legacy imports
+// This might be used by tests or other parts of the codebase not yet updated.
+// For new calculations, X is 0 and centering is external.
 export const DEFAULT_CENTER_OFFSET_X = 0; 

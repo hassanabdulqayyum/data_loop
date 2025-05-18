@@ -75,9 +75,9 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 |---|------------|---------|-----------|---------|
 | 1 | **Scaffold `<ThreePaneLayout>`** component with placeholder slots and Storybook example. | Re-usable 3-pane shell lives in `apps/frontend/src/components/layout/ThreePaneLayout.tsx`; Storybook demo renders without TS deps. | – | ✅ **COMPLETE** (commit _ThreePaneLayout shell_) |
 | 2 | **Create `<CanvasWrapper>`** that auto-centres on mount/resize + Jest tests that stub React-Flow. | Wrapper lives in `layout/CanvasWrapper.jsx`, unit-tested (`tests/CanvasWrapper.test.jsx`). Provides single-source centring via `fitView()`. | 1 | ✅ **COMPLETE** (commit _CanvasWrapper with tests_) |
-| 3 | **Migrate `LoadView`** to use the new layout + wrapper. Remove old width maths. Cypress smoke test still passes. | LoadView uses global shell, no bespoke maths. | 1,2 | (commit _Refactor LoadView to use ThreePaneLayout_) |
+| 3 | **Migrate `LoadView`** to use the new layout + wrapper. Remove old width maths. Cypress smoke test still passes. | LoadView uses global shell, no bespoke maths. | 1,2 | ✅ **COMPLETE** (commit _Refactor LoadView to use ThreePaneLayout_) |
 | 4 | **Extract `<PersonaGrid>`** inside LoadView; replace manual spacing with pure flex. | LoadView rows centre reliably. | 3 | ⬜ |
-| 5 | **Migrate `ScriptView`** to `<ThreePaneLayout>` + `<CanvasWrapper>`. Delete legacy centring code. | ScriptView alignment unified. | 1,2 | ⬜ |
+| 5 | **Migrate `ScriptView`** to `<ThreePaneLayout>` + `<CanvasWrapper>`. Delete legacy centring code. | ScriptView alignment unified. | 1,2 | 🔄 **IN PROGRESS** |
 | 6 | **Migrate `NodeView`** similarly. Ensure alternating cards still align. | NodeView inherits shell. | 1,2 | ⬜ |
 | 7 | **Refactor node component** to be border-aware (padding compensation). Unit test ensures spine alignment unaffected by selected state. | | 5,6 | ⬜ |
 | 8 | **Clean-up & docs.** Remove dead code, update Storybook, add developer notes in README. | | All | ⬜ |
@@ -102,6 +102,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-20* | • **LoadView (Task #3 UI refinement)**: Adjusted styles in `LoadView.jsx` for buttons (borderRadius, removed fixed width) and helper text (font, size, spacing) to match Figma specs. Centered the helper text and buttons block in the RSP. <br> • **HierarchyGraph (Task #3 visual refinement)**: Commented out edge creation for persona nodes in `HierarchyGraph.jsx` to hide connecting lines as per Figma design. |
 | *2025-05-20* | • **LoadView (Task #3 UI refinement)**: Updated button layout in `LoadView.jsx` RSP. "Load Script" button now only appears when a persona is selected. When visible, "Load Script" and "Export" buttons align horizontally; otherwise, "Export" (if active for module/topic) is centered vertically. |
 | *2025-05-20* | • **Styling (Task #3 Refactor)**: Created `apps/frontend/src/styles/commonStyles.js` and moved `buttonStyle` into it. Updated `LoadView.jsx` to import `buttonStyle` from this shared location, promoting reusability for upcoming view migrations. |
+| *YYYY-MM-DD* | • **ScriptView (Task #5 Migration)**: Replaced `EditorShell` with `ThreePaneLayout` in `ScriptView.jsx`.<br>  • Wrapped `TurnCanvas` with `CanvasWrapper` to delegate centering and initial view logic.<br>  • Modified `TurnCanvas.jsx` to remove its internal `ResizeObserver`, width calculations, and specific React Flow props related to viewport management, now handled by `CanvasWrapper` or set directly for its vertical, non-pannable, non-zoomable nature.<br>  • Updated `TurnCanvas.utils.js` (`calculateNodesAndEdges`) to remove `containerW` dependency and horizontal centering logic; nodes are now positioned at `x:0`, with `CanvasWrapper` managing overall centering via `fitView`. Vertical layout logic remains. |
 
 ---
 

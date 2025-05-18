@@ -23,12 +23,24 @@ import React, { useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import TurnCanvas from '../components/TurnCanvas.jsx';
 import RightSidePanel from '../components/RightSidePanel.jsx';
-import EditorShell from '../components/layout/EditorShell.jsx';
+import ThreePaneLayout from '../components/layout/ThreePaneLayout.tsx';
+import CanvasWrapper from '../components/layout/CanvasWrapper.jsx';
 import useScriptStore from '../store/useScriptStore.js';
 import useAuthStore from '../store/useAuthStore.js';
 import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
 import { apiFetch } from '../lib/api.js';
 
+/**
+ * ScriptView - Main page for displaying and interacting with a script's turns.
+ *
+ * This view orchestrates the display of script turns within a three-pane layout.
+ * It fetches script data and hierarchy information for breadcrumbs, then renders
+ * the `TopNavBar`, `TurnCanvas` (wrapped in `CanvasWrapper` for consistent
+ * centering and layout), and `RightSidePanel`.
+ *
+ * @example
+ * <Route path="/canvas/:personaId" element={<ScriptView />} />
+ */
 function ScriptView() {
   const { personaId } = useParams();
   const location = useLocation();
@@ -114,37 +126,51 @@ function ScriptView() {
     }
   }, [personaId, token, loadScript]);
 
-  /* We add 72-px top padding so the content does not hide beneath the fixed
-   * TopNavBar (the bar itself is 72 px tall per Figma spec).  Keeping this
-   * padding in one place avoids magic numbers sprinkled across siblings. */
+  // Construct the TopNavBar element with necessary props for breadcrumbs and navigation.
+  const navElement = (
+    <TopNavBar
+      selectedModuleNode={crumbNodes.module}
+      selectedTopicNode={crumbNodes.topic}
+      selectedPersonaNode={crumbNodes.persona}
+      onModuleClick={() => {
+        if (!crumbNodes.module) return;
+        navigate('/load', { state: { preselect: { moduleId: crumbNodes.module.id } } });
+      }}
+      onTopicClick={() => {
+        if (!crumbNodes.module || !crumbNodes.topic) return;
+        navigate('/load', {
+          state: {
+            preselect: {
+              moduleId: crumbNodes.module.id,
+              topicId: crumbNodes.topic.id
+            }
+          }
+        });
+      }}
+      onPersonaClick={() => {
+        // Currently, clicking the persona breadcrumb does not navigate elsewhere from ScriptView.
+        // This can be implemented if a different behavior is desired.
+      }}
+    />
+  );
+
+  /*
+   * Render the ScriptView using ThreePaneLayout.
+   * - `nav`: The constructed TopNavBar.
+   * - `canvas`: The TurnCanvas, wrapped in CanvasWrapper to handle automatic
+   *             centering and consistent layout context.
+   * - `panel`: The RightSidePanel for contextual information and actions.
+   */
   return (
-    <>
-      <EditorShell
-        navBarProps={{
-          selectedModuleNode: crumbNodes.module,
-          selectedTopicNode: crumbNodes.topic,
-          selectedPersonaNode: crumbNodes.persona,
-          onModuleClick: () => {
-            if (!crumbNodes.module) return;
-            navigate('/load', { state: { preselect: { moduleId: crumbNodes.module.id } } });
-          },
-          onTopicClick: () => {
-            if (!crumbNodes.module || !crumbNodes.topic) return;
-            navigate('/load', {
-              state: {
-                preselect: {
-                  moduleId: crumbNodes.module.id,
-                  topicId: crumbNodes.topic.id
-                }
-              }
-            });
-          },
-          onPersonaClick: () => {}
-        }}
-        MainComponent={<TurnCanvas />}
-        SideComponent={<RightSidePanel />}
-      />
-    </>
+    <ThreePaneLayout
+      nav={navElement}
+      canvas={
+        <CanvasWrapper>
+          <TurnCanvas />
+        </CanvasWrapper>
+      }
+      panel={<RightSidePanel />}
+    />
   );
 }
 

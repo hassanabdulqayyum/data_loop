@@ -39,107 +39,73 @@ import useScriptStore from '../store/useScriptStore.js';
 import TurnNode from './TurnNode.jsx';
 import { calculateNodesAndEdges } from './TurnCanvas.utils.js';
 
+/**
+ * TurnCanvas - Renders the script turns as a vertical React Flow chart.
+ *
+ * This component displays the gold-path turns from the Zustand store.
+ * It relies on `CanvasWrapper` (its parent) to handle `fitView` and initial centering.
+ * It defines the node types and calculates the relative positions of turn nodes and edges.
+ * Vertical scrolling for tall scripts is handled by this component's own styles.
+ * Zooming and horizontal panning are disabled to maintain a focused vertical layout.
+ *
+ * @example
+ * // Used within ScriptView, wrapped by CanvasWrapper
+ * <CanvasWrapper>
+ *   <TurnCanvas />
+ * </CanvasWrapper>
+ */
 function TurnCanvas() {
-  // -----------------------------------------------------------------------
-  // Ref & state – we measure container width so we can *perfectly centre* the
-  // nodes irrespective of viewport size or the presence of the right-side
-  // panel.  We store the derived x-offset in React state so memoisation stays
-  // deterministic.
-  // -----------------------------------------------------------------------
-  const containerRef = useRef(null);
-  const [containerW, setContainerW] = useState(0);
+  // Container ref and width state are no longer needed as CanvasWrapper handles layout context.
+  // const containerRef = useRef(null);
+  // const [containerW, setContainerW] = useState(0);
 
-  // ResizeObserver keeps the centre aligned on window resizes without the
-  // need for expensive re-layouts – we only update the state when the width
-  // actually changes.
-  useLayoutEffect(() => {
-    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
+  // ResizeObserver for containerW is no longer needed.
+  // useLayoutEffect(() => { ... }, []);
 
-    const handle = () => {
-      const { clientWidth } = containerRef.current;
-      setContainerW(clientWidth);
-    };
-
-    handle(); // Initial calculation
-
-    const ro = new ResizeObserver(handle);
-    ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  // Pull the gold-path turns from the zustand store.
   const turns = useScriptStore((s) => s.turns);
-
-  // Skip the invisible ROOT node – start canvas at first *real* turn.
   const visibleTurns = useMemo(() => turns.filter((t) => t.role !== 'root'), [turns]);
 
-  // Build nodes & edges once inputs change.  The helper keeps the file tidy
-  // and 100 % unit-testable.
-  const { nodes, edges, leftOffset } = useMemo(
-    () => calculateNodesAndEdges(visibleTurns, containerW),
-    [visibleTurns, containerW]
+  // calculateNodesAndEdges no longer needs containerW for centering.
+  // It focuses on relative positioning of nodes and vertical layout.
+  const { nodes, edges } = useMemo(
+    () => calculateNodesAndEdges(visibleTurns),
+    [visibleTurns]
   );
 
-  // React-Flow needs to know our custom node component.
   const nodeTypes = useMemo(() => ({ turnNode: TurnNode }), []);
-
-  // ---------------------------------------------------------------------
-  // Wrapper takes the remaining width after the Right-Side Panel (fixed
-  // 420 px) so the canvas never leaks underneath.  We enable **vertical**
-  // scrolling via `overflowY:auto` – React-Flow no longer pans the viewport.
-  // ---------------------------------------------------------------------
 
   return (
     <div
-      ref={containerRef}
+      // ref={containerRef} // No longer needed
       data-testid="turn-canvas-wrapper"
       style={{
-        /* Take *all* remaining space after the Right-Side Panel so the
-           canvas auto-expands on large monitors and shrinks gracefully on
-           small ones.  The sibling <RightSidePanel> now has an explicit
-           `width:clamp(...)` so using `flex:1 1 0` here means: "grow to fill
-           whatever is left". */
-        flex: '1 1 0%',
-        height: '100%',
+        // This div takes all available space from CanvasWrapper and handles own scrolling.
+        flex: '1 1 0%', // Flex properties might be redundant if CanvasWrapper's child is block
+        width: '100%', // Ensure it takes full width from CanvasWrapper
+        height: '100%', // Ensure it takes full height from CanvasWrapper
         overflowY: 'auto',
         overflowX: 'hidden',
         background: '#fafafa'
       }}
     >
       <ReactFlow
-        /* Remount on width change so internal calculations refresh */
-        key={containerW}
+        // key={containerW} // No longer needed
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        /* -----------------------------------------------------------------
-         * Scroll/zoom behaviour tweaks
-         * -----------------------------------------------------------------
-         * 1. We **disable** React-Flow's automatic fit-to-view logic because it
-         *    centres the graph inside the *entire* window, ignoring the fixed
-         *    Right-Side Panel.  Our ResizeObserver-driven maths already place
-         *    the nodes correctly, so we only need a neutral starting
-         *    viewport `{x:0,y:0,zoom:1}` (see `defaultViewport` prop below).
-         * 2. React-Flow driven panning is switched off (`panOnScroll=false` &
-         *    `panOnDrag` left false by default).  Vertical movement now relies
-         *    on the wrapper's native `overflow-y:auto` scroll bar.
-         * ---------------------------------------------------------------- */
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        minZoom={1}
-        maxZoom={1}
+        // defaultViewport, minZoom, maxZoom, zoomOnScroll, zoomOnPinch, zoomOnDoubleClick,
+        // panOnScroll, preventScrolling are managed by CanvasWrapper or set to fixed values here.
+        // CanvasWrapper will call fitView, so defaultViewport is not necessary.
+        minZoom={1} // Keep zoom locked
+        maxZoom={1} // Keep zoom locked
         zoomOnScroll={false}
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
         panOnScroll={false}
-        panOnDrag={false}
-        /* Allow wheel events to bubble so the wrapper div (overflow-y:auto)
-           handles scrolling instead of React-Flow swallowing them. */
-        preventScrolling={false}
-        /* Horizontal panning disabled via panOnDrag=false, so no translateExtent needed */
+        panOnDrag={false} // Keep horizontal panning disabled
+        preventScrolling={false} // Allow wheel events for the div's overflowY scroll
       >
-        {/* Subtle dotted background so users see canvas area boundaries */}
         <Background gap={16} size={0.5} />
-        {/* Interactive controls hidden to keep UI minimal */}
         <Controls showInteractive={false} />
       </ReactFlow>
     </div>
