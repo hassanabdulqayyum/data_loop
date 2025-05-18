@@ -1,0 +1,13 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Key change: prevent these from scrolling */
+}
+
+/* Optional: ensure box-sizing is consistent, though often set by reset/normalize css */
+*, *::before, *::after {
+  box-sizing: border-box;
+} 

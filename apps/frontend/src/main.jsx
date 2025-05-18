@@ -13,6 +13,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 import App from './App.jsx';
+import './index.css'; // Import global styles
 
 // Grab the placeholder <div id="root"></div> that lives in index.html.
 const rootElement = document.getElementById('root');
