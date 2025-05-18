@@ -329,6 +329,7 @@ function LoadView() {
                   }}
                   onPersonaSelect={(id) => setSelectedPersonaId(id)}
                   onSelect={(nodeType, nodeId) => {
+                    console.log('[LoadView] onSelect triggered. nodeType:', nodeType, 'nodeId:', nodeId);
                     // This logic might need to be adjusted based on HierarchyGraph's actual onNodeClick behavior
                     if (nodeType === 'module') {
                       setSelectedModuleId(nodeId);
