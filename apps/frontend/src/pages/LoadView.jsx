@@ -332,7 +332,8 @@ function LoadView() {
                   <p>Loading hierarchy...</p>
                 </div>
               )}
-              {!loading && tree && tree.length > 0 && (
+              {/* Ensure graphRect is available before rendering HierarchyGraph */}
+              {!loading && tree && tree.length > 0 && graphRect && (
                 <HierarchyGraph
                   programs={tree}
                   selectedModuleId={selectedModuleId}
@@ -364,7 +365,8 @@ function LoadView() {
                   }}
                 />
               )}
-              {!loading && (!tree || tree.length === 0) && (
+              {/* Also check graphRect here for consistency before showing no data message */}
+              {!loading && graphRect && (!tree || tree.length === 0) && (
                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                   <p>No hierarchy data found.</p>
                 </div>
@@ -373,15 +375,17 @@ function LoadView() {
           </CanvasWrapper>
         }
         panel={
-          <div style={{ padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', boxSizing: 'border-box' }}>
-            <div style={{ textAlign: 'center', marginBottom: 'auto' }}> {/* Removed paddingTop: '20px', Pushes content down a bit, and lets button stick to bottom via mt: auto */}
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}> {/* Outer container for flex column layout */}
+            {/* Helper text area - this part will grow and scroll if needed */}
+            <div style={{ flexGrow: 1, overflowY: 'auto', padding: '20px', textAlign: 'center' }}>
               {!selectedModuleId && <p>Select a module to begin viewing its topics and associated personas.</p>}
               {selectedModuleId && !selectedTopicId && <p>Select a topic to explore available personas.</p>}
               {selectedTopicId && !selectedPersonaId && <p>Select a script to load their script.</p>}
               {selectedPersonaId && <p>Ready to load script for: <strong>{selectedPersonaNode?.name || selectedPersonaId}</strong>.</p>}
             </div>
 
-            <div style={{ marginTop: 'auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}> {/* Ensures buttons are at the bottom */}
+            {/* Buttons area - this part will remain at the bottom */}
+            <div style={{ padding: '20px', paddingTop: '0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <button
                 type="button"
                 onClick={handleLoad}
