@@ -64,6 +64,8 @@ function TurnCanvas() {
   const turnCanvasWrapperRef = useRef(null); // Ref for the main div
   const { setNodes, getNodes } = useReactFlow(); // Get setNodes and getNodes from useReactFlow
 
+  const [displayNodes, setDisplayNodes] = useState([]); // ADDED: State for nodes to render
+
   // Log turns from the store
   const turns = useScriptStore((s) => {
     // Commenting out repetitive logs for clarity during scroll debugging
@@ -118,17 +120,18 @@ function TurnCanvas() {
     console.log('[TurnCanvas] useEffect setting initial nodes. nodesWithCallback count:', nodesWithCallback.length);
     if (nodesWithCallback.length > 0) {
       setNodes(nodesWithCallback);
+      setDisplayNodes(nodesWithCallback); // ADDED: Update displayNodes
     } else {
-      console.log('[TurnCanvas] No nodesWithCallback, setting empty array to ReactFlow');
+      console.log('[TurnCanvas] No nodesWithCallback, setting empty array to ReactFlow and displayNodes');
       setNodes([]);
+      setDisplayNodes([]); // ADDED: Update displayNodes
     }
   }, [nodesWithCallback, setNodes]);
 
   // Effect to adjust Y positions once all node heights are known
   useEffect(() => {
     console.log('[TurnCanvas] Y-ADJUSTMENT useEffect triggered. Visible turns:', visibleTurns.length, 'Heights known:', Object.keys(nodeHeights).length, 'All nodeHeights:', nodeHeights);
-    const currentNodesFromGetNodes = getNodes(); // Get current nodes from React Flow state
-    console.log('[TurnCanvas] Y-ADJUSTMENT: currentNodes from getNodes():', currentNodesFromGetNodes.map(n=>n.id));
+    console.log('[TurnCanvas] Y-ADJUSTMENT: current displayNodes before adjustment:', displayNodes.map(n=>n.id)); // Log current displayNodes
 
     if (visibleTurns.length > 0 && Object.keys(nodeHeights).length === visibleTurns.length) {
       console.log('[TurnCanvas] Y-ADJUSTMENT: All node heights potentially reported.');
@@ -143,12 +146,12 @@ function TurnCanvas() {
         return;
       }
 
-      if (currentNodesFromGetNodes.length === 0 && visibleTurns.length > 0) {
-        console.log('[TurnCanvas] Y-ADJUSTMENT: currentNodes (from getNodes) is empty but visibleTurns exist. Bailing out.');
+      if (displayNodes.length === 0 && visibleTurns.length > 0) { // Check displayNodes
+        console.log('[TurnCanvas] Y-ADJUSTMENT: displayNodes is empty but visibleTurns exist. Bailing out. Should be populated by initial useEffect.');
         return;
       }
       
-      const currentNodesMap = new Map(currentNodesFromGetNodes.map(n => [n.id, n]));
+      const currentNodesMap = new Map(displayNodes.map(n => [n.id, n])); // Use displayNodes
       const newNodes = [];
       let accumulatedY = FIRST_NODE_OFFSET_Y;
 
@@ -186,11 +189,12 @@ function TurnCanvas() {
       if (newNodes.length > 0) {
          console.log('[TurnCanvas] Y-ADJUSTMENT: Setting new Y-adjusted nodes:', newNodes.map(n => ({id: n.id, y: n.position.y}) ));
         setNodes(newNodes);
+        setDisplayNodes(newNodes); // ADDED: Update displayNodes
       }
     } else {
       console.log('[TurnCanvas] Y-ADJUSTMENT: Conditions not met (not enough visible turns or not all heights reported).');
     }
-  }, [visibleTurns, nodeHeights, setNodes, getNodes, handleNodeHeightReport]);
+  }, [visibleTurns, nodeHeights, setNodes, getNodes /* getNodes still needed for RF internal sync? Maybe not. */, displayNodes, handleNodeHeightReport]); // Added displayNodes to dependency array
 
   // Edges are taken directly from the initial calculation, 
   // React Flow should update them automatically when nodes move.
@@ -203,8 +207,7 @@ function TurnCanvas() {
     }
   }, [initialLayout.nodes, visibleTurns, nodeHeights]);
 
-  const nodesForReactFlow = getNodes(); // Get nodes for ReactFlow prop
-  console.log('[TurnCanvas] Rendering ReactFlow with nodes (from getNodes()):', nodesForReactFlow.map(n => n.id) );
+  console.log('[TurnCanvas] Rendering ReactFlow with displayNodes:', displayNodes.map(n => n.id) ); // Log displayNodes
 
   return (
     <div
@@ -220,7 +223,7 @@ function TurnCanvas() {
       }}
     >
       <ReactFlow
-        nodes={nodesForReactFlow}
+        nodes={displayNodes} // CHANGED: Use displayNodes state for the nodes prop
         edges={edges}      // Edges from initial layout, React Flow updates paths
         nodeTypes={useMemo(() => ({ turnNode: TurnNode }), [])} // nodeTypes should be memoized
         minZoom={1}
