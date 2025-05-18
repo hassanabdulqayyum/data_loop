@@ -108,14 +108,12 @@ function TurnCanvas() {
       ref={turnCanvasWrapperRef} // Added ref
       data-testid="turn-canvas-wrapper"
       style={{
-        // REMOVED: flex: '1 1 0%',
-        width: '100%', // Keep width 100%
-        // REMOVED: display: 'flex',
-        // REMOVED: flexDirection: 'column',
-        // No explicit height or min-height, should size to content.
-        // overflowY: 'auto', // REMOVED: Scrolling is handled by ThreePaneLayout's canvas slot
-        overflowX: 'hidden', // Keep horizontal overflow hidden
-        background: 'rgb(250, 250, 250)' // Keep background for visual debugging
+        flex: '1 1 0%', // ADDED: Grow and shrink to fill CanvasWrapper (which is display:flex for ScriptView)
+        width: '100%',
+        display: 'flex', // ADDED: Make this a flex container for ReactFlow child
+        flexDirection: 'column', // ADDED: Stack ReactFlow child vertically
+        overflowX: 'hidden',
+        background: 'rgb(250, 250, 250)'
       }}
     >
       <ReactFlow
@@ -132,9 +130,8 @@ function TurnCanvas() {
         preventScrolling={false}
         style={{
           width: '100%',
-          // REMOVED: flexGrow: 1
-          // REMOVED: height: '5000px' (or any explicit height)
-          // ReactFlow should determine its own height based on content.
+          flex: '1 1 0%', // ADDED: Grow and shrink to fill TurnCanvas wrapper div
+          // ReactFlow should determine its own height based on content, constrained by this flex item.
         }}
       >
         <Background gap={16} size={0.5} />

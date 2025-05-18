@@ -157,13 +157,15 @@ function CanvasWrapper({ children, deps = [], useFitView = true }) {
   // For fitView screens (e.g., LoadView), take full height; for scroll screens (e.g., ScriptView), allow intrinsic height
   const wrapperStyle = useFitView
     ? { width: '100%', height: '100%' }
-    : { width: '100%' };
+    : { width: '100%', minHeight: '100%', display: 'flex' };
 
   return (
     <div ref={wrapperRef} style={wrapperStyle}>
-      {/* Changed height to minHeight conditionally based on useFitView.
+      {/*
           - For useFitView=true (e.g., LoadView), height: '100%' provides a stable area for fitView.
-          - For useFitView=false (e.g., ScriptView), a simple width-only style allows this div to size to its content so overflow can occur in the parent. */}
+          - For useFitView=false (e.g., ScriptView), minHeight: '100%' and display: 'flex' allow content to overflow for scrolling,
+            AND provide a flex context for TurnCanvas to expand into.
+      */}
       {children}
     </div>
   );
