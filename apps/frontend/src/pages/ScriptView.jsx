@@ -167,7 +167,8 @@ function ScriptView() {
       nav={navElement}
       canvas={
         <ReactFlowProvider>
-          <CanvasWrapper>
+          {/* For ScriptView, we want zoom 1 and vertical scrolling, not fitView. */}
+          <CanvasWrapper useFitView={false}>
             <TurnCanvas />
           </CanvasWrapper>
         </ReactFlowProvider>
