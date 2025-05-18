@@ -29,6 +29,7 @@ import useScriptStore from '../store/useScriptStore.js';
 import useAuthStore from '../store/useAuthStore.js';
 import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
 import { apiFetch } from '../lib/api.js';
+import { ReactFlowProvider } from 'reactflow';
 
 /**
  * ScriptView - Main page for displaying and interacting with a script's turns.
@@ -165,9 +166,11 @@ function ScriptView() {
     <ThreePaneLayout
       nav={navElement}
       canvas={
-        <CanvasWrapper>
-          <TurnCanvas />
-        </CanvasWrapper>
+        <ReactFlowProvider>
+          <CanvasWrapper>
+            <TurnCanvas />
+          </CanvasWrapper>
+        </ReactFlowProvider>
       }
       panel={<RightSidePanel />}
     />
