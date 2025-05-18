@@ -82,23 +82,17 @@ function TurnCanvas() {
   useEffect(() => {
     if (turnCanvasWrapperRef.current) {
       const rect = turnCanvasWrapperRef.current.getBoundingClientRect();
-      console.log('[TurnCanvas] Wrapper div dimensions:', {
-        width: rect.width,
-        height: rect.height,
-        top: rect.top,
-        left: rect.left,
-      });
+      // Expand the log to show the full rect object
+      console.log('[TurnCanvas] Wrapper div getBoundingClientRect():', rect);
       console.log('[TurnCanvas] Wrapper div scrollHeight:', turnCanvasWrapperRef.current.scrollHeight);
       console.log('[TurnCanvas] Wrapper div clientHeight:', turnCanvasWrapperRef.current.clientHeight);
-
+      console.log('[TurnCanvas] Wrapper style:', turnCanvasWrapperRef.current.style.cssText);
 
       const reactFlowElement = turnCanvasWrapperRef.current.querySelector('.react-flow');
       if (reactFlowElement) {
         const rfRect = reactFlowElement.getBoundingClientRect();
-        console.log('[TurnCanvas] ReactFlow component direct dimensions:', {
-            width: rfRect.width,
-            height: rfRect.height,
-        });
+        // Expand the log to show the full rect object for ReactFlow
+        console.log('[TurnCanvas] ReactFlow component getBoundingClientRect():', rfRect);
       } else {
         console.log('[TurnCanvas] ReactFlow component NOT FOUND in DOM query.');
       }

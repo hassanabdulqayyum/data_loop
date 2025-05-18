@@ -62,6 +62,16 @@ function CanvasWrapper({ children, deps = [], useFitView = true }) {
   const wrapperRef = useRef(null); // Ref for the wrapper div
   const [wrapperWidth, setWrapperWidth] = useState(0); // State to store the wrapper's width
 
+  // Log dimensions of CanvasWrapper's root div when useFitView is false
+  useEffect(() => {
+    if (!useFitView && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      console.log('[CanvasWrapper] Root div getBoundingClientRect() (useFitView=false):', rect);
+      console.log('[CanvasWrapper] Root div style (useFitView=false):', wrapperRef.current.style.cssText);
+    }
+    // Log this when useFitView changes or when the ref is available
+  }, [useFitView, wrapperRef.current]);
+
   // Effect to update wrapperWidth when the wrapper div mounts or resizes
   useEffect(() => {
     const currentRef = wrapperRef.current;
