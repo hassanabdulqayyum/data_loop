@@ -10,4 +10,9 @@ body,
 /* Optional: ensure box-sizing is consistent, though often set by reset/normalize css */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+/* Ensure React Flow renderer expands to allow parent scrolling in ScriptView */
+.react-flow__renderer {
+  height: 100% !important;
 } 
