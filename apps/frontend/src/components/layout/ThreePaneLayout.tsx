@@ -90,14 +90,14 @@ function ThreePaneLayout({ nav, canvas, panel }: ThreePaneLayoutProps) {
           display: 'grid',
           gridTemplateColumns: '2fr 1fr',
           height: 'calc(100vh - 72px)',
-          overflow: 'hidden'
+          overflow: 'hidden' // This overflow hidden is for the grid container itself, fine.
         }}
       >
         {/* Left canvas area */}
         <div
           style={{
-            position: 'relative',
-            overflow: 'hidden'
+            position: 'relative' // Keep for positioning context if needed by children
+            // overflow: 'hidden' // REMOVED to allow children like TurnCanvas to scroll
           }}
         >
           {canvas}
