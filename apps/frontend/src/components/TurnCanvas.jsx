@@ -131,7 +131,7 @@ function TurnCanvas() {
         panOnScroll={false}
         panOnDrag={false} // Keep horizontal panning disabled
         preventScrolling={false} // Allow wheel events for the div's overflowY scroll
-        style={{ width: '100%', flexGrow: 1 }} // Let ReactFlow grow within this flex container
+        style={{ width: '100%', flexGrow: 1, height: '5000px' }} // Let ReactFlow grow, TEMP: force large height
       >
         <Background gap={16} size={0.5} />
         <Controls showInteractive={false} />
