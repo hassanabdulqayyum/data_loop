@@ -65,6 +65,7 @@ function TurnCanvas() {
   const { setNodes, getNodes } = useReactFlow(); // Get setNodes and getNodes from useReactFlow
 
   const [displayNodes, setDisplayNodes] = useState([]); // ADDED: State for nodes to render
+  const [displayEdges, setDisplayEdges] = useState([]); // ADDED: State for edges to render
 
   // Log turns from the store
   const turns = useScriptStore((s) => {
@@ -120,13 +121,16 @@ function TurnCanvas() {
     console.log('[TurnCanvas] useEffect setting initial nodes. nodesWithCallback count:', nodesWithCallback.length);
     if (nodesWithCallback.length > 0) {
       setNodes(nodesWithCallback);
-      setDisplayNodes(nodesWithCallback); // ADDED: Update displayNodes
+      setDisplayNodes(nodesWithCallback);
+      setDisplayEdges(initialLayout.edges); // ADDED: Set initial displayEdges
     } else {
-      console.log('[TurnCanvas] No nodesWithCallback, setting empty array to ReactFlow and displayNodes');
+      console.log('[TurnCanvas] No nodesWithCallback, setting empty array to ReactFlow and displayNodes/Edges');
       setNodes([]);
-      setDisplayNodes([]); // ADDED: Update displayNodes
+      setDisplayNodes([]);
+      setDisplayEdges([]); // ADDED: Clear displayEdges
     }
-  }, [nodesWithCallback, setNodes]);
+    // Ensure initialLayout.edges is a dependency if used directly here
+  }, [nodesWithCallback, setNodes, initialLayout.edges]);
 
   // Effect to adjust Y positions once all node heights are known
   useEffect(() => {
@@ -205,24 +209,27 @@ function TurnCanvas() {
       }
 
       if (changed) {
-        console.log('[TurnCanvas] Y-ADJUSTMENT: Node positions or count changed. Updating React Flow and displayNodes.', newCalculatedNodes.map(n => ({id: n.id, y: n.position.y}) ));
+        console.log('[TurnCanvas] Y-ADJUSTMENT: Node positions or count changed. Updating React Flow and displayNodes/Edges.', newCalculatedNodes.map(n => ({id: n.id, y: n.position.y}) ));
         setNodes(newCalculatedNodes);
         setDisplayNodes(newCalculatedNodes);
+        // When nodes are re-positioned, edges might need to be re-evaluated or at least re-passed if their internal linkage depends on node instances.
+        // For now, re-pass the same edge data structure. If calculateNodesAndEdges were cheap, we could recall it.
+        // Or, if edge structure depends on node positions (e.g. custom edge paths), it would need recalculation here.
+        // Since our edges are simple (source/target ID), re-passing the existing structure should be fine.
+        setDisplayEdges(initialLayout.edges); // Re-set displayEdges to ensure ReactFlow gets a potentially fresh reference if it matters for its diffing with new nodes.
       } else {
         console.log('[TurnCanvas] Y-ADJUSTMENT: No actual change in node positions/count, skipping displayNodes update to prevent loop.');
-        // If only React Flow internal state needs sync without triggering a displayNodes-based rerender of this effect:
-        // setNodes(newCalculatedNodes); // Potentially still useful if RF internal state could diverge and needs strict sync.
-        // However, if displayNodes didn't change, and newCalculatedNodes are based on displayNodes + heights, then RF state should be in sync if setDisplayNodes was the last thing.
       }
     } else {
       console.log('[TurnCanvas] Y-ADJUSTMENT: Conditions not met (not enough visible turns or not all heights reported).');
     }
-  }, [visibleTurns, nodeHeights, displayNodes, setNodes, handleNodeHeightReport]);
+    // Make sure initialLayout.edges is in dependency array if used like this for setDisplayEdges
+  }, [visibleTurns, nodeHeights, displayNodes, setNodes, handleNodeHeightReport, initialLayout.edges]);
 
   // Edges are taken directly from the initial calculation, 
-  // React Flow should update them automatically when nodes move.
-  const { edges } = initialLayout;
-  console.log("[TurnCanvas] Edges being passed to ReactFlow:", edges); // ADDED: Log edges
+  // const { edges } = initialLayout; // No longer directly used for ReactFlow prop
+  console.log("[TurnCanvas] Edges that *would have been* from initialLayout:", initialLayout.edges); // Keep for debug if needed
+  console.log("[TurnCanvas] DisplayEdges state:", displayEdges); // Log displayEdges
 
   // Existing useEffect for logging dimensions - keep for debugging if needed
   useEffect(() => {
@@ -231,7 +238,7 @@ function TurnCanvas() {
     }
   }, [initialLayout.nodes, visibleTurns, nodeHeights]);
 
-  console.log('[TurnCanvas] Rendering ReactFlow with displayNodes:', displayNodes.map(n => n.id) ); // Log displayNodes
+  console.log('[TurnCanvas] Rendering ReactFlow with displayNodes:', displayNodes.map(n => n.id), 'and displayEdges:', displayEdges.map(e => e.id) ); // Log displayNodes and displayEdges
 
   return (
     <div
@@ -248,7 +255,7 @@ function TurnCanvas() {
     >
       <ReactFlow
         nodes={displayNodes} // CHANGED: Use displayNodes state for the nodes prop
-        edges={edges}      // Edges from initial layout, React Flow updates paths
+        edges={displayEdges}      // CHANGED: Use displayEdges state
         nodeTypes={useMemo(() => ({ turnNode: TurnNode }), [])} // nodeTypes should be memoized
         minZoom={1}
         maxZoom={1}
