@@ -32,7 +32,7 @@ Example usage (already wired in <ScriptView>):
 ```
 */
 
-import React, { useMemo, useRef, useLayoutEffect, useState } from 'react';
+import React, { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
 import ReactFlow, { Background, Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 import useScriptStore from '../store/useScriptStore.js';
@@ -55,28 +55,61 @@ import { calculateNodesAndEdges } from './TurnCanvas.utils.js';
  * </CanvasWrapper>
  */
 function TurnCanvas() {
-  // Container ref and width state are no longer needed as CanvasWrapper handles layout context.
-  // const containerRef = useRef(null);
-  // const [containerW, setContainerW] = useState(0);
+  const turnCanvasWrapperRef = useRef(null); // Ref for the main div
 
-  // ResizeObserver for containerW is no longer needed.
-  // useLayoutEffect(() => { ... }, []);
+  // Log turns from the store
+  const turns = useScriptStore((s) => {
+    console.log('[TurnCanvas] Turns from store:', s.turns);
+    return s.turns;
+  });
+  const visibleTurns = useMemo(() => {
+    const filtered = turns.filter((t) => t.role !== 'root');
+    console.log('[TurnCanvas] Visible turns:', filtered);
+    return filtered;
+  }, [turns]);
 
-  const turns = useScriptStore((s) => s.turns);
-  const visibleTurns = useMemo(() => turns.filter((t) => t.role !== 'root'), [turns]);
-
-  // calculateNodesAndEdges no longer needs containerW for centering.
-  // It focuses on relative positioning of nodes and vertical layout.
-  const { nodes, edges } = useMemo(
-    () => calculateNodesAndEdges(visibleTurns),
-    [visibleTurns]
-  );
+  // Log calculated nodes and edges
+  const { nodes, edges } = useMemo(() => {
+    const calculated = calculateNodesAndEdges(visibleTurns);
+    console.log('[TurnCanvas] Calculated nodes:', calculated.nodes);
+    console.log('[TurnCanvas] Calculated edges:', calculated.edges);
+    return calculated;
+  }, [visibleTurns]);
 
   const nodeTypes = useMemo(() => ({ turnNode: TurnNode }), []);
 
+  // Log dimensions of the TurnCanvas wrapper div
+  useEffect(() => {
+    if (turnCanvasWrapperRef.current) {
+      const rect = turnCanvasWrapperRef.current.getBoundingClientRect();
+      console.log('[TurnCanvas] Wrapper div dimensions:', {
+        width: rect.width,
+        height: rect.height,
+        top: rect.top,
+        left: rect.left,
+      });
+      console.log('[TurnCanvas] Wrapper div scrollHeight:', turnCanvasWrapperRef.current.scrollHeight);
+      console.log('[TurnCanvas] Wrapper div clientHeight:', turnCanvasWrapperRef.current.clientHeight);
+
+
+      const reactFlowElement = turnCanvasWrapperRef.current.querySelector('.react-flow');
+      if (reactFlowElement) {
+        const rfRect = reactFlowElement.getBoundingClientRect();
+        console.log('[TurnCanvas] ReactFlow component direct dimensions:', {
+            width: rfRect.width,
+            height: rfRect.height,
+        });
+      } else {
+        console.log('[TurnCanvas] ReactFlow component NOT FOUND in DOM query.');
+      }
+    }
+  }, [nodes]); // Re-log if nodes change, might indicate re-render
+
+  console.log('[TurnCanvas] Rendering with nodes count:', nodes.length);
+
   return (
     <div
-      // ref={containerRef} // No longer needed
+      ref={turnCanvasWrapperRef} // Added ref
       data-testid="turn-canvas-wrapper"
       style={{
         // This div will now take full width and expand height based on its content.
