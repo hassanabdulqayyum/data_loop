@@ -30,6 +30,8 @@ import useAuthStore from '../store/useAuthStore.js';
 import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
 import { apiFetch } from '../lib/api.js';
 import { ReactFlowProvider } from 'reactflow';
+import { ReactFlow } from 'reactflow';
+import { Background } from 'reactflow';
 
 /**
  * ScriptView - Main page for displaying and interacting with a script's turns.
@@ -167,10 +169,26 @@ function ScriptView() {
       nav={navElement}
       canvas={
         <ReactFlowProvider>
-          {/* For ScriptView, we want zoom 1 and vertical scrolling, not fitView. */}
-          <CanvasWrapper useFitView={false}>
-            <TurnCanvas />
-          </CanvasWrapper>
+          <ReactFlow
+            nodes={[
+              { id: 'm1', type: 'input', data: { label: 'Minimal Node 1' }, position: { x: 50, y: 50 }, style: {background: '#fff', border: '1px solid #000', padding: 10} },
+              { id: 'm2', data: { label: 'Minimal Node 2' }, position: { x: 50, y: 200 }, style: {background: '#fff', border: '1px solid #000', padding: 10} },
+            ]}
+            edges={[
+              { 
+                id: 'em1-m2', 
+                source: 'm1', 
+                target: 'm2', 
+                type: 'default', 
+                animated: false, 
+                style: { stroke: '#FF0000', strokeWidth: 3 } // Bright red, thick
+              }
+            ]}
+            fitView 
+            style={{ background: '#f0f0f0', height: '100%', width: '100%' }}
+          >
+            <Background />
+          </ReactFlow>
         </ReactFlowProvider>
       }
       panel={<RightSidePanel />}
