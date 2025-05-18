@@ -109,7 +109,6 @@ function TurnCanvas() {
       data-testid="turn-canvas-wrapper"
       style={{
         flex: '1 1 0%', // Grow and shrink to fill CanvasWrapper
-        minHeight: '0', // ADDED: Ensure flex item can shrink below content size initially
         width: '100%',
         display: 'flex', // Make this a flex container for ReactFlow child
         flexDirection: 'column', // ADDED: Stack ReactFlow child vertically
