@@ -362,7 +362,6 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
 
   // Handler for React Flow's onNodeClick
   const handleNodeClick = (event, node) => {
-    console.log('[HierarchyGraph] handleNodeClick triggered. Event:', event, 'Node:', node);
     if (onSelect) {
       // Determine nodeType based on node.type (which comes from our custom node types)
       let nodeType = 'unknown';
@@ -370,14 +369,12 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
       else if (node.type === 'moduleNode') nodeType = 'module';
       else if (node.type === 'dayNode') nodeType = 'day';
       else if (node.type === 'personaNode') nodeType = 'persona';
-      console.log('[HierarchyGraph] Calling onSelect with:', node.id, nodeType);
       onSelect(node.id, nodeType); // Call the onSelect prop from LoadView
     }
   };
 
   // Handler for React Flow's onPaneClick (for debugging)
   const handlePaneClick = (event) => {
-    console.log('[HierarchyGraph] handlePaneClick triggered. Event:', event);
   };
 
   if (!programs || programs.length === 0) {
