@@ -222,6 +222,7 @@ function TurnCanvas() {
   // Edges are taken directly from the initial calculation, 
   // React Flow should update them automatically when nodes move.
   const { edges } = initialLayout;
+  console.log("[TurnCanvas] Edges being passed to ReactFlow:", edges); // ADDED: Log edges
 
   // Existing useEffect for logging dimensions - keep for debugging if needed
   useEffect(() => {
