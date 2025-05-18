@@ -88,7 +88,7 @@ export function calculateNodesAndEdges(turns) {
     id: `e${turns[idx].id}-${turn.id}`,
     source: String(turns[idx].id), // ID of the source node for the edge
     target: String(turn.id), // ID of the target node for the edge
-    type: 'straight', // Type of edge (React Flow built-in)
+    type: 'default', // CHANGED: from 'straight' to 'default' for testing
     animated: false, // ADDED: Explicitly disable animation
     style: {
       stroke: '#CCCCCC', // Edge color
