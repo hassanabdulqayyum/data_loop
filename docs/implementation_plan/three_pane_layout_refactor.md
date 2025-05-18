@@ -112,6 +112,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-21* | • **ScriptView (Task #5 Scrolling Fix Attempt 2)**: Reverted temporary `3000px` height in `TurnCanvas.jsx`. Created `index.css` with `html, body, #root { height: 100%; overflow: hidden; }` to prevent base document scroll. Imported `index.css` into `main.jsx`. Aim: ensure `ThreePaneLayout`'s canvas slot is the sole scroll manager for its content. |
 | *2025-05-21* | • **ScriptView (Task #5 Scrolling Fix Attempt 3)**: RSP stopped scrolling after previous change. Removed `overflow: 'hidden'` from the main grid container in `ThreePaneLayout.tsx`. `html,body,#root` still has `overflow:hidden`. Aim: Allow canvas and RSP slots in `ThreePaneLayout` to manage their own `overflowY: 'auto'` independently. |
 | *2025-05-21* | • **ScriptView (Task #5 Scrolling Fix Attempt 4)**: Canvas still static. Removed `height: '100%'` from `ReactFlow` component style in `TurnCanvas.jsx` (width remains 100%). Aim: Allow ReactFlow to set its height based on content, potentially triggering overflow in `ThreePaneLayout`'s canvas slot (which has `height:100%` & `overflowY:auto`). |
+| *2025-05-22* | • **ScriptView (Task #5 Scrolling Fix)**: Resolved canvas scrolling issue. Removed `height: '100%'` from the main wrapper `div` style in `apps/frontend/src/components/TurnCanvas.jsx`. This allows the `TurnCanvas` wrapper to grow with its `ReactFlow` content, correctly triggering `overflowY: 'auto'` on the designated scrolling parent (the canvas slot in `ThreePaneLayout.tsx`). |
 
 ---
 

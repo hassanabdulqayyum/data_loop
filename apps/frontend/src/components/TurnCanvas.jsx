@@ -83,8 +83,9 @@ function TurnCanvas() {
         // Scrolling is handled by its parent in ThreePaneLayout.tsx.
         flex: '1 1 0%', // Flex properties might be redundant if CanvasWrapper's child is block
         width: '100%', // Ensure it takes full width from CanvasWrapper
-        height: '100%', // RESTORED: Allow this div to fill the parent's height
-        // overflowY: 'auto', // REMOVED: Scrolling handled by parent
+        // height: '100%', // REMOVED: Allow this div to fill the parent's height
+        // The above line was the culprit. By removing it, this div can grow taller
+        // than its parent (the canvas slot in ThreePaneLayout), which has overflowY: 'auto'.
         overflowX: 'hidden',
         background: '#fafafa'
       }}
