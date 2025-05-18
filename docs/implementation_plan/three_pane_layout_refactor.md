@@ -75,7 +75,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 |---|------------|---------|-----------|---------|
 | 1 | **Scaffold `<ThreePaneLayout>`** component with placeholder slots and Storybook example. | Re-usable 3-pane shell lives in `apps/frontend/src/components/layout/ThreePaneLayout.tsx`; Storybook demo renders without TS deps. | – | ✅ **COMPLETE** (commit _ThreePaneLayout shell_) |
 | 2 | **Create `<CanvasWrapper>`** that auto-centres on mount/resize + Jest tests that stub React-Flow. | Wrapper lives in `layout/CanvasWrapper.jsx`, unit-tested (`tests/CanvasWrapper.test.jsx`). Provides single-source centring via `fitView()`. | 1 | ✅ **COMPLETE** (commit _CanvasWrapper with tests_) |
-| 3 | **Migrate `LoadView`** to use the new layout + wrapper. Remove old width maths. Cypress smoke test still passes. | LoadView uses global shell, no bespoke maths. | 1,2 | ✅ **COMPLETE** (commit _Refactor LoadView to use ThreePaneLayout_) |
+| 3 | **Migrate `LoadView`** to use the new layout + wrapper. Remove old width maths. Cypress smoke test still passes. | LoadView uses global shell, no bespoke maths. | 1,2 | (commit _Refactor LoadView to use ThreePaneLayout_) |
 | 4 | **Extract `<PersonaGrid>`** inside LoadView; replace manual spacing with pure flex. | LoadView rows centre reliably. | 3 | ⬜ |
 | 5 | **Migrate `ScriptView`** to `<ThreePaneLayout>` + `<CanvasWrapper>`. Delete legacy centring code. | ScriptView alignment unified. | 1,2 | ⬜ |
 | 6 | **Migrate `NodeView`** similarly. Ensure alternating cards still align. | NodeView inherits shell. | 1,2 | ⬜ |
@@ -90,6 +90,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 |------|---------|
 | *2025-05-18* | • **ThreePaneLayout** shell created with grid 2fr/1fr split and divider.<br>• Storybook story added (`*.jsx`). |
 | *2025-05-18* | • **CanvasWrapper** implemented, calls `fitView()` on mount/resize/deps change.<br>• Jest tests verify behaviour; wrapper now ready to wrap any React-Flow canvas. |
+| *2025-05-19* | • **LoadView (Task #3 integration)**: Debugged `LoadView` integration with `ThreePaneLayout` and `CanvasWrapper`.<br>  • Resolved `NaN` dimension errors by removing manual dimension calculations (`graphRect`) from `LoadView` and `HierarchyGraph`, deferring to `CanvasWrapper` and React Flow for layout and fitting.<br>  • Corrected `TypeError` for node click handlers by aligning prop names (`onSelect`) and ensuring `HierarchyGraph` properly adapts the handler for React Flow's `onNodeClick` event.<br>  • Removed redundant `fitView` logic from `HierarchyGraph` to rely solely on `CanvasWrapper`. |
 
 ---
 

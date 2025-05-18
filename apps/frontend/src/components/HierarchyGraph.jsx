@@ -105,7 +105,7 @@ const nodeTypes = {
   personaNode: (props) => <CustomNode {...props} type="persona" selected={props.data.selected} />,
 };
 
-function HierarchyGraph({ programs, selectedIds, onSelect, graphRect }) {
+function HierarchyGraph({ programs, selectedIds, onSelect }) {
   const { nodes, edges } = useMemo(() => {
     const n = [];
     const e = [];
@@ -179,7 +179,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect, graphRect }) {
         ref: mod,
       }));
 
-      const availableWidth = (graphRect?.width ?? 1200) * 0.9; // Leave a 5 % margin each side.
+      const availableWidth = 1200 * 0.9; // Using fallback width, assuming 1200px default, CanvasWrapper will fit.
       const moduleRows = packIntoRows(measuredModules, CHIP_GAP, availableWidth);
 
       let moduleRowY = programY + CHIP_HEIGHT + whiteGap;
@@ -248,6 +248,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect, graphRect }) {
       if (!activeModule) return; // Skip entire day tier when none selected.
 
       const filteredDays = activeModule.days.filter((day, idx) => {
+        // Visibility logic for days
         if (
           selectedIds?.topicId !== null &&
           selectedIds?.topicId !== undefined &&
@@ -261,35 +262,34 @@ function HierarchyGraph({ programs, selectedIds, onSelect, graphRect }) {
         return true;
       });
 
-      const measuredDays = filteredDays.map((d) => ({
-        id: d.id,
-        width: measureChipWidth(d.id),
-        ref: d,
+      const measuredDays = filteredDays.map((day) => ({
+        id: day.id,
+        width: measureChipWidth(day.id),
+        ref: day,
       }));
 
+      // Use the same fallback width strategy for days
       const dayRows = packIntoRows(measuredDays, CHIP_GAP, availableWidth);
-
       let dayRowY = dayTierStartY;
       const dayPos = {};
 
       dayRows.forEach((rowObj) => {
-        const rowStartX = -rowObj.width / 2;
+        const rowStartX = -rowObj.width / 2; // Centre around x=0
         let chipX = rowStartX;
 
         rowObj.chips.forEach((chip) => {
           const day = chip.ref;
           const isTopicSelected = selectedIds?.topicId === day.id;
+          const isPersonaSelectedForThisTopic = selectedIds?.personaId !== null && activeModule.days.find(d => d.id === selectedIds.topicId) === day;
 
-          // Refined logic for effective border width and node state
-          const isPersonaSelectedUnderThisTopic = selectedIds?.personaId !== null;
-          const isTrulySelectedTopic = isTopicSelected && !isPersonaSelectedUnderThisTopic;
-          const isAncestorTopic = isTopicSelected && isPersonaSelectedUnderThisTopic;
+          const isTrulySelectedDay = isTopicSelected && !selectedIds?.personaId;
+          const isAncestorDay = isTopicSelected && selectedIds?.personaId;
 
           let effectiveBorderWidth = 1; // Default for unselected
-          if (isTrulySelectedTopic) {
+          if (isTrulySelectedDay) {
             effectiveBorderWidth = 3;
-          } else if (isAncestorTopic) {
-            effectiveBorderWidth = 0; // Ancestors have no border in CustomNode
+          } else if (isAncestorDay) {
+            effectiveBorderWidth = 0; // Ancestors have no border
           }
 
           n.push({
@@ -297,158 +297,101 @@ function HierarchyGraph({ programs, selectedIds, onSelect, graphRect }) {
             type: 'dayNode',
             data: {
               label: day.id,
-              selected: isTrulySelectedTopic,
-              ancestor: isAncestorTopic,
+              selected: isTrulySelectedDay,
+              ancestor: isAncestorDay,
             },
             position: { x: chipX - effectiveBorderWidth, y: dayRowY },
             selectable: true,
           });
-
           dayPos[day.id] = { x: chipX, y: dayRowY };
-
-          // Edge module → day
-          e.push({ id: `${activeModule.id}-${day.id}`, source: activeModule.id, target: day.id, type: 'straight' });
-
+          if (modulePos[activeModule.id]) {
+            e.push({ id: `${activeModule.id}-${day.id}`, source: activeModule.id, target: day.id, type: 'straight' });
+          }
           chipX += chip.width + CHIP_GAP;
         });
-
         dayRowY += CHIP_HEIGHT + ROW_GAP;
       });
 
       const personaTierStartY = dayRowY - ROW_GAP + whiteGap;
 
-      /* --------------------------------------------------------------
-       * 4. PERSONA tier – may span many rows, always centred on mid-point.
-       * ------------------------------------------------------------*/
       const activeDay = activeModule.days.find((d) => d.id === selectedIds?.topicId);
-      if (!activeDay) return;
+      if (!activeDay || !activeDay.personas) return; // Skip persona tier
 
       const measuredPersonas = activeDay.personas.map((p) => ({
         id: p.id,
-        width: measureChipWidth(p.id),
+        width: measureChipWidth(p.id), // Width per persona based on text
+        ref: p,
       }));
 
+      // Use the same fallback width strategy for personas
       const personaRows = packIntoRows(measuredPersonas, CHIP_GAP, availableWidth);
-
       let personaRowY = personaTierStartY;
 
       personaRows.forEach((rowObj) => {
-        const rowStartX = -rowObj.width / 2;
+        const rowStartX = -rowObj.width / 2; // Centre around x=0
         let chipX = rowStartX;
-
         rowObj.chips.forEach((chip) => {
-          const isPersonaSelected = selectedIds?.personaId === chip.id;
-
-          // For Persona nodes, they can't be ancestors, so border is 3 if selected, 1 if not.
-          const effectiveBorderWidth = isPersonaSelected ? 3 : 1;
+          const persona = chip.ref;
+          const isPersonaSelected = selectedIds?.personaId === persona.id;
+          
+          let effectiveBorderWidth = 1; // Default for unselected
+          if (isPersonaSelected) {
+            effectiveBorderWidth = 3;
+          }
 
           n.push({
-            id: chip.id,
+            id: persona.id,
             type: 'personaNode',
-            data: { label: chip.id, selected: isPersonaSelected },
+            data: { label: persona.id, selected: isPersonaSelected }, // Pass selected state
             position: { x: chipX - effectiveBorderWidth, y: personaRowY },
             selectable: true,
           });
-
+          if (dayPos[activeDay.id]) {
+            e.push({ id: `${activeDay.id}-${persona.id}`, source: activeDay.id, target: persona.id, type: 'straight' });
+          }
           chipX += chip.width + CHIP_GAP;
         });
-
         personaRowY += CHIP_HEIGHT + ROW_GAP;
       });
-
-      // Topic → Persona edges intentionally omitted (design wants a clean look)
     });
     return { nodes: n, edges: e };
-  }, [programs, selectedIds, graphRect]);
+  }, [programs, selectedIds]);
 
-  /* ------------------------------------------------------------------
-   * Smart viewport logic (option B from our discussion)
-   * ---------------------------------------------------
-   * 1. After every render where the **node set changes** we let React-Flow
-   *    choose a reasonable zoom via `fitView()`.
-   * 2. We then *nudge* the camera so the Program node (root) sits `80` pixels
-   *    from the top of the canvas, matching the Figma screenshot.
-   * 3. When deeper levels of the tree are revealed the effect fires again,
-   *    so the new children are always visible and the root anchor is kept.
-   * ------------------------------------------------------------------ */
   const reactFlowInstance = useReactFlow();
-  const nodesInitialised = useNodesInitialized();
+  const nodesInitialized = useNodesInitialized();
 
-  // useLayoutEffect fires **before** the browser paints the updated DOM, so
-  // any viewport tweaks we make here are applied invisibly—removing the last
-  // flicker some users noticed.
-  useLayoutEffect(() => {
-    if (!nodesInitialised || nodes.length === 0) return;
-
-    // ------------------------------------------------------------------
-    // NEW STRATEGY (May-2025): we **lock the zoom factor to 1×** so the UI
-    // is always rendered at native pixel size.  That means no scroll-wheel or
-    // pinch gestures will scale the canvas – users can still pan, but the
-    // text stays crisp and the chip sizes match the Figma 1-for-1.
-    // ------------------------------------------------------------------
-
-    // 1. Grab the current viewport, force zoom to 1.
-    let vp = { ...reactFlowInstance.getViewport(), zoom: 1 };
-
-    // 2. Centre the Program node `80` px from the top edge so the hierarchy
-    //    always starts in a predictable spot.  We need the *hydrated* nodes
-    //    (those contain runtime width/height measurements) to do this.
-    const hydratedNodes =
-      typeof reactFlowInstance.getNodes === 'function'
-        ? reactFlowInstance.getNodes()
-        : [];
-
-    const programNode = hydratedNodes.find((n) => n.type === 'programNode');
-    // The design calls for the Program chip to sit ~43 px below the breadcrumb bar.
-    // Because computeViewportForRoot expects the *distance from wrapper top to
-    // node top*, we pass exactly 43 so the root never hides under the NavBar.
-    vp = computeViewportForRoot(vp, programNode, graphRect, 43);
-
-    // 3. Apply the viewport instantly (no animation) so the load feels snappy.
-    reactFlowInstance.setViewport(vp, { duration: 0 });
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps – instance is stable.
-  }, [nodes, nodesInitialised]);
-
-  const defaultEdgeOptions = {
-    style: { stroke: '#c8c8c8', strokeWidth: 3 }, // Thicker connectors per design
-    type: 'straight'
+  // Handler for React Flow's onNodeClick
+  const handleNodeClick = (event, node) => {
+    if (onSelect) {
+      // Determine nodeType based on node.type (which comes from our custom node types)
+      let nodeType = 'unknown';
+      if (node.type === 'programNode') nodeType = 'program';
+      else if (node.type === 'moduleNode') nodeType = 'module';
+      else if (node.type === 'dayNode') nodeType = 'day';
+      else if (node.type === 'personaNode') nodeType = 'persona';
+      onSelect(node.id, nodeType); // Call the onSelect prop from LoadView
+    }
   };
 
+  if (!programs || programs.length === 0) {
+    return <div style={{ textAlign: 'center', padding: '20px' }}>Loading hierarchy or no data...</div>;
+  }
+
   return (
-    /*
-     * Wrapper div previously carried a 24-px padding on all sides which, combined
-     * with the parent container's own margin, produced visible white gutters
-     * around the canvas.  We drop that padding so the React-Flow surface can
-     * claim the full allotted space.  If future designs need a buffer we can
-     * re-introduce a smaller margin or rely on fitView spacing.
-     */
-    <div style={{ width: '100%', height: '100%' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={true}
-        zoomOnScroll={false}
-        zoomOnPinch={false}
-        zoomOnDoubleClick={false}
-        minZoom={1}
-        maxZoom={1}
-        onNodeClick={(_, node) => {
-          let nodeType = 'persona'; // Default to persona
-          if (node.type === 'programNode') nodeType = 'program';
-          else if (node.type === 'moduleNode') nodeType = 'module';
-          else if (node.type === 'dayNode') nodeType = 'day';
-          onSelect(node.id, nodeType);
-        }}
-        selectNodesOnDrag={false}
-      >
-        <Background gap={20} size={1} color="#f0f0f0" />
-      </ReactFlow>
-    </div>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      onNodeClick={handleNodeClick} // Pass the adapted click handler to React Flow
+      fitView
+      fitViewOptions={{ padding: 0.1 }}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      selectNodesOnDrag={false} // Prevent selection on drag, only on click
+      style={{ background: '#F3F4F6' }} // Match the div background in LoadView for consistency
+    >
+      <Background color="#ccc" variant="dots" gap={16} size={1} />
+    </ReactFlow>
   );
 }
 

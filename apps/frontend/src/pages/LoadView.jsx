@@ -64,10 +64,6 @@ function LoadView() {
   const [selectedModuleId, setSelectedModuleId] = useState(null); // Store ID
   const [selectedTopicId, setSelectedTopicId] = useState(null);   // Store ID
   const [selectedPersonaId, setSelectedPersonaId] = useState(null); // Store ID
-  const [graphRect, setGraphRect] = useState(null); // State to store graph dimensions
-
-  // Ref for the div that will contain HierarchyGraph
-  const graphContainerRef = useRef(null);
 
   // Grab the JWT so we can call protected endpoints safely.
   const { token } = useAuthStore();
@@ -135,22 +131,6 @@ function LoadView() {
     if (preTopic) setSelectedTopicId(preTopic);
     if (prePersona) setSelectedPersonaId(prePersona);
   }, [location.state]);
-
-  /* ------------------------------------------------------------------
-   * Measure the graph container div dimensions
-   * This will be passed to HierarchyGraph for its internal layout.
-   * ------------------------------------------------------------------ */
-  useLayoutEffect(() => {
-    // This effect measures the div that wraps HierarchyGraph.
-    // It runs after the DOM is painted, ensuring dimensions are accurate.
-    // It re-runs if 'tree' changes because the loading state might alter container size.
-    if (graphContainerRef.current) {
-      setGraphRect({
-        width: graphContainerRef.current.clientWidth,
-        height: graphContainerRef.current.clientHeight,
-      });
-    }
-  }, [tree, loading]); // Re-run if tree data changes or loading state changes.
 
   /* ------------------------------------------------------------------
    * Helper functions to find full node objects from IDs.
@@ -325,21 +305,19 @@ function LoadView() {
       <ThreePaneLayout
         nav={<TopNavBar {...topNavProps} />}
         canvas={
-          <CanvasWrapper deps={[tree, selectedModuleId, selectedTopicId, selectedPersonaId, graphRect]}>
-            <div ref={graphContainerRef} style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6', position: 'relative' }}> {/* Ensure this div takes full space of canvas slot and allows HierarchyGraph to position correctly */}
+          <CanvasWrapper deps={[tree, selectedModuleId, selectedTopicId, selectedPersonaId]}>
+            <div style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6', position: 'relative' }}>
               {loading && (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                   <p>Loading hierarchy...</p>
                 </div>
               )}
-              {/* Ensure graphRect is available before rendering HierarchyGraph */}
-              {!loading && tree && tree.length > 0 && graphRect && (
+              {!loading && tree && tree.length > 0 && (
                 <HierarchyGraph
                   programs={tree}
                   selectedModuleId={selectedModuleId}
                   selectedTopicId={selectedTopicId}
                   selectedPersonaId={selectedPersonaId}
-                  graphRect={graphRect}
                   onModuleSelect={(id) => {
                     setSelectedModuleId(id);
                     setSelectedTopicId(null);
@@ -350,7 +328,7 @@ function LoadView() {
                     setSelectedPersonaId(null);
                   }}
                   onPersonaSelect={(id) => setSelectedPersonaId(id)}
-                  onNodeClick={(nodeType, nodeId) => {
+                  onSelect={(nodeType, nodeId) => {
                     // This logic might need to be adjusted based on HierarchyGraph's actual onNodeClick behavior
                     if (nodeType === 'module') {
                       setSelectedModuleId(nodeId);
@@ -365,8 +343,7 @@ function LoadView() {
                   }}
                 />
               )}
-              {/* Also check graphRect here for consistency before showing no data message */}
-              {!loading && graphRect && (!tree || tree.length === 0) && (
+              {!loading && (!tree || tree.length === 0) && (
                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                   <p>No hierarchy data found.</p>
                 </div>
