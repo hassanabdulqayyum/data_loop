@@ -90,7 +90,8 @@ function ThreePaneLayout({ nav, canvas, panel }: ThreePaneLayoutProps) {
           display: 'grid',
           gridTemplateColumns: '2fr 1fr',
           height: 'calc(100vh - 72px)',
-          overflow: 'hidden' // This overflow hidden is for the grid container itself, fine.
+          // overflow: 'hidden' // REMOVED: Let child slots manage their own overflow.
+          // The html, body, #root overflow:hidden should prevent overall page scroll.
         }}
       >
         {/* Left canvas area */}

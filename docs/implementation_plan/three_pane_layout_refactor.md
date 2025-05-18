@@ -110,6 +110,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-21* | • **ScriptView (Task #5 Scrolling Fix Attempt)**: Modified `CanvasWrapper.jsx` to accept `useFitView` prop (default true). If false (as set in `ScriptView.jsx`), it skips `fitView()` and sets viewport to zoom 1, y-offset 43px, and calculated x-center based on its own width and max node width (724px). This aims to enable vertical scrolling for `ScriptView` by preventing nodes from being shrunk to fit. |
 | *2025-05-21* | • **ScriptView (Task #5 Scrolling Diagnosis)**: Temporarily set `ReactFlow` component height in `TurnCanvas.jsx` to `3000px` to test if `ThreePaneLayout`'s canvas slot scrolls with explicitly oversized content. This helps determine if the issue is with the scroll container or React Flow's content/viewport sizing. |
 | *2025-05-21* | • **ScriptView (Task #5 Scrolling Fix Attempt 2)**: Reverted temporary `3000px` height in `TurnCanvas.jsx`. Created `index.css` with `html, body, #root { height: 100%; overflow: hidden; }` to prevent base document scroll. Imported `index.css` into `main.jsx`. Aim: ensure `ThreePaneLayout`'s canvas slot is the sole scroll manager for its content. |
+| *2025-05-21* | • **ScriptView (Task #5 Scrolling Fix Attempt 3)**: RSP stopped scrolling after previous change. Removed `overflow: 'hidden'` from the main grid container in `ThreePaneLayout.tsx`. `html,body,#root` still has `overflow:hidden`. Aim: Allow canvas and RSP slots in `ThreePaneLayout` to manage their own `overflowY: 'auto'` independently. |
 
 ---
 
