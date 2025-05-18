@@ -106,17 +106,13 @@ function TurnCanvas() {
       ref={turnCanvasWrapperRef} // Added ref
       data-testid="turn-canvas-wrapper"
       style={{
-        // This div will now take full width and expand height based on its content.
-        // Scrolling is handled by its parent in ThreePaneLayout.tsx.
         flex: '1 1 0%', // This (specifically flex-grow: 1) should make it expand to fill CanvasWrapper (which is display:flex)
-        width: '100%', // Ensure it takes full width from CanvasWrapper
+        width: '100%',
         // REMOVED height: '100%'. Relying on flex-grow to fill the parent flex container.
-        // REVERTED from min-height. ReactFlow needs a concrete height from its immediate parent.
-        // This div will take 100% height of CanvasWrapper. If ReactFlow content overflows,
-        // this div has overflowY:visible (default), so its scrollHeight will grow.
-        // CanvasWrapper (with min-height:100%) will then grow, triggering scroll on ThreePaneLayout.
+        display: 'flex', // Make this a flex container for ReactFlow child
+        flexDirection: 'column', // Stack children vertically
         overflowX: 'hidden',
-        background: 'rgb(250, 250, 250)' // Corrected from #fafafa to ensure it matches other uses
+        background: 'rgb(250, 250, 250)'
       }}
     >
       <ReactFlow
@@ -135,7 +131,7 @@ function TurnCanvas() {
         panOnScroll={false}
         panOnDrag={false} // Keep horizontal panning disabled
         preventScrolling={false} // Allow wheel events for the div's overflowY scroll
-        style={{ width: '100%' }} // REMOVED height: '100%', let ReactFlow determine its own height from content
+        style={{ width: '100%', flexGrow: 1 }} // Let ReactFlow grow within this flex container
       >
         <Background gap={16} size={0.5} />
         <Controls showInteractive={false} />
