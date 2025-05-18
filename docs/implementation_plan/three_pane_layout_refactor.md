@@ -98,6 +98,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Adjusted `HierarchyGraph` to apply a 43px top offset to the Program node, ensuring correct initial vertical positioning below the nav bar. |
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Revised Program node positioning. Reverted direct Y-offset in `HierarchyGraph`. Modified `CanvasWrapper` to adjust viewport after `fitView`, aiming for a consistent 43px visual top offset for the graph content. |
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Enhanced `CanvasWrapper` to use `useNodesInitialized` and `useCallback` to ensure its centering and 43px top offset logic only runs after React Flow nodes are fully initialized, preventing initial layout jumps. |
+| *2025-05-20* | • **LoadView (Task #3 functionality)**: Modified the "Export" button logic in `LoadView.jsx` to be enabled when a module, topic, or persona is selected, instead of only when a persona is selected. This allows users to export data at different hierarchy levels. |
 
 ---
 

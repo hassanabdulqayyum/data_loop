@@ -373,11 +373,11 @@ function LoadView() {
               <button
                 type="button"
                 onClick={handleExport}
-                disabled={loading || !selectedPersonaId} // Same condition as Load for now
+                disabled={loading || (!selectedModuleId && !selectedTopicId && !selectedPersonaId)}
                 style={{
                   ...buttonStyle,
-                  cursor: (loading || !selectedPersonaId) ? 'not-allowed' : 'pointer',
-                  opacity: (loading || !selectedPersonaId) ? 0.5 : 1,
+                  cursor: (loading || (!selectedModuleId && !selectedTopicId && !selectedPersonaId)) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || (!selectedModuleId && !selectedTopicId && !selectedPersonaId)) ? 0.5 : 1,
                   backgroundColor: '#EFEFEF', // A slightly different style for export or make it consistent
                   width: '100%' // Make button take full width
                 }}
