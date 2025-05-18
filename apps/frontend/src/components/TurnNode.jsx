@@ -47,6 +47,7 @@ const node = {
 
 import React, { useLayoutEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { Handle, Position } from 'reactflow';
 import useScriptStore from '../store/useScriptStore.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -126,6 +127,17 @@ function TurnNode({ id, data }) {
   // ---------------------------------------------------------------------------
   const rawText = typeof turn.text === 'string' ? turn.text : '';
 
+  // Style for invisible handles
+  const handleStyle = {
+    background: 'transparent',
+    border: 'none',
+    width: '1px',
+    height: '1px',
+    // Position them slightly inside to avoid being exactly on the border if that causes issues
+    // For top handle, you might use: top: '-1px' and for bottom: bottom: '-1px' 
+    // Or rely on default centering of the handle on the edge.
+  };
+
   return (
     <div
       ref={nodeRef}
@@ -136,7 +148,21 @@ function TurnNode({ id, data }) {
         navigate(`/canvas/${personaId}/node/${id}`);
       }}
     >
+      {/* Target handle (top) for incoming edges */}
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        id={`turn-${id}-target`}
+        style={handleStyle} 
+      />
       {rawText}
+      {/* Source handle (bottom) for outgoing edges */}
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        id={`turn-${id}-source`}
+        style={handleStyle} 
+      />
     </div>
   );
 }
