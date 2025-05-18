@@ -105,7 +105,7 @@ function TurnCanvas() {
         panOnScroll={false}
         panOnDrag={false} // Keep horizontal panning disabled
         preventScrolling={false} // Allow wheel events for the div's overflowY scroll
-        style={{ height: '100%', width: '100%' }} // REVERTED: Ensure ReactFlow fills its parent
+        style={{ width: '100%' }} // REMOVED height: '100%', let ReactFlow determine its own height from content
       >
         <Background gap={16} size={0.5} />
         <Controls showInteractive={false} />
