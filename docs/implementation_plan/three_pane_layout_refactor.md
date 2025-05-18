@@ -94,6 +94,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Locked React Flow zoom to 1x in `HierarchyGraph` to ensure consistent font size and prevent user zooming, aligning with design goals. |
 | *2025-05-19* | • **LoadView (Task #3 functionality)**: Resolved node clickability issue by correcting parameter order in `LoadView`'s `onSelect` handler. Click events now correctly trigger state updates and expected behavior. Removed debug logs. |
 | *2025-05-19* | • **LoadView (Task #3 functionality/visuals)**: Fixed an issue in `HierarchyGraph` where not all topic nodes were displayed when a module was selected. Now, all topics for the selected module are correctly shown, addressing a key part of the `LoadView` migration. |
+| *2025-05-19* | • **LoadView (Task #3 debugging)**: Refactored prop passing from `LoadView` to `HierarchyGraph` to use a single `selectedIds` object, resolving a `JSON.parse(undefined)` error in debug logs and clarifying component contracts. Added debug logs to `HierarchyGraph` to trace topic display. |
 
 ---
 

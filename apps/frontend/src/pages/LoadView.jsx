@@ -300,6 +300,13 @@ function LoadView() {
 
   const buttonDisabled = loading || !selectedPersonaId;
 
+  // Bundle IDs for HierarchyGraph
+  const currentSelectedIds = {
+    moduleId: selectedModuleId,
+    topicId: selectedTopicId,
+    personaId: selectedPersonaId
+  };
+
   return (
     <ReactFlowProvider>
       <ThreePaneLayout
@@ -315,19 +322,7 @@ function LoadView() {
               {!loading && tree && tree.length > 0 && (
                 <HierarchyGraph
                   programs={tree}
-                  selectedModuleId={selectedModuleId}
-                  selectedTopicId={selectedTopicId}
-                  selectedPersonaId={selectedPersonaId}
-                  onModuleSelect={(id) => {
-                    setSelectedModuleId(id);
-                    setSelectedTopicId(null);
-                    setSelectedPersonaId(null);
-                  }}
-                  onTopicSelect={(id) => {
-                    setSelectedTopicId(id);
-                    setSelectedPersonaId(null);
-                  }}
-                  onPersonaSelect={(id) => setSelectedPersonaId(id)}
+                  selectedIds={currentSelectedIds}
                   onSelect={(nodeId, nodeType) => {
                     if (nodeType === 'module') {
                       setSelectedModuleId(nodeId);
