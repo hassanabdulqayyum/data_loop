@@ -131,6 +131,7 @@ function TurnCanvas() {
         style={{
           width: '100%',
           flex: '1 1 0%', // ADDED: Grow and shrink to fill TurnCanvas wrapper div
+          height: '2000px', // TEMP: Force large height to test scrolling
           // ReactFlow should determine its own height based on content, constrained by this flex item.
         }}
       >
