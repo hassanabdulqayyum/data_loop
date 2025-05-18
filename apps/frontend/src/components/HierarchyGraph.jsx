@@ -362,7 +362,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
             selectable: true,
           });
           if (dayPos[activeDay.id]) {
-            e.push({ id: `${activeDay.id}-${persona.id}`, source: activeDay.id, target: persona.id, type: 'straight' });
+            // e.push({ id: `${activeDay.id}-${persona.id}`, source: activeDay.id, target: persona.id, type: 'straight' }); // Commented out to hide lines to persona nodes
           }
           chipX += chip.width + CHIP_GAP;
         });

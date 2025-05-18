@@ -81,7 +81,7 @@ function LoadView() {
     color: '#000000',
     border: '2px solid #000000',
     padding: '8px', // 8px padding as per figma
-    borderRadius: '6px', // Added a slight border radius for aesthetics, can be removed if not desired
+    borderRadius: '12px', 
     cursor: 'pointer',
     backgroundColor: '#FFFFFF', // Assuming a white background, can be transparent
     textDecoration: 'none', // For the export button if it's an <a> tag
@@ -346,17 +346,23 @@ function LoadView() {
           </CanvasWrapper>
         }
         panel={
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}> {/* Outer container for flex column layout */}
-            {/* Helper text area - this part will grow and scroll if needed */}
-            <div style={{ flexGrow: 1, overflowY: 'auto', padding: '20px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ 
+              padding: '20px',
+              textAlign: 'center',
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 500,
+              fontSize: '28px',
+              letterSpacing: '-0.05em',
+              marginBottom: '20px'
+            }}>
               {!selectedModuleId && <p>Select a module to begin viewing its topics and associated personas.</p>}
               {selectedModuleId && !selectedTopicId && <p>Select a topic to explore available personas.</p>}
               {selectedTopicId && !selectedPersonaId && <p>Select a script to load their script.</p>}
               {selectedPersonaId && <p>Ready to load script for: <strong>{selectedPersonaNode?.name || selectedPersonaId}</strong>.</p>}
             </div>
 
-            {/* Buttons area - this part will remain at the bottom */}
-            <div style={{ padding: '20px', paddingTop: '0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
               <button
                 type="button"
                 onClick={handleLoad}
@@ -365,7 +371,6 @@ function LoadView() {
                   ...buttonStyle,
                   cursor: buttonDisabled ? 'not-allowed' : 'pointer',
                   opacity: buttonDisabled ? 0.5 : 1,
-                  width: '100%' // Make button take full width of its container
                 }}
               >
                 Load Script
@@ -378,8 +383,7 @@ function LoadView() {
                   ...buttonStyle,
                   cursor: (loading || (!selectedModuleId && !selectedTopicId && !selectedPersonaId)) ? 'not-allowed' : 'pointer',
                   opacity: (loading || (!selectedModuleId && !selectedTopicId && !selectedPersonaId)) ? 0.5 : 1,
-                  backgroundColor: '#EFEFEF', // A slightly different style for export or make it consistent
-                  width: '100%' // Make button take full width
+                  backgroundColor: '#EFEFEF', 
                 }}
               >
                 Export
