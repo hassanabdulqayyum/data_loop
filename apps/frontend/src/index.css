@@ -13,8 +13,21 @@ body,
 }
 
 /* Ensure React Flow renderer expands to allow parent scrolling in ScriptView */
-.react-flow__renderer {
-  height: 100% !important;
+/* .react-flow__renderer {
+  height: 100% !important; 
+} */ /* Commenting out as viewport will handle scrolling now */
+
+/* For ScriptView, allow React Flow's main wrapper to be visible, not the primary scroller. */
+/* It should expand via flex, and its viewport child will handle internal scrolling. */
+[data-testid="turn-canvas-wrapper"] .react-flow {
+  overflow: visible !important; /* Changed from overflow-y: auto */
+  /* height: auto !important; */ /* Let flexbox and parent define height */
+}
+
+/* Make the React Flow viewport the actual scrolling container for nodes */
+[data-testid="turn-canvas-wrapper"] .react-flow__viewport {
+  overflow-y: auto !important;
+  height: 100% !important; /* Ensure it has a defined height to scroll its own content within */
 }
 
 /* Override React Flow's default overflow:hidden on its main wrapper */
