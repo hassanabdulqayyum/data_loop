@@ -96,8 +96,9 @@ function ThreePaneLayout({ nav, canvas, panel }: ThreePaneLayoutProps) {
         {/* Left canvas area */}
         <div
           style={{
-            position: 'relative' // Keep for positioning context if needed by children
-            // overflow: 'hidden' // REMOVED to allow children like TurnCanvas to scroll
+            position: 'relative', // Keep for positioning context if needed by children
+            height: '100%', // Ensure this div takes the full height of its grid cell
+            overflowY: 'auto' // Allow this div to scroll if its content (the canvas prop) overflows
           }}
         >
           {canvas}

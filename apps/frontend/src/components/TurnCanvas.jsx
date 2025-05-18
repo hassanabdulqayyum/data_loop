@@ -79,11 +79,12 @@ function TurnCanvas() {
       // ref={containerRef} // No longer needed
       data-testid="turn-canvas-wrapper"
       style={{
-        // This div takes all available space from CanvasWrapper and handles own scrolling.
+        // This div will now take full width and expand height based on its content.
+        // Scrolling is handled by its parent in ThreePaneLayout.tsx.
         flex: '1 1 0%', // Flex properties might be redundant if CanvasWrapper's child is block
         width: '100%', // Ensure it takes full width from CanvasWrapper
-        height: '100%', // Ensure it takes full height from CanvasWrapper
-        overflowY: 'auto',
+        // height: '100%', // REMOVED: Allow height to be determined by content
+        // overflowY: 'auto', // REMOVED: Scrolling handled by parent
         overflowX: 'hidden',
         background: '#fafafa'
       }}
