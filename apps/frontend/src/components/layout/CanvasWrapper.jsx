@@ -145,7 +145,9 @@ function CanvasWrapper({ children, deps = [], useFitView = true }) {
   }, [manageViewport, useFitView]); // Removed direct dependency on centre (now manageViewport)
 
   return (
-    <div ref={wrapperRef} style={{ width: '100%', height: '100%' }}>
+    <div ref={wrapperRef} style={{ width: '100%', minHeight: '100%' }}>
+      {/* Changed height to minHeight to allow the wrapper to grow with its content,
+          which is necessary for the parent scroll container in ThreePaneLayout to work correctly. */}
       {children}
     </div>
   );

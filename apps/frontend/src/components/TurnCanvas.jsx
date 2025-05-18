@@ -83,9 +83,9 @@ function TurnCanvas() {
         // Scrolling is handled by its parent in ThreePaneLayout.tsx.
         flex: '1 1 0%', // Flex properties might be redundant if CanvasWrapper's child is block
         width: '100%', // Ensure it takes full width from CanvasWrapper
-        // height: '100%', // REMOVED: Allow this div to fill the parent's height
-        // The above line was the culprit. By removing it, this div can grow taller
-        // than its parent (the canvas slot in ThreePaneLayout), which has overflowY: 'auto'.
+        minHeight: '100%', // CHANGED from height: '100%'. This allows the div to grow if ReactFlow's content is taller,
+                         // while still providing an initial 100% height for ReactFlow to render in.
+                         // This growth is necessary for the parent (CanvasWrapper, and then ThreePaneLayout's slot) to scroll.
         overflowX: 'hidden',
         background: '#fafafa'
       }}
