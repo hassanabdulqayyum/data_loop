@@ -126,7 +126,7 @@ function RSPIdle({ onExport }) {
       <button
         type="button"
         onClick={onExport}
-        style={buttonStyle}
+        style={{ ...buttonStyle, borderRadius: '12px !important' }}
       >
         Export
       </button>
@@ -186,10 +186,10 @@ function RSPSelected({ onExport, onEdit }) {
           gap: 14
         }}
       >
-        <button type="button" onClick={onEdit} style={buttonStyle}>
+        <button type="button" onClick={onEdit} style={{ ...buttonStyle, borderRadius: '12px !important' }}>
           Edit
         </button>
-        <button type="button" onClick={onExport} style={buttonStyle}>
+        <button type="button" onClick={onExport} style={{ ...buttonStyle, borderRadius: '12px !important' }}>
           Export
         </button>
       </div>
