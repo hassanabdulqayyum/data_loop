@@ -389,6 +389,15 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
       nodesConnectable={false}
       selectNodesOnDrag={false} // Prevent selection on drag, only on click
       style={{ background: '#F3F4F6' }} // Match the div background in LoadView for consistency
+      // Zoom and pan props for fixed zoom behavior
+      zoomOnScroll={false}
+      zoomOnPinch={false}
+      zoomOnDoubleClick={false}
+      panOnScroll={false} // Typically you want to pan, but disable if scroll should do something else
+      panOnDrag={true}    // Allow panning by dragging the canvas
+      minZoom={1}
+      maxZoom={1}
+      elementsSelectable={true} // Ensure elements are selectable by default (React Flow default is true)
     >
       <Background color="#ccc" variant="dots" gap={16} size={1} />
     </ReactFlow>
