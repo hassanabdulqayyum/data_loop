@@ -32,12 +32,14 @@ Example usage (already wired in <ScriptView>):
 ```
 */
 
-import React, { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
-import ReactFlow, { Background, Controls } from 'reactflow';
+import React, { useMemo, useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react';
+import ReactFlow, { Background, Controls, useReactFlow } from 'reactflow';
 import 'reactflow/dist/style.css';
 import useScriptStore from '../store/useScriptStore.js';
 import TurnNode from './TurnNode.jsx';
-import { calculateNodesAndEdges } from './TurnCanvas.utils.js';
+import { calculateNodesAndEdges, FIRST_NODE_OFFSET_Y } from './TurnCanvas.utils.js';
+
+const REQUIRED_VERTICAL_GAP = 43; // px, the desired edge-to-edge gap
 
 /**
  * TurnCanvas - Renders the script turns as a vertical React Flow chart.
@@ -47,15 +49,20 @@ import { calculateNodesAndEdges } from './TurnCanvas.utils.js';
  * It defines the node types and calculates the relative positions of turn nodes and edges.
  * Vertical scrolling for tall scripts is handled by this component's own styles.
  * Zooming and horizontal panning are disabled to maintain a focused vertical layout.
+ * This version dynamically adjusts node Y positions to ensure a consistent vertical gap
+ * based on the actual rendered height of each TurnNode.
  *
  * @example
- * // Used within ScriptView, wrapped by CanvasWrapper
- * <CanvasWrapper>
- *   <TurnCanvas />
- * </CanvasWrapper>
+ * // Used within ScriptView, wrapped by CanvasWrapper and ReactFlowProvider
+ * <ReactFlowProvider>
+ *   <CanvasWrapper useFitView={false}>
+ *     <TurnCanvas />
+ *   </CanvasWrapper>
+ * </ReactFlowProvider>
  */
 function TurnCanvas() {
   const turnCanvasWrapperRef = useRef(null); // Ref for the main div
+  const { setNodes, getNodes } = useReactFlow(); // Get setNodes and getNodes from useReactFlow
 
   // Log turns from the store
   const turns = useScriptStore((s) => {
@@ -69,57 +76,151 @@ function TurnCanvas() {
     return filtered;
   }, [turns]);
 
-  // Log calculated nodes and edges
-  const { nodes, edges } = useMemo(() => {
-    const calculated = calculateNodesAndEdges(visibleTurns);
-    // console.log('[TurnCanvas] Calculated nodes:', calculated.nodes);
-    // console.log('[TurnCanvas] Calculated edges:', calculated.edges);
-    return calculated;
+  const [nodeHeights, setNodeHeights] = useState({});
+
+  /**
+   * Callback for TurnNode instances to report their rendered height.
+   * @param {string} nodeId - The ID of the node reporting its height.
+   * @param {number} height - The rendered offsetHeight of the node.
+   */
+  const handleNodeHeightReport = useCallback((nodeId, height) => {
+    // console.log(`[TurnCanvas] Received height for ${nodeId}: ${height}`);
+    setNodeHeights(prev => {
+      if (prev[nodeId] === height) return prev; // Avoid unnecessary re-renders if height is the same
+      return { ...prev, [nodeId]: height };
+    });
+  }, []);
+
+  // Initial calculation of nodes and edges from the utility function
+  const initialLayout = useMemo(() => {
+    // console.log('[TurnCanvas] Calculating initial layout with visibleTurns:', visibleTurns);
+    return calculateNodesAndEdges(visibleTurns);
   }, [visibleTurns]);
 
-  const nodeTypes = useMemo(() => ({ turnNode: TurnNode }), []);
+  // Augment initial nodes with the onHeightReport callback
+  // This is passed to ReactFlow for the first render.
+  const nodesWithCallback = useMemo(() => {
+    // console.log('[TurnCanvas] Augmenting initial nodes with callback. Initial nodes count:', initialLayout.nodes.length);
+    return initialLayout.nodes.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        onHeightReport: handleNodeHeightReport
+      }
+    }));
+  }, [initialLayout.nodes, handleNodeHeightReport]);
 
-  // Log dimensions of the TurnCanvas wrapper div
+  // Effect to set initial nodes once they are calculated and augmented
   useEffect(() => {
-    if (turnCanvasWrapperRef.current) {
-      const rect = turnCanvasWrapperRef.current.getBoundingClientRect();
-      console.log('[TurnCanvas] Wrapper div getBoundingClientRect():', rect);
-      console.log('[TurnCanvas] Wrapper div scrollHeight:', turnCanvasWrapperRef.current.scrollHeight);
-      console.log('[TurnCanvas] Wrapper div clientHeight:', turnCanvasWrapperRef.current.clientHeight);
-      console.log('[TurnCanvas] Wrapper style:', turnCanvasWrapperRef.current.style.cssText);
+    // console.log('[TurnCanvas] useEffect setting initial nodes. Count:', nodesWithCallback.length);
+    if (nodesWithCallback.length > 0) {
+      setNodes(nodesWithCallback);
+    } else {
+      setNodes([]); // Clear nodes if visibleTurns is empty
+    }
+  }, [nodesWithCallback, setNodes]);
 
-      const reactFlowElement = turnCanvasWrapperRef.current.querySelector('.react-flow');
-      if (reactFlowElement) {
-        const rfRect = reactFlowElement.getBoundingClientRect();
-        console.log('[TurnCanvas] ReactFlow component getBoundingClientRect():', rfRect);
-        // Add scrollHeight and clientHeight for ReactFlow element itself
-        console.log('[TurnCanvas] ReactFlow component scrollHeight:', reactFlowElement.scrollHeight);
-        console.log('[TurnCanvas] ReactFlow component clientHeight:', reactFlowElement.clientHeight);
-      } else {
-        console.log('[TurnCanvas] ReactFlow component NOT FOUND in DOM query.');
+  // Effect to adjust Y positions once all node heights are known
+  useEffect(() => {
+    // console.log('[TurnCanvas] useEffect for Y adjustment. Visible turns:', visibleTurns.length, 'Heights known:', Object.keys(nodeHeights).length);
+    if (visibleTurns.length > 0 && Object.keys(nodeHeights).length === visibleTurns.length) {
+      // console.log('[TurnCanvas] All node heights reported. Recalculating Y positions.');
+      // Ensure all visible turns actually have a height reported
+      const allHeightsReported = visibleTurns.every(turn => nodeHeights[String(turn.id)] !== undefined && nodeHeights[String(turn.id)] > 0);
+      
+      if (!allHeightsReported) {
+        // console.log('[TurnCanvas] Not all heights reported or some are zero, skipping Y adjustment.');
+        return;
+      }
+
+      const currentNodes = getNodes(); // Get current nodes from React Flow state
+      if (currentNodes.length === 0 && visibleTurns.length > 0) {
+        // This can happen if setNodes from initial load hasn't fully propagated yet,
+        // or if currentNodes got cleared. Re-set with callback nodes if necessary.
+        // console.log('[TurnCanvas] currentNodes is empty but visibleTurns exist. Attempting to re-initialize with nodesWithCallback.');
+        // setNodes(nodesWithCallback); // This might cause a loop, be cautious.
+        // For now, we will just return and wait for the state to be consistent.
+        return;
+      }
+      
+      // Create a map for quick lookup of current nodes by ID
+      const currentNodesMap = new Map(currentNodes.map(n => [n.id, n]));
+      const newNodes = [];
+      let accumulatedY = FIRST_NODE_OFFSET_Y;
+
+      for (let i = 0; i < visibleTurns.length; i++) {
+        const turn = visibleTurns[i];
+        const nodeId = String(turn.id);
+        const currentNode = currentNodesMap.get(nodeId);
+        const height = nodeHeights[nodeId];
+
+        if (!currentNode) {
+          // console.warn(`[TurnCanvas] Node with ID ${nodeId} not found in current React Flow nodes during Y adjustment. Skipping.`);
+          continue; // Should not happen if initialNodes were set correctly
+        }
+        if (height === undefined || height === 0) {
+          // console.warn(`[TurnCanvas] Height for node ${nodeId} is ${height}. Skipping Y adjustment for this and subsequent nodes.`);
+          // If a height is missing or zero, we can't reliably position subsequent nodes.
+          // It might be better to use the original nodes list as is, or wait.
+          // For now, we will just apply positions up to this point if any.
+          // if (newNodes.length > 0) setNodes(newNodes); // set what we have if it is a partial update
+          return; // Exit if any height is missing to prevent incorrect layout
+        }
+
+        const updatedNode = {
+          ...currentNode,
+          position: {
+            ...currentNode.position, // Keep original x
+            y: accumulatedY
+          },
+          // Ensure onHeightReport is still there if nodes are fully replaced
+          data: {
+            ...currentNode.data,
+            onHeightReport: handleNodeHeightReport
+          }
+        };
+        newNodes.push(updatedNode);
+        
+        // console.log(`[TurnCanvas] Node ${nodeId}: oldY=${currentNode.position.y}, newY=${accumulatedY}, height=${height}`);
+        accumulatedY += height + REQUIRED_VERTICAL_GAP;
+      }
+
+      if (newNodes.length > 0) {
+         // console.log('[TurnCanvas] Setting new Y-adjusted nodes:', newNodes.map(n => ({id: n.id, y: n.position.y}) ));
+        setNodes(newNodes);
       }
     }
-  }, [nodes, visibleTurns]); // Re-log if nodes or visibleTurns change
+  }, [visibleTurns, nodeHeights, setNodes, getNodes, handleNodeHeightReport /*, nodesWithCallback - potentially add if re-init logic is used */]);
 
-  // console.log('[TurnCanvas] Rendering with nodes count:', nodes.length);
+  // Edges are taken directly from the initial calculation, 
+  // React Flow should update them automatically when nodes move.
+  const { edges } = initialLayout;
+
+  // Existing useEffect for logging dimensions - keep for debugging if needed
+  useEffect(() => {
+    if (turnCanvasWrapperRef.current) {
+      // ... (kept existing logging, can be commented out later)
+      // console.log('[TurnCanvas] Wrapper div getBoundingClientRect():', turnCanvasWrapperRef.current.getBoundingClientRect());
+    }
+  }, [/* nodes, visibleTurns - original deps were nodes, visibleTurns. Consider new deps if this log is vital */ initialLayout.nodes, visibleTurns, nodeHeights]);
 
   return (
     <div
-      ref={turnCanvasWrapperRef} // Added ref
+      ref={turnCanvasWrapperRef}
       data-testid="turn-canvas-wrapper"
       style={{
-        flex: '1 1 0%', // Grow and shrink to fill CanvasWrapper
+        flex: '1 1 0%',
         width: '100%',
-        display: 'flex', // Make this a flex container for ReactFlow child
-        flexDirection: 'column', // ADDED: Stack ReactFlow child vertically
+        display: 'flex',
+        flexDirection: 'column',
         overflowX: 'hidden',
         background: 'rgb(250, 250, 250)'
       }}
     >
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
+        nodes={getNodes()} // Use getNodes() to always get the latest from React Flow state
+        edges={edges}      // Edges from initial layout, React Flow updates paths
+        nodeTypes={useMemo(() => ({ turnNode: TurnNode }), [])} // nodeTypes should be memoized
         minZoom={1}
         maxZoom={1}
         zoomOnScroll={false}

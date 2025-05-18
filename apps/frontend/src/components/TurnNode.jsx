@@ -45,11 +45,25 @@ const node = {
 ```
 */
 
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import useScriptStore from '../store/useScriptStore.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
+/**
+ * TurnNode - Renders a single turn in the script.
+ *
+ * This component displays the text of a turn and handles its styling
+ * based on selection status and role (user/assistant).
+ * It also reports its rendered height to the parent component to allow
+ * for accurate vertical layouting.
+ *
+ * @param {string} id - The ID of the node (should match turn.id).
+ * @param {object} data - Data object for the node.
+ * @param {object} data.turn - The turn object containing role and text.
+ * @param {function} data.onHeightReport - Callback function to report the node's height.
+ *                                        Signature: `(nodeId, height) => void`.
+ */
 function TurnNode({ id, data }) {
   // Pull helpers so clicking on a card can mark it selected and read selected id.
   const selectTurn = useScriptStore((s) => s.selectTurn);
@@ -59,7 +73,17 @@ function TurnNode({ id, data }) {
   const { personaId } = useParams();
 
   // Destructure the turn for convenience.
-  const { turn } = data;
+  const { turn, onHeightReport } = data;
+  const nodeRef = useRef(null);
+
+  // Report height whenever text or selection status changes, as border width can affect height.
+  useLayoutEffect(() => {
+    if (nodeRef.current && onHeightReport) {
+      const height = nodeRef.current.offsetHeight;
+      // console.log(`[TurnNode ${id}] Reporting height: ${height}`);
+      onHeightReport(id, height);
+    }
+  }, [id, turn.text, selectedTurnId, onHeightReport]);
 
   // ---------------------------------------------------------------------------
   // Visual style calculations (all numbers / colours come straight from Figma)
@@ -104,6 +128,7 @@ function TurnNode({ id, data }) {
 
   return (
     <div
+      ref={nodeRef}
       style={bubbleStyle}
       onClick={() => selectTurn(id)}
       onDoubleClick={() => {
@@ -122,7 +147,8 @@ TurnNode.propTypes = {
     turn: PropTypes.shape({
       role: PropTypes.string.isRequired,
       text: PropTypes.string
-    }).isRequired
+    }).isRequired,
+    onHeightReport: PropTypes.func
   }).isRequired
 };
 
