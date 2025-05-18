@@ -713,20 +713,13 @@
    - Gracefully logs and falls back to empty string on errors so diffs are still published.
    - Added global `_neo4j_driver` reference at bottom for type clarity.
 
-76. apps/py-ai-service/diff_worker.py (previous-text Neo4j lookup)
-   - Added `from neo4j import GraphDatabase` import.
-   - Declared new env vars `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` and created a single driver instance in `main()` with connectivity check.
-   - Implemented parent text retrieval inside `_process_message` via Cypher `MATCH (t:Turn {id: $id}) RETURN t.text`.
-   - Gracefully logs and falls back to empty string on errors so diffs are still published.
-   - Added global `_neo4j_driver` reference at bottom for type clarity.
-
-77. docker-compose.yml
+76. docker-compose.yml
    - diff_worker environment: added `NEO4J_USER=neo4j`, `NEO4J_PASSWORD=test12345` to match Neo4j service credentials.
 
-78. tests/test_diff_worker.py (new file)
+77. tests/test_diff_worker.py (new file)
    - Adds fully mocked unit tests for diff_worker ensuring HTML diff contains "diff_add" on new text and worker handles missing `text` safely without raising. Uses dynamic import because of dash in directory name.
 
-79. scripts/start_ngrok_tunnels.sh
+78. scripts/start_ngrok_tunnels.sh
    - #!/usr/bin/env bash  # Shebang makes the file executable in any Unix shell.
    - ###############################################################################  # Visual divider explaining purpose in a non-techie style.
    - # start_ngrok_tunnels.sh – Convenience wrapper to expose local Neo4j + Redis via ngrok so Vercel preview builds can reach your laptop.
@@ -739,12 +732,12 @@
    - After parsing, the script echoes ready-to-copy connection strings (NEO4J_URI, REDIS_URL) inside a bold divider (lines ~135-150).
    - Final `wait` call (last line) keeps the script running so the two ngrok tunnels stay alive until the user hits Ctrl-C.
 
-80. package.json (root)
+79. package.json (root)
    - Declares monorepo-level dependencies so Vercel's @vercel/node builder installs runtime libs.
    - Lists dotenv, express, jsonwebtoken, neo4j-driver, redis with same versions as apps/api-server to avoid duplication issues.
    - Marked "private": true to prevent accidental npm publish.
 
-81. Front-end scaffold – apps/frontend (multiple new files)
+80. Front-end scaffold – apps/frontend (multiple new files)
    - apps/frontend/package.json (lines 1-40) – Declares React 18 app, scripts `dev/build/test`, dependencies (react, router, zustand, etc.).
    - apps/frontend/vite.config.js (lines 1-25) – Configures Vite with react plugin.
    - apps/frontend/index.html (lines 1-20) – Single-page HTML shell with <div id="root">.
@@ -756,98 +749,98 @@
    - apps/frontend/jest.config.js (lines 1-20) & babel.config.js (lines 1-10) – Jest setup for JSX.
    - apps/frontend/.eslintrc.cjs (lines 1-25) – ESLint rules for browser React code.
 
-82. Front-end dependency fix – apps/frontend/package.json
+81. Front-end dependency fix – apps/frontend/package.json
    - Changed devDependencies.identity-obj-proxy version from ^4.0.0 to ^3.0.0 because npm registry has no 4.x release (lines ~25-30 in file).
 
-83. Front-end dependency fix – apps/frontend/package.json
+82. Front-end dependency fix – apps/frontend/package.json
    - Bumped react-flow-renderer from ^11.8.6 (non-existent) to ^11.10.0 (latest 11.x) so npm install succeeds on Vercel.
 
-84. Front-end dependency fix – apps/frontend/package.json
+83. Front-end dependency fix – apps/frontend/package.json
    - Downgraded react-flow-renderer to ^10.6.13 because 11.x series published under new package name; keeps install working.
 
-85. Front-end dependency switch – apps/frontend/package.json
+84. Front-end dependency switch – apps/frontend/package.json
    - Removed react-flow-renderer and added reactflow ^11.11.4 (new official package name) to avoid ETARGET errors.
 
-86. Front-end API helper and LoginView update
+85. Front-end API helper and LoginView update
    - apps/frontend/src/lib/api.js (new file) – apiFetch helper prefixes paths with VITE_API_BASE_URL, JSON header default, throws on error.
    - apps/frontend/src/pages/LoginView.jsx – replaced raw fetch with apiFetch and added import.
 
-87. API CORS support – apps/api-server/src/app.js import cors and added middleware; package.json adds dependency.
+86. API CORS support – apps/api-server/src/app.js import cors and added middleware; package.json adds dependency.
 
-88. Root package.json update – added cors ^2.8.5 so Vercel builder for api/index.mjs includes the library.
+87. Root package.json update – added cors ^2.8.5 so Vercel builder for api/index.mjs includes the library.
 
-89. apiFetch URL normalization – strip trailing slash from VITE_API_BASE_URL and ensure single leading slash to avoid //auth/login redirect that broke CORS preflight.
+88. apiFetch URL normalization – strip trailing slash from VITE_API_BASE_URL and ensure single leading slash to avoid //auth/login redirect that broke CORS preflight.
 
-90. Added app.options('*', cors(...)) to ensure preflight CORS requests get proper headers.
+89. Added app.options('*', cors(...)) to ensure preflight CORS requests get proper headers.
 
-91. Front-end SPA fallback – added apps/frontend/vercel.json with rewrite to serve index.html for all routes.
+90. Front-end SPA fallback – added apps/frontend/vercel.json with rewrite to serve index.html for all routes.
 
-92. Improved CORS – app.js now parses CORS_ORIGIN into exact + wildcard patterns and builds dynamic checker allowing *.vercel.app domains.
+91. Improved CORS – app.js now parses CORS_ORIGIN into exact + wildcard patterns and builds dynamic checker allowing *.vercel.app domains.
 
-93. apps/api-server/src/app.js
+92. apps/api-server/src/app.js
    - Replaced open CORS debug block (lines ~40-100 removed) with dynamic whitelist function `buildCorsOptions` and Express-5 `/{*splat}` pre-flight handler (new lines ~40-110).
 
-94. apps/api-server/tests/cors.test.js
+93. apps/api-server/tests/cors.test.js
    - **New file** lines 1-40 – Jest + Supertest test that sends OPTIONS /auth/login and asserts 204 status plus correct CORS headers.
 
-95. apps/api-server/README.md
+94. apps/api-server/README.md
    - Added new "CORS policy" section (lines 80-115) explaining how to add new domains via `CORS_ORIGIN` env var and wildcard syntax.
 
-96. docs/implementation_plan/user_flow_1_implementation_plan.md
+95. docs/implementation_plan/user_flow_1_implementation_plan.md
    - Added "CORS hardening – Status: COMPLETE ✅" subsection under 2.3 API-Server.
 
-97. apps/frontend/index.html
+96. apps/frontend/index.html
    - Added `margin:0; padding:0;` to `html, body` rule inside inline <style> to eliminate residual white gutters around the React root.
 
-98. apps/frontend/src/pages/LoginView.jsx
+97. apps/frontend/src/pages/LoginView.jsx
    - Multiple style adjustments: heading fontSize 48, button colour #131413, button text size 32 & weight 600, placeholder + forgot-password text colour #373639, input border #CCCCCC, font sizes 26, scoped style block sets placeholder colour & letter-spacing.
 
-99. apps/frontend/src/pages/LoginView.jsx
+98. apps/frontend/src/pages/LoginView.jsx
    - lines 1-140 replaced: switched header text to "Login", centred form with flexbox, updated button to black/white design, introduced disabled-until-complete logic, and appended a "Forgot password?" link. Extensive layman comments added for future maintainers.
 
-100. apps/frontend/tests/LoginView.test.jsx
+99. apps/frontend/tests/LoginView.test.jsx
    - Extended smoke-test: now also asserts presence of the forgot-password link and verifies the Login button is disabled when inputs are empty, reflecting new UI behaviour.
 
-101. Global styles: introduced `colours` object inside component for maintainability.
+100. Global styles: introduced `colours` object inside component for maintainability.
 
-102. apps/frontend/src/pages/LoadView.jsx
+101. apps/frontend/src/pages/LoadView.jsx
    - lines ~310-380 replaced: right-side panel now shows staged helper text (module/topic/script) and floating **Export** button.  Added contextual CTA "Load script" button plus disabled logic and toast stub.
 
-103. apps/frontend/src/App.jsx
+102. apps/frontend/src/App.jsx
    - lines 14-32 added: import of LoadView, CanvasStub placeholder component, and new routes `/load` and `/canvas/:personaId`.
 
-104. apps/frontend/src/pages/LoginView.jsx
+103. apps/frontend/src/pages/LoginView.jsx
    - Added `useNavigate` import and `navigate('/load')` call after successful login (lines ~15 and ~65 new).
 
-105. apps/frontend/tests/LoadView.test.jsx
+104. apps/frontend/tests/LoadView.test.jsx
    - New test file lines 1-80: mocks fetch, renders LoadView, asserts hierarchy rendering and persona selection enables "Load script" button.
 
-106. docs/scripts/neo4j/004_demo_catalog.cypher
+105. docs/scripts/neo4j/004_demo_catalog.cypher
    - New file lines 1-40: inserts Program 'Program', Module 'Module 1: Defusion', Topic(=Day) 'Topic 1: Intro', and 22 Persona nodes with seq.
 
-106.1 docs/scripts/neo4j/004_demo_catalog.cypher
+105.1 docs/scripts/neo4j/004_demo_catalog.cypher
     - Replaced WITH topic1 block with MATCH (topic1:Day ...) to ensure variable exists when creating personas.
 
-106.2 docs/scripts/neo4j/004_demo_catalog.cypher
+105.2 docs/scripts/neo4j/004_demo_catalog.cypher
     - Added semicolons and combined persona UNWIND into single statement to prevent variable-scope errors when running via -f.
 
-106.3 docs/scripts/neo4j/004_demo_catalog.cypher
+105.3 docs/scripts/neo4j/004_demo_catalog.cypher
     - Added MATCH statements to create HAS_MODULE and HAS_DAY relationships so hierarchy query returns rows.
 
-107. apps/frontend/src/components/Icons/SearchIcon.jsx (new file)
-    - Full file (lines 1-70): Stateless magnifying-glass SVG component accepting `size` & `colour` props so we can swap the text placeholder with a real icon.
+106. apps/frontend/src/components/Icons/SearchIcon.jsx (new file)
+   - Full file (lines 1-70): Stateless magnifying-glass SVG component accepting `size` & `colour` props so we can swap the text placeholder with a real icon.
 
-108. apps/frontend/src/components/Icons/UserIcon.jsx (new file)
-    - Full file (lines 1-75): Minimalist avatar SVG (head + shoulders) used in the TopNavBar; same API as `SearchIcon` for consistency.
+107. apps/frontend/src/components/Icons/UserIcon.jsx (new file)
+   - Full file (lines 1-75): Minimalist avatar SVG (head + shoulders) used in the TopNavBar; same API as `SearchIcon` for consistency.
 
-109. apps/frontend/src/components/TopNavBar/TopNavBar.jsx
+108. apps/frontend/src/components/TopNavBar/TopNavBar.jsx
    - lines 1-120 updated: default breadcrumb text now "Mindfulness Program" (was "Data Loop"), search icon moved to right section, both icons set to size 36 px, 24 px spacer added between icons, breadcrumb container given left margin 48 px and explanatory layman comments.
 
-110. apps/frontend/src/components/TopNavBar/TopNavBar.module.css
+109. apps/frontend/src/components/TopNavBar/TopNavBar.module.css
    - .navBar rule: horizontal padding increased from 24 px to 40 px so breadcrumb no longer hugs the viewport after icon relocation.
 
-111. apps/frontend/src/components/HierarchyGraph.jsx
-    - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing`
+110. apps/frontend/src/components/HierarchyGraph.jsx
+   - lines 13-20: bumped `fontSize` to **36px** and kept `letterSpacing`
 
 850. apps/frontend/src/lib/viewport.js
    - export function anchorRootToTop(viewport, rootNode, topMargin = 60) {  # Pure helper pans the camera so the Program node sits at a fixed margin.
@@ -954,28 +947,28 @@ Added hidden-span based `measureChipWidth` helper that returns exact rendered wi
 885.1 apps/frontend/src/components/HierarchyGraph.jsx
    - Logging updated to use console.log and warn so output is definitely visible.
 
-885. apps/frontend/src/components/HierarchyGraph.jsx
+885.2 apps/frontend/src/components/HierarchyGraph.jsx
    - Added dev-only diagnostic hook `useEffect` (updated again) that computes Δx/Δy for each edge and logs a grouped console.table when `import.meta.env.DEV` or `process.env.NODE_ENV==='development'` is true. Provides objective tilt angles while leaving production bundle clean. Lines ~10 and ~245-315.
 
-885.2 apps/frontend/src/components/HierarchyGraph.jsx
+885.3 apps/frontend/src/components/HierarchyGraph.jsx
    - Added unconditional console.log('Tilt diagnostic hook fired') to verify hook execution.
 
-885.3 apps/frontend/src/components/HierarchyGraph.jsx
+885.4 apps/frontend/src/components/HierarchyGraph.jsx
    - Added logging of nodes/edges length and warning when empty to diagnose why angle table not printing.
 
-885.4 apps/frontend/src/components/HierarchyGraph.jsx
+885.5 apps/frontend/src/components/HierarchyGraph.jsx
    - Added per-edge missing position warning and ensured diagnostics log rows or reason.
 
-885.5 apps/frontend/src/components/HierarchyGraph.jsx
+885.6 apps/frontend/src/components/HierarchyGraph.jsx
    - Removed dev/prod guard so tilt diagnostics always run; retained SSR window check.
 
-885.6 apps/frontend/src/components/HierarchyGraph.jsx
+885.7 apps/frontend/src/components/HierarchyGraph.jsx
    - Fixed misalignment: subtract full borderWidth (not half) for Module, Day, and Persona positions so visual centres align regardless of 1 px vs 3 px outline.
 
-885.7 apps/frontend/src/components/HierarchyGraph.jsx
+885.8 apps/frontend/src/components/HierarchyGraph.jsx
    - Refined border logic: `effectiveBorderWidth` calculated for Module and Day nodes based on `isTrulySelected` vs `isAncestor` state (0px for ancestor, 3px for selected, 1px otherwise). This ensures positioning X-offset matches the border rendered by CustomNode, fixing all slants.
 
-885.8 apps/frontend/src/components/HierarchyGraph.jsx
+885.9 apps/frontend/src/components/HierarchyGraph.jsx
    - Removed tilt diagnostic `useEffect` hook and associated comments now that alignment is fixed.
 
 // --- User Flow 1: 2.6 Front-End --- 
@@ -1463,64 +1456,18 @@ const rspContent = (
     – `width:'clamp(300px, 30vw, 440px)'`
 -   Removed the old `minWidth: '320px'` so the panel can shrink on narrow screens.
 
-### 197. apps/frontend/src/components/TurnCanvas.jsx (ReactFlow remount)
--   Added `key={centreX}` prop so React-Flow re-initialises whenever the canvas width changes; this lets the updated `translateExtent` take effect immediately and fixes the hidden-until-click bug.
+28. apps/frontend/tests/CanvasWrapper.test.jsx
+   - Jest tests mocking useReactFlow to verify fitView gets called on mount and deps change, and not when there are no nodes.
 
-### 198. apps/frontend/src/lib/textMeasurer.js
--   Generalised `measureTextWidth()` (font + padding params) and kept `measureChipWidth` wrapper.
-
-### 199. apps/frontend/src/components/TurnCanvas.utils.js
--   Now centres nodes using **widest bubble** logic and dynamic container width. Added guard for containerW===0.
-
-### 200. apps/frontend/src/components/TurnCanvas.jsx
--   Reworked to pass container width to util, removed constant offsets, updated translateExtent and ReactFlow `key`.
-
-### 201. apps/frontend/src/components/RightSidePanel.jsx & pages/LoadView.jsx
--   Both Right-Side Panels now use `width: clamp(300px, 33.33vw, 440px)` ensuring consistent 1/3 screen width across views.
-
-### 202. apps/frontend/src/lib/textMeasurer.js (dynamic ruler styling)
--   `createRuler` now accepts `font` and `paddingX` arguments.
--   `measureTextWidth` updates the global ruler's style (font, padding) on *every call* before measuring, ensuring accuracy if called with different styles. Cache key now includes font and padding to prevent collisions.
-
-102. apps/frontend/src/components/RightSidePanel.jsx (Layout Fix - Item 2.6.3.3.2)
-    - // flex: '0 0 auto', // Removed to allow parent flex to control width
-    - // width: 'clamp(300px, 33.33vw, 440px)', // Removed to allow parent flex to control width (was at line ~251)
-
-103. apps/frontend/src/pages/ScriptView.jsx (Layout Fix - Item 2.6.3.3.2)
-    - // style.height changed from '100vh' to 'calc(100vh - 72px)' (line ~141)
-    - // style.paddingTop: '72px' was removed (line ~142)
-    - // Original <TurnCanvas /> and <RightSidePanel /> direct children replaced by styled divs (lines ~146-153)
-    - <div style={{ flex: '2 1 0%', height: '100%', overflow: 'hidden', position: 'relative' }}>
-    -   <TurnCanvas />
-    - </div>
-    - <div style={{ flex: '1 1 0%', height: '100%', overflowY: 'auto', position: 'relative' /* RSP's internal <aside> handles border and bg */ }}>
-    -   <RightSidePanel />
-    - </div>
-
-104. apps/frontend/src/components/layout/EditorShell.jsx – NEW FILE (lines 1-110)
-    • Introduces shared two-column layout (TopNavBar + 2:1 flex) so LoadView / ScriptView / NodeView stay in sync.
-    • Handles 72-px top offset, draws 3-px divider, owns overflow scroll for RSP.
-
-105. apps/frontend/src/components/RightSidePanel.jsx & pages/ScriptView.jsx – Layout refactor
-    • RightSidePanel: removed outer <aside>, border & overflow styles; now content-only (lines ~190-225 replaced).
-    • ScriptView: deleted bespoke flex wrapper and inlined TopNavBar; now renders <EditorShell MainComponent={<TurnCanvas/>} SideComponent={<RightSidePanel/>}> (lines ~110-170 replaced).
-
-203. apps/frontend/src/components/layout/EditorShell.jsx – PATCH
-   - Added `overflow: 'hidden'` to the outer flex-row style object (approx. line 35) so mouse-wheel scrolling now affects **only** the centre canvas. This locks the Right-Side Panel in place and eliminates the remaining layout-drift bug described in the saga.
-
-204. apps/frontend/src/pages/LoadView.jsx – REFACTORED
-   - Removed bespoke flex wrapper + duplicate TopNavBar rendering (≈ lines 450-520 deleted).
-   - Imported shared `EditorShell` and now returns:
-     ```jsx
-     <EditorShell navBarProps={navBarProps} MainComponent={mainContent} SideComponent={rspContent} />
-     ```
-     where `mainContent` wraps the `HierarchyGraph` inside a scrollable div.  This brings LoadView in line with ScriptView, giving both screens the exact same 2 : 1 split and 3-px divider.
-
-205. apps/frontend/tests/TurnCanvas.utils.test.js – PATCH
-   - Updated all three calls to `calculateNodesAndEdges()` to pass a dummy container width of `1000` px (lines 10, 15, 22).  Tests now match the updated util signature and pass again.
-
-206. apps/frontend/src/components/TurnCanvas.utils.js – PATCH
-   - Reworked centring math: each node now measures its own bubble width and sets `position.x` to `containerW/2 - width/2` instead of sharing a single leftOffset.  Added `bubbleWidths` array, per-node width in `data`, and computes `leftOffset` as the minimum X for translateExtent.  This puts *every* card (wide or skinny) dead-centre on the spine.
-
-207. apps/frontend/src/components/HierarchyGraph.jsx – PATCH
-   - Changed call `computeViewportForRoot(…, 50)` → `computeViewportForRoot(…, 43)` and explanatory comment so the Program chip sits exactly 43 px below the breadcrumb bar, preventing it from hiding under the NavBar in Load View.
+29. apps/frontend/src/pages/LoadView.jsx
+   - Removed `EditorShell` component and its usage.
+   - Imported and implemented `ThreePaneLayout` as the main page structure.
+   - Imported and used `TopNavBar` directly within `ThreePaneLayout` for the navigation bar.
+   - Imported and wrapped the `HierarchyGraph` component with `CanvasWrapper` for standardized canvas behavior and auto-centering.
+   - Adjusted props for `HierarchyGraph` and `TopNavBar` to fit the new structure.
+   - The `renderTree` function was removed as `HierarchyGraph` now handles its own rendering.
+   - The right-side panel (RSP) content, including helper text and Load/Export buttons, is now passed directly to the `panel` prop of `ThreePaneLayout`.
+   - Ensured `ReactFlowProvider` still wraps the layout where React Flow components are used.
+   - Removed `graphRef` as `CanvasWrapper` and direct styling manage the canvas area.
+   - Updated dependencies for `CanvasWrapper` to include `tree` and selection state variables (`selectedModuleId`, `selectedTopicId`, `selectedPersonaId`) to trigger recentering when these change.
+   - Lines changed: Major refactor of the component structure. Imports updated (lines 38-45 approximately, new lines 40-42), `graphRef` removed (line 55), `renderTree` function and its calls removed (previously around lines 210-310), RSP logic refactored (previously around lines 312-360), main return structure completely changed from `EditorShell` to `ThreePaneLayout` (previously line 416, now lines 277-372).

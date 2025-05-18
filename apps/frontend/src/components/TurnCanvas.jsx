@@ -107,12 +107,8 @@ function TurnCanvas() {
       }}
     >
       <ReactFlow
-        /* Changing the `key` forces React-Flow to fully re-mount whenever
-           `leftOffset` changes.  This ensures the new `translateExtent` min/max X
-           values take effect – otherwise the library only reads the prop on
-           first mount, which is why the graph kept centring inside the *full*
-           window until the user clicked. */
-        key={leftOffset}
+        /* Remount on width change so internal calculations refresh */
+        key={containerW}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -135,14 +131,11 @@ function TurnCanvas() {
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
         panOnScroll={false}
+        panOnDrag={false}
         /* Allow wheel events to bubble so the wrapper div (overflow-y:auto)
            handles scrolling instead of React-Flow swallowing them. */
         preventScrolling={false}
-        /* Clamp horizontal movement to keep nodes centred; allow large vertical range */
-        translateExtent={[
-          [leftOffset, -100000],
-          [leftOffset, 100000]
-        ]}
+        /* Horizontal panning disabled via panOnDrag=false, so no translateExtent needed */
       >
         {/* Subtle dotted background so users see canvas area boundaries */}
         <Background gap={16} size={0.5} />

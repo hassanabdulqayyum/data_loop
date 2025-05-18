@@ -134,7 +134,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
     // ---------------------------------------------------------------------
     const baseNodeWidth = REF_NODE_WIDTH;
 
-    let programY = 50; // Anchor Program tier 50 px from top in Flow co-ords.
+    let programY = 0; // Anchor Program tier at y=0; viewport will later nudge it to the desired 43-px offset.
 
     tree.forEach((program) => {
       /* --------------------------------------------------------------

@@ -47,7 +47,9 @@ import { apiFetch } from '../lib/api.js';
 import HierarchyGraph from '../components/HierarchyGraph.jsx';
 import { ReactFlowProvider } from 'reactflow';
 import useHierarchyStore from '../store/useHierarchyStore.js';
-import EditorShell from '../components/layout/EditorShell.jsx';
+import ThreePaneLayout from '../components/layout/ThreePaneLayout.tsx';
+import CanvasWrapper from '../components/layout/CanvasWrapper.jsx';
+import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
 
 function LoadView() {
   /* ------------------------------------------------------------------
@@ -67,8 +69,6 @@ function LoadView() {
   const { token } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const graphRef = useRef(null);
 
   /* ------------------------------------------------------------------
    * Style for the Load and Export buttons in the RSP
@@ -207,105 +207,27 @@ function LoadView() {
   }
 
   /* ------------------------------------------------------------------
-   * Recursive helper – prints one level of the tree.  The layout is kept
-   * deliberately minimal at this stage – we only indent using `marginLeft`
-   * so later we can drop in fancy SVG connectors without rewriting logic.
+   * Props for TopNavBar, similar to what was passed to navBarProps of EditorShell
    * ---------------------------------------------------------------- */
-  function renderTree(nodes, depth = 0) {
-    if (!nodes) return null;
-
-    return nodes.map((node) => {
-      // PROGRAM level – has `modules` array
-      if (node.modules) {
-        return (
-          <div key={node.id} style={{ marginLeft: depth * 16 }}>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>{node.id}</div>
-            {renderTree(node.modules, depth + 1)}
-          </div>
-        );
-      }
-
-      // MODULE level – has `days` array
-      if (node.days) {
-        const isSelected = selectedModuleId === node.id;
-        return (
-          <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 8 }}>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedModuleId(node.id);
-                setSelectedTopicId(null);
-                setSelectedPersonaId(null);
-              }}
-              style={{
-                background: '#fff',
-                color: '#000',
-                border: `2px solid ${isSelected ? '#1E40AF' : '#000'}` /* blue outline when selected */,
-                borderRadius: 6,
-                padding: '0.3rem 0.6rem',
-                cursor: 'pointer',
-                fontSize: 16,
-                fontWeight: isSelected ? 600 : 400,
-                transition: 'border-color 0.2s'
-              }}
-            >
-              {node.id}
-            </button>
-            {isSelected && renderTree(node.days, depth + 1)}
-          </div>
-        );
-      }
-
-      // DAY/Topic level – has `personas` array
-      if (node.personas) {
-        const isSelected = selectedTopicId === node.id;
-        return (
-          <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 6 }}>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedTopicId(node.id);
-                setSelectedPersonaId(null);
-              }}
-              style={{
-                background: '#fff',
-                color: '#000',
-                border: `2px solid ${isSelected ? '#1E40AF' : '#000'}`,
-                borderRadius: 6,
-                padding: '0.25rem 0.5rem',
-                cursor: 'pointer',
-                fontSize: 15
-              }}
-            >
-              {node.id}
-            </button>
-            {isSelected && renderTree(node.personas, depth + 1)}
-          </div>
-        );
-      }
-
-      // PERSONA level – *leaf* node.  Render as a selectable button.
-      return (
-        <div key={node.id} style={{ marginLeft: depth * 16, marginBottom: 4 }}>
-          <button
-            type="button"
-            onClick={() => setSelectedPersonaId(node.id)}
-            style={{
-              background: selectedPersonaId === node.id ? '#000' : '#fff',
-              color: selectedPersonaId === node.id ? '#fff' : '#000',
-              border: '1px solid #000',
-              borderRadius: 4,
-              padding: '0.25rem 0.5rem',
-              cursor: 'pointer',
-              fontSize: 14
-            }}
-          >
-            {node.id}
-          </button>
-        </div>
-      );
-    });
-  }
+  const topNavProps = {
+    currentView: 'load',
+    programNode: tree && tree.length > 0 ? tree[0] : null, // Assuming the first program is relevant context
+    selectedModuleNode,
+    selectedTopicNode,
+    selectedPersonaNode,
+    onModuleSelect: (moduleId) => {
+      setSelectedModuleId(moduleId);
+      setSelectedTopicId(null);
+      setSelectedPersonaId(null);
+    },
+    onTopicSelect: (topicId) => {
+      setSelectedTopicId(topicId);
+      setSelectedPersonaId(null);
+    },
+    onPersonaSelect: (personaId) => {
+      setSelectedPersonaId(personaId);
+    },
+  };
 
   /* ------------------------------------------------------------------
    * When the user presses "Load script" we navigate to `/canvas/{id}`.
@@ -376,135 +298,101 @@ function LoadView() {
     }
   }
 
-  // based on what the user has selected in the hierarchy tree.
-  let rspContentElements = []; // Array to hold elements for RSP
-  let helperText = "";
-
-  if (selectedPersonaId) {
-    // Persona selected: Show "Load script" and "Export" buttons
-    // Helper text is not needed when buttons are present for this state.
-    rspContentElements.push(
-      <div key="buttons" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
-        <button
-          type="button"
-          onClick={handleLoad}
-          style={buttonStyle}
-        >
-          Load script
-        </button>
-        <button
-          type="button"
-          onClick={handleExport}
-          style={buttonStyle}
-          // Export button is always enabled when a Persona is selected to allow export
-        >
-          Export
-        </button>
-      </div>
-    );
-  } else if (selectedTopicId) {
-    // Topic selected, but no Persona: Show "Select a script to load..." and "Export" button
-    helperText = "Select a script to load…";
-    rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', marginBottom: '20px' }}>{helperText}</p>);
-    rspContentElements.push(
-      <button
-        key="export-button"
-        type="button"
-        onClick={handleExport} // handleExport already checks for selectedPersonaId, but here we want to allow export attempt for a topic (backend might support it or show specific message)
-        style={buttonStyle}
-        disabled={!selectedTopicId} // Enable if a topic is selected, for consistency with design showing export at this stage
-      >
-        Export
-      </button>
-    );
-  } else if (selectedModuleId) {
-    // Module selected, but no Topic: Show "Select a topic..." and "Export" button
-    helperText = "Select a topic…";
-    rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center', marginBottom: '20px' }}>{helperText}</p>);
-    rspContentElements.push(
-      <button
-        key="export-button"
-        type="button"
-        onClick={handleExport} // Allow export attempt for a module
-        style={buttonStyle}
-        disabled={!selectedModuleId} // Enable if a module is selected
-      >
-        Export
-      </button>
-    );
-  } else {
-    // Nothing selected beyond Program, or only Program selected: Show "Select a module to begin..."
-    helperText = "Select a module to begin…";
-    rspContentElements.push(<p key="helper" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.05em', color: '#000000', textAlign: 'center' }}>{helperText}</p>);
-  }
-
-  const rspContent = (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
-      {rspContentElements}
-    </div>
-  );
-
-  /* ------------------------------------------------------------------
-   * Shared EditorShell layout: hierarchy on the left, Right-Side Panel on right.
-   * ---------------------------------------------------------------- */
-
-  const navBarProps = {
-    selectedModuleNode: selectedModuleNode,
-    selectedTopicNode: selectedTopicNode,
-    selectedPersonaNode: selectedPersonaNode,
-    onModuleClick: () => {
-      if (!selectedModuleId) return;
-      setSelectedTopicId(null);
-      setSelectedPersonaId(null);
-    },
-    onTopicClick: () => {
-      if (!selectedTopicId) return;
-      setSelectedPersonaId(null);
-    },
-    onPersonaClick: () => {}
-  };
-
-  const mainContent = (
-    <div
-      ref={graphRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        overflow: 'auto',
-        padding: 0
-      }}
-    >
-      {loading && <p>Loading hierarchy…</p>}
-      {!loading && tree && (
-        <ReactFlowProvider>
-          <HierarchyGraph
-            tree={tree}
-            selectedIds={{ moduleId: selectedModuleId, topicId: selectedTopicId, personaId: selectedPersonaId }}
-            graphRect={graphRef.current ? graphRef.current.getBoundingClientRect() : null}
-            onSelect={(id, nodeType) => {
-              if (nodeType === 'program') {
-                setSelectedModuleId(null);
-                setSelectedTopicId(null);
-                setSelectedPersonaId(null);
-              } else if (nodeType === 'module') {
-                setSelectedModuleId(id);
-                setSelectedTopicId(null);
-                setSelectedPersonaId(null);
-              } else if (nodeType === 'day') {
-                setSelectedTopicId(id);
-                setSelectedPersonaId(null);
-              } else if (nodeType === 'persona') {
-                setSelectedPersonaId(id);
-              }
-            }}
-          />
-        </ReactFlowProvider>
-      )}
-    </div>
-  );
+  const buttonDisabled = loading || !selectedPersonaId;
 
   return (
-    <EditorShell navBarProps={navBarProps} MainComponent={mainContent} SideComponent={rspContent} />
+    <ReactFlowProvider>
+      <ThreePaneLayout
+        nav={<TopNavBar {...topNavProps} />}
+        canvas={
+          <CanvasWrapper deps={[tree, selectedModuleId, selectedTopicId, selectedPersonaId]}>
+            <div style={{ height: '100%', width: '100%', backgroundColor: '#F3F4F6', position: 'relative' }}> {/* Ensure this div takes full space of canvas slot and allows HierarchyGraph to position correctly */}
+              {loading && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                  <p>Loading hierarchy...</p>
+                </div>
+              )}
+              {!loading && tree && tree.length > 0 && (
+                <HierarchyGraph
+                  programs={tree}
+                  selectedModuleId={selectedModuleId}
+                  selectedTopicId={selectedTopicId}
+                  selectedPersonaId={selectedPersonaId}
+                  onModuleSelect={(id) => {
+                    setSelectedModuleId(id);
+                    setSelectedTopicId(null);
+                    setSelectedPersonaId(null);
+                  }}
+                  onTopicSelect={(id) => {
+                    setSelectedTopicId(id);
+                    setSelectedPersonaId(null);
+                  }}
+                  onPersonaSelect={(id) => setSelectedPersonaId(id)}
+                  onNodeClick={(nodeType, nodeId) => {
+                    // This logic might need to be adjusted based on HierarchyGraph's actual onNodeClick behavior
+                    if (nodeType === 'module') {
+                      setSelectedModuleId(nodeId);
+                      setSelectedTopicId(null);
+                      setSelectedPersonaId(null);
+                    } else if (nodeType === 'topic' || nodeType === 'day') { // Assuming 'day' is topic
+                      setSelectedTopicId(nodeId);
+                      setSelectedPersonaId(null);
+                    } else if (nodeType === 'persona') {
+                      setSelectedPersonaId(nodeId);
+                    }
+                  }}
+                />
+              )}
+              {!loading && (!tree || tree.length === 0) && (
+                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                  <p>No hierarchy data found.</p>
+                </div>
+              )}
+            </div>
+          </CanvasWrapper>
+        }
+        panel={
+          <div style={{ padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', boxSizing: 'border-box' }}>
+            <div style={{ textAlign: 'center', marginBottom: 'auto', paddingTop: '20px' }}> {/* Pushes content down a bit, and lets button stick to bottom via mt: auto */}
+              {!selectedModuleId && <p>Select a module to begin viewing its topics and associated personas.</p>}
+              {selectedModuleId && !selectedTopicId && <p>Select a topic to explore available personas.</p>}
+              {selectedTopicId && !selectedPersonaId && <p>Select a persona to load their script.</p>}
+              {selectedPersonaId && <p>Ready to load script for: <strong>{selectedPersonaNode?.name || selectedPersonaId}</strong>.</p>}
+            </div>
+
+            <div style={{ marginTop: 'auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}> {/* Ensures buttons are at the bottom */}
+              <button
+                type="button"
+                onClick={handleLoad}
+                disabled={buttonDisabled}
+                style={{
+                  ...buttonStyle,
+                  cursor: buttonDisabled ? 'not-allowed' : 'pointer',
+                  opacity: buttonDisabled ? 0.5 : 1,
+                  width: '100%' // Make button take full width of its container
+                }}
+              >
+                Load Script
+              </button>
+              <button
+                type="button"
+                onClick={handleExport}
+                disabled={loading || !selectedPersonaId} // Same condition as Load for now
+                style={{
+                  ...buttonStyle,
+                  cursor: (loading || !selectedPersonaId) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || !selectedPersonaId) ? 0.5 : 1,
+                  backgroundColor: '#EFEFEF', // A slightly different style for export or make it consistent
+                  width: '100%' // Make button take full width
+                }}
+              >
+                Export
+              </button>
+            </div>
+          </div>
+        }
+      />
+    </ReactFlowProvider>
   );
 }
 
