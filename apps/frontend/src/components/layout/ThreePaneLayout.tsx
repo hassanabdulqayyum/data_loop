@@ -86,6 +86,7 @@ function ThreePaneLayout({ nav, canvas, panel }: ThreePaneLayoutProps) {
       */}
       <div
         style={{
+          marginTop: '72px',
           display: 'grid',
           gridTemplateColumns: '2fr 1fr',
           height: 'calc(100vh - 72px)',
@@ -106,7 +107,7 @@ function ThreePaneLayout({ nav, canvas, panel }: ThreePaneLayoutProps) {
         <aside
           style={{
             borderLeft: '3px solid #D1D1D1',
-            background: 'lightcoral',
+            background: '#ffffff',
             overflowY: 'auto'
           }}
         >
