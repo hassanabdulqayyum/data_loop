@@ -129,6 +129,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *YYYY-MM-DD* | • **ScriptView (Task #5 Scrolling Flexbox Fix)**: Added `minHeight: '0'` to the main wrapper `div` in `TurnCanvas.jsx`. This is based on web search findings that flex items can sometimes default to a `min-height` based on content, preventing them from shrinking correctly to allow child flex items to expand and report overflow. |
 | *YYYY-MM-DD* | • **ScriptView (Task #5 Scrolling Diagnosis)**: Reverted `minHeight: '0'` from `TurnCanvas.jsx` as it did not resolve scrolling. Nodes are visible, but `TurnCanvas` wrapper and `ReactFlow` component `scrollHeight` still match `clientHeight`, preventing scrolling. Issue likely internal to React Flow's height calculation/reporting in a flex context. `display: contents` on `.react-flow` div was a temporary workaround. |
 | *YYYY-MM-DD* | • **ScriptView (Task #5 Scrolling Fix Attempt)**: Added `overflowY: 'visible'` to the `style` prop of the `ReactFlow` component in `TurnCanvas.jsx`. This attempts to override the `overflow: hidden` that React Flow appears to apply to its root `div` by default, which is suspected to be clipping content and preventing scrolling. |
+| *YYYY-MM-DD* | • **ScriptView (Task #5 Scrolling Fix)**: Added CSS rule to `index.css` targeting `[data-testid="turn-canvas-wrapper"] .react-flow` to set `overflow-y: auto !important;`. This overrides React Flow's internal `overflow: hidden` on its main wrapper, which was identified as the primary blocker for scrolling in `ScriptView`. |
 
 ---
 

@@ -15,4 +15,11 @@ body,
 /* Ensure React Flow renderer expands to allow parent scrolling in ScriptView */
 .react-flow__renderer {
   height: 100% !important;
+}
+
+/* Override React Flow's default overflow:hidden on its main wrapper */
+/* This is necessary for ScriptView scrolling when ReactFlow is a flex child. */
+[data-testid="turn-canvas-wrapper"] .react-flow {
+  overflow-y: auto !important; /* Allow vertical scrolling */
+  /* height: auto !important; */ /* Optionally, if height:100% is still an issue */
 } 
