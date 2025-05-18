@@ -130,8 +130,8 @@ function TurnCanvas() {
 
   // Effect to adjust Y positions once all node heights are known
   useEffect(() => {
-    console.log('[TurnCanvas] Y-ADJUSTMENT useEffect triggered. Visible turns:', visibleTurns.length, 'Heights known:', Object.keys(nodeHeights).length, 'All nodeHeights:', nodeHeights);
-    console.log('[TurnCanvas] Y-ADJUSTMENT: current displayNodes before adjustment:', displayNodes.map(n=>n.id)); // Log current displayNodes
+    console.log('[TurnCanvas] Y-ADJUSTMENT useEffect triggered. Visible turns:', visibleTurns.length, 'Heights known:', Object.keys(nodeHeights).length);
+    // console.log('[TurnCanvas] Y-ADJUSTMENT: current displayNodes before adjustment:', displayNodes.map(n=>n.id)); // Keep this for detailed debugging if needed
 
     if (visibleTurns.length > 0 && Object.keys(nodeHeights).length === visibleTurns.length) {
       console.log('[TurnCanvas] Y-ADJUSTMENT: All node heights potentially reported.');
@@ -146,13 +146,13 @@ function TurnCanvas() {
         return;
       }
 
-      if (displayNodes.length === 0 && visibleTurns.length > 0) { // Check displayNodes
+      if (displayNodes.length === 0 && visibleTurns.length > 0) {
         console.log('[TurnCanvas] Y-ADJUSTMENT: displayNodes is empty but visibleTurns exist. Bailing out. Should be populated by initial useEffect.');
         return;
       }
       
-      const currentNodesMap = new Map(displayNodes.map(n => [n.id, n])); // Use displayNodes
-      const newNodes = [];
+      const currentNodesMap = new Map(displayNodes.map(n => [n.id, n]));
+      const newCalculatedNodes = [];
       let accumulatedY = FIRST_NODE_OFFSET_Y;
 
       for (let i = 0; i < visibleTurns.length; i++) {
@@ -162,15 +162,15 @@ function TurnCanvas() {
         const height = nodeHeights[nodeId];
 
         if (!currentNode) {
-          console.warn(`[TurnCanvas] Y-ADJUSTMENT: Node with ID ${nodeId} not found in current React Flow nodes. Skipping.`);
+          console.warn(`[TurnCanvas] Y-ADJUSTMENT: Node with ID ${nodeId} not found in current displayNodes. Skipping.`);
           continue;
         }
         if (height === undefined || height === 0) {
-          console.warn(`[TurnCanvas] Y-ADJUSTMENT: Height for node ${nodeId} is ${height}. Skipping Y adjustment for this node.`);
+          console.warn(`[TurnCanvas] Y-ADJUSTMENT: Height for node ${nodeId} is ${height}. Critical error, should have been caught by allHeightsReported. Bailing.`);
           return;
         }
 
-        const updatedNode = {
+        newCalculatedNodes.push({
           ...currentNode,
           position: {
             ...currentNode.position,
@@ -180,21 +180,44 @@ function TurnCanvas() {
             ...currentNode.data,
             onHeightReport: handleNodeHeightReport
           }
-        };
-        newNodes.push(updatedNode);
-        
+        });
         accumulatedY += height + REQUIRED_VERTICAL_GAP;
       }
 
-      if (newNodes.length > 0) {
-         console.log('[TurnCanvas] Y-ADJUSTMENT: Setting new Y-adjusted nodes:', newNodes.map(n => ({id: n.id, y: n.position.y}) ));
-        setNodes(newNodes);
-        setDisplayNodes(newNodes); // ADDED: Update displayNodes
+      // Conditional update to prevent re-render loops
+      let changed = false;
+      if (newCalculatedNodes.length !== displayNodes.length) {
+        changed = true;
+      } else {
+        for (let i = 0; i < newCalculatedNodes.length; i++) {
+          // More robust check: find corresponding node in displayNodes by ID, as order might not be guaranteed if displayNodes was manipulated elsewhere (though unlikely here)
+          const originalNode = displayNodes.find(dn => dn.id === newCalculatedNodes[i].id);
+          if (!originalNode || originalNode.position.y !== newCalculatedNodes[i].position.y) {
+            // Also check if the number of data properties changed, or onHeightReport got lost (should not happen with spread)
+            if (!originalNode || Object.keys(originalNode.data).length !== Object.keys(newCalculatedNodes[i].data).length) {
+                changed = true;
+                break;
+            }
+            changed = true;
+            break;
+          }
+        }
+      }
+
+      if (changed) {
+        console.log('[TurnCanvas] Y-ADJUSTMENT: Node positions or count changed. Updating React Flow and displayNodes.', newCalculatedNodes.map(n => ({id: n.id, y: n.position.y}) ));
+        setNodes(newCalculatedNodes);
+        setDisplayNodes(newCalculatedNodes);
+      } else {
+        console.log('[TurnCanvas] Y-ADJUSTMENT: No actual change in node positions/count, skipping displayNodes update to prevent loop.');
+        // If only React Flow internal state needs sync without triggering a displayNodes-based rerender of this effect:
+        // setNodes(newCalculatedNodes); // Potentially still useful if RF internal state could diverge and needs strict sync.
+        // However, if displayNodes didn't change, and newCalculatedNodes are based on displayNodes + heights, then RF state should be in sync if setDisplayNodes was the last thing.
       }
     } else {
       console.log('[TurnCanvas] Y-ADJUSTMENT: Conditions not met (not enough visible turns or not all heights reported).');
     }
-  }, [visibleTurns, nodeHeights, setNodes, getNodes /* getNodes still needed for RF internal sync? Maybe not. */, displayNodes, handleNodeHeightReport]); // Added displayNodes to dependency array
+  }, [visibleTurns, nodeHeights, displayNodes, setNodes, handleNodeHeightReport]);
 
   // Edges are taken directly from the initial calculation, 
   // React Flow should update them automatically when nodes move.
