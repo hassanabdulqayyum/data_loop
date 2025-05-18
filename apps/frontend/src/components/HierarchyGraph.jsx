@@ -2,7 +2,7 @@
 HierarchyGraph.jsx – Displays Program → Module → Topic → Persona tree using React-Flow.
 
 Props:
-• tree            – the nested array returned by /hierarchy (Programs at root).
+• programs        – the nested array returned by /hierarchy (Programs at root).
 • selectedIds     – { moduleId, topicId, personaId } so we can highlight.
 • onSelect(nodeId, nodeType)  – callback invoked when any node is clicked, passing its id and type ('program', 'module', 'day', 'persona').
 • graphRect       – the rectangle of the graph for viewport calculations.
@@ -105,10 +105,15 @@ const nodeTypes = {
   personaNode: (props) => <CustomNode {...props} type="persona" selected={props.data.selected} />,
 };
 
-function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
+function HierarchyGraph({ programs, selectedIds, onSelect, graphRect }) {
   const { nodes, edges } = useMemo(() => {
     const n = [];
     const e = [];
+
+    if (!programs || programs.length === 0) {
+      return { nodes: n, edges: e };
+    }
+
     /*-----------------------------------------------
      * LAYOUT CONSTANTS – tweak here if spacing ever
      * feels cramped or too loose on different screens
@@ -136,7 +141,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
 
     let programY = 0; // Anchor Program tier at y=0; viewport will later nudge it to the desired 43-px offset.
 
-    tree.forEach((program) => {
+    programs.forEach((program) => {
       /* --------------------------------------------------------------
        * 1. PROGRAM (root) – always a single chip centred at x=0
        * ------------------------------------------------------------*/
@@ -354,7 +359,7 @@ function HierarchyGraph({ tree, selectedIds, onSelect, graphRect }) {
       // Topic → Persona edges intentionally omitted (design wants a clean look)
     });
     return { nodes: n, edges: e };
-  }, [tree, selectedIds]);
+  }, [programs, selectedIds, graphRect]);
 
   /* ------------------------------------------------------------------
    * Smart viewport logic (option B from our discussion)
