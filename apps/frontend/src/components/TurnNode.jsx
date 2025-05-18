@@ -80,7 +80,7 @@ function TurnNode({ id, data }) {
   useLayoutEffect(() => {
     if (nodeRef.current && onHeightReport) {
       const height = nodeRef.current.offsetHeight;
-      // console.log(`[TurnNode ${id}] Reporting height: ${height}`);
+      console.log(`[TurnNode ${id}] Reporting height: ${height}`);
       onHeightReport(id, height);
     }
   }, [id, turn.text, selectedTurnId, onHeightReport]);
