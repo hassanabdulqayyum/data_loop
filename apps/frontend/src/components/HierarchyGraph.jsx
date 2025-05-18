@@ -141,8 +141,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
     // ---------------------------------------------------------------------
     const baseNodeWidth = REF_NODE_WIDTH;
 
-    const PROGRAM_NODE_TOP_OFFSET = 43; // Desired offset from the top of the canvas
-    let programY = PROGRAM_NODE_TOP_OFFSET; // Anchor Program tier with the offset
+    let programY = 0; // Anchor Program tier at y=0; CanvasWrapper will handle the visual offset.
 
     programs.forEach((program) => {
       console.log('[HG_DEBUG] Processing program:', program.id);
