@@ -362,19 +362,33 @@ function LoadView() {
               {selectedPersonaId && <p>Ready to load script for: <strong>{selectedPersonaNode?.name || selectedPersonaId}</strong>.</p>}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-              <button
-                type="button"
-                onClick={handleLoad}
-                disabled={buttonDisabled}
-                style={{
-                  ...buttonStyle,
-                  cursor: buttonDisabled ? 'not-allowed' : 'pointer',
-                  opacity: buttonDisabled ? 0.5 : 1,
-                }}
-              >
-                Load Script
-              </button>
+            {/* Buttons area - center buttons below helper text */}
+            <div style={{
+              display: 'flex',
+              // If a persona is selected, lay out buttons in a row, otherwise in a column
+              flexDirection: selectedPersonaId ? 'row' : 'column',
+              // Center buttons horizontally in both row and column layouts
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '1rem'
+            }}>
+              {/* Load Script button: Only render if a persona is selected */}
+              {selectedPersonaId && (
+                <button
+                  type="button"
+                  onClick={handleLoad}
+                  disabled={buttonDisabled} // This is already (loading || !selectedPersonaId)
+                  style={{
+                    ...buttonStyle,
+                    cursor: buttonDisabled ? 'not-allowed' : 'pointer',
+                    opacity: buttonDisabled ? 0.5 : 1,
+                  }}
+                >
+                  Load Script
+                </button>
+              )}
+              {/* Export button: Always rendered, but disabled state handles clickability */}
+              {/* Its disabled state depends on whether any of module, topic, or persona is selected */}
               <button
                 type="button"
                 onClick={handleExport}
@@ -383,7 +397,7 @@ function LoadView() {
                   ...buttonStyle,
                   cursor: (loading || (!selectedModuleId && !selectedTopicId && !selectedPersonaId)) ? 'not-allowed' : 'pointer',
                   opacity: (loading || (!selectedModuleId && !selectedTopicId && !selectedPersonaId)) ? 0.5 : 1,
-                  backgroundColor: '#EFEFEF', 
+                  backgroundColor: '#EFEFEF',
                 }}
               >
                 Export

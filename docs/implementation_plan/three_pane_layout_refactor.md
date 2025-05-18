@@ -100,6 +100,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Enhanced `CanvasWrapper` to use `useNodesInitialized` and `useCallback` to ensure its centering and 43px top offset logic only runs after React Flow nodes are fully initialized, preventing initial layout jumps. |
 | *2025-05-20* | • **LoadView (Task #3 functionality)**: Modified the "Export" button logic in `LoadView.jsx` to be enabled when a module, topic, or persona is selected, instead of only when a persona is selected. This allows users to export data at different hierarchy levels. |
 | *2025-05-20* | • **LoadView (Task #3 UI refinement)**: Adjusted styles in `LoadView.jsx` for buttons (borderRadius, removed fixed width) and helper text (font, size, spacing) to match Figma specs. Centered the helper text and buttons block in the RSP. <br> • **HierarchyGraph (Task #3 visual refinement)**: Commented out edge creation for persona nodes in `HierarchyGraph.jsx` to hide connecting lines as per Figma design. |
+| *2025-05-20* | • **LoadView (Task #3 UI refinement)**: Updated button layout in `LoadView.jsx` RSP. "Load Script" button now only appears when a persona is selected. When visible, "Load Script" and "Export" buttons align horizontally; otherwise, "Export" (if active for module/topic) is centered vertically. |
 
 ---
 
