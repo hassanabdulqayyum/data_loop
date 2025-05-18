@@ -108,9 +108,10 @@ function TurnCanvas() {
       ref={turnCanvasWrapperRef} // Added ref
       data-testid="turn-canvas-wrapper"
       style={{
-        flex: '1 1 0%', // ADDED: Grow and shrink to fill CanvasWrapper (which is display:flex for ScriptView)
+        flex: '1 1 0%', // Grow and shrink to fill CanvasWrapper
+        minHeight: '0', // ADDED: Ensure flex item can shrink below content size initially
         width: '100%',
-        display: 'flex', // ADDED: Make this a flex container for ReactFlow child
+        display: 'flex', // Make this a flex container for ReactFlow child
         flexDirection: 'column', // ADDED: Stack ReactFlow child vertically
         overflowX: 'hidden',
         background: 'rgb(250, 250, 250)'
