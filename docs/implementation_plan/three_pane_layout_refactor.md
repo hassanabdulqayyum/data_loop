@@ -93,6 +93,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-19* | • **LoadView (Task #3 integration)**: Debugged `LoadView` integration with `ThreePaneLayout` and `CanvasWrapper`.<br>  • Resolved `NaN` dimension errors by removing manual dimension calculations (`graphRect`) from `LoadView` and `HierarchyGraph`, deferring to `CanvasWrapper` and React Flow for layout and fitting.<br>  • Corrected `TypeError` for node click handlers by aligning prop names (`onSelect`) and ensuring `HierarchyGraph` properly adapts the handler for React Flow's `onNodeClick` event.<br>  • Removed redundant `fitView` logic from `HierarchyGraph` to rely solely on `CanvasWrapper`. |
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Locked React Flow zoom to 1x in `HierarchyGraph` to ensure consistent font size and prevent user zooming, aligning with design goals. |
 | *2025-05-19* | • **LoadView (Task #3 functionality)**: Resolved node clickability issue by correcting parameter order in `LoadView`'s `onSelect` handler. Click events now correctly trigger state updates and expected behavior. Removed debug logs. |
+| *2025-05-19* | • **LoadView (Task #3 functionality/visuals)**: Fixed an issue in `HierarchyGraph` where not all topic nodes were displayed when a module was selected. Now, all topics for the selected module are correctly shown, addressing a key part of the `LoadView` migration. |
 
 ---
 

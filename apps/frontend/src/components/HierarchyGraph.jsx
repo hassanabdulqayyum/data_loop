@@ -249,16 +249,11 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
 
       const filteredDays = activeModule.days.filter((day, idx) => {
         // Visibility logic for days
-        if (
-          selectedIds?.topicId !== null &&
-          selectedIds?.topicId !== undefined &&
-          selectedIds?.topicId !== day.id
-        ) {
-          return false;
+        // If a specific topic IS selected, only show that topic.
+        if (selectedIds?.topicId !== null && selectedIds?.topicId !== undefined) {
+          return day.id === selectedIds.topicId;
         }
-        if (selectedIds?.topicId === null && idx > 0 && activeModule.days.length > 1) {
-          return false;
-        }
+        // Otherwise (no specific topic is selected for this active module), show all topics of this module.
         return true;
       });
 

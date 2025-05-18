@@ -1471,3 +1471,18 @@ const rspContent = (
    - Removed `graphRef` as `CanvasWrapper` and direct styling manage the canvas area.
    - Updated dependencies for `CanvasWrapper` to include `tree` and selection state variables (`selectedModuleId`, `selectedTopicId`, `selectedPersonaId`) to trigger recentering when these change.
    - Lines changed: Major refactor of the component structure. Imports updated (lines 38-45 approximately, new lines 40-42), `graphRef` removed (line 55), `renderTree` function and its calls removed (previously around lines 210-310), RSP logic refactored (previously around lines 312-360), main return structure completely changed from `EditorShell` to `ThreePaneLayout` (previously line 416, now lines 277-372).
+
+30. apps/frontend/src/components/HierarchyGraph.jsx
+    - Fixed a potential runtime error ("Cannot read properties of undefined (reading 'forEach')").
+    - Ensured the `programs` prop is guarded with a check (`if (!programs || programs.length === 0)`) before iteration within the `useMemo` hook that calculates nodes and edges.
+    - Corrected the dependency array of this `useMemo` to include `graphRect`.
+    - Ensured `useMemo` consistently returns an object `{ nodes: [], edges: [] }`.
+    - Updated JSDoc for props to correctly refer to `programs` instead of `tree`.
+    - Lines changed: approx 83-87 (guard and return), 180 (dependency array), 4 (JSDoc).
+
+31. Cypress Setup for apps/frontend
+    - Installed Cypress as a dev dependency: `npm install --save-dev cypress` in `apps/frontend`.
+    - Initialized Cypress, creating `apps/frontend/cypress/` directory and `apps/frontend/cypress.config.js`.
+    - Created a new smoke test file: `apps/frontend/cypress/e2e/load_view_spec.cy.js`.
+        - This test visits `/load`, checks for the main canvas area, waits for an element containing "Program" (case-insensitive), and checks for the initial RSP text.
+    - Added a script to `apps/frontend/package.json`: `"cy:open": "cypress open"` to facilitate running Cypress tests.
