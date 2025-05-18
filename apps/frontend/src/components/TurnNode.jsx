@@ -56,14 +56,16 @@ import { useNavigate, useParams } from 'react-router-dom';
  *
  * This component displays the text of a turn and handles its styling
  * based on selection status and role (user/assistant).
- * It also reports its rendered height to the parent component to allow
- * for accurate vertical layouting.
+ * It also reports its rendered height and width to the parent component to allow
+ * for accurate vertical and horizontal layouting.
  *
  * @param {string} id - The ID of the node (should match turn.id).
  * @param {object} data - Data object for the node.
  * @param {object} data.turn - The turn object containing role and text.
- * @param {function} data.onHeightReport - Callback function to report the node's height.
+ * @param {function} [data.onHeightReport] - Callback function to report the node's height.
  *                                        Signature: `(nodeId, height) => void`.
+ * @param {function} [data.onWidthReport] - Callback function to report the node's width.
+ *                                       Signature: `(nodeId, width) => void`.
  */
 function TurnNode({ id, data }) {
   // Pull helpers so clicking on a card can mark it selected and read selected id.
@@ -74,17 +76,25 @@ function TurnNode({ id, data }) {
   const { personaId } = useParams();
 
   // Destructure the turn for convenience.
-  const { turn, onHeightReport } = data;
+  const { turn, onHeightReport, onWidthReport } = data;
   const nodeRef = useRef(null);
 
   // Report height whenever text or selection status changes, as border width can affect height.
+  // Also report width for horizontal centering calculations.
   useLayoutEffect(() => {
-    if (nodeRef.current && onHeightReport) {
-      const height = nodeRef.current.offsetHeight;
-      console.log(`[TurnNode ${id}] Reporting height: ${height}`);
-      onHeightReport(id, height);
+    if (nodeRef.current) {
+      if (onHeightReport) {
+        const height = nodeRef.current.offsetHeight;
+        console.log(`[TurnNode ${id}] Reporting height: ${height}`);
+        onHeightReport(id, height);
+      }
+      if (onWidthReport) {
+        const width = nodeRef.current.offsetWidth;
+        console.log(`[TurnNode ${id}] Reporting width: ${width}`);
+        onWidthReport(id, width);
+      }
     }
-  }, [id, turn.text, selectedTurnId, onHeightReport]);
+  }, [id, turn.text, selectedTurnId, onHeightReport, onWidthReport]);
 
   // ---------------------------------------------------------------------------
   // Visual style calculations (all numbers / colours come straight from Figma)
@@ -174,7 +184,8 @@ TurnNode.propTypes = {
       role: PropTypes.string.isRequired,
       text: PropTypes.string
     }).isRequired,
-    onHeightReport: PropTypes.func
+    onHeightReport: PropTypes.func,
+    onWidthReport: PropTypes.func
   }).isRequired
 };
 

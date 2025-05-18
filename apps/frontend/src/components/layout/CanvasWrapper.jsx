@@ -108,13 +108,15 @@ function CanvasWrapper({ children, deps = [], useFitView = true }) {
       } else {
         // Manual viewport for scrolling cases like ScriptView
         const desiredTopOffset = 43;
-        let xOffset = 0;
-        if (wrapperWidth > 0) {
-          // Center the content (max width MAX_NODE_WIDTH_FOR_CENTERING) within the wrapperWidth
-          xOffset = (wrapperWidth - MAX_NODE_WIDTH_FOR_CENTERING) / 2;
-        }
+        // xOffset is now 0 because individual nodes will be centered by TurnCanvas/TurnCanvas.utils.js
+        // based on the wrapperWidth passed to them.
+        const xOffset = 0;
+        // if (wrapperWidth > 0) {
+        //   // Center the content (max width MAX_NODE_WIDTH_FOR_CENTERING) within the wrapperWidth
+        //   xOffset = (wrapperWidth - MAX_NODE_WIDTH_FOR_CENTERING) / 2;
+        // }
         reactFlowInstance.setViewport({
-          x: xOffset, // Calculated x for centering
+          x: xOffset, // This will now be 0.
           y: desiredTopOffset, // y offset, zoom is 1
           zoom: 1 // Ensure zoom is 1 for natural size
         });
@@ -159,14 +161,26 @@ function CanvasWrapper({ children, deps = [], useFitView = true }) {
     ? { width: '100%', height: '100%' }
     : { width: '100%', minHeight: '100%', display: 'flex' };
 
+  // Clone the child element to pass down the wrapperWidth prop if it's a valid React element.
+  // This is necessary so that TurnCanvas (or other direct children) can receive the canvasWidth.
+  const childrenWithProps = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      // Pass wrapperWidth as canvasWidth to the child.
+      // This is crucial for ScriptView/TurnCanvas to calculate individual node x positions.
+      return React.cloneElement(child, { canvasWidth: wrapperWidth });
+    }
+    return child;
+  });
+
   return (
     <div ref={wrapperRef} style={wrapperStyle}>
       {/*
           - For useFitView=true (e.g., LoadView), height: '100%' provides a stable area for fitView.
           - For useFitView=false (e.g., ScriptView), minHeight: '100%' and display: 'flex' allow content to overflow for scrolling,
             AND provide a flex context for TurnCanvas to expand into.
+            The actual canvasWidth is passed down to children (TurnCanvas) for precise node centering.
       */}
-      {children}
+      {childrenWithProps}
     </div>
   );
 }

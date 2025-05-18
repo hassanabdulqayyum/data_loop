@@ -33,6 +33,7 @@ Example usage (already wired in <ScriptView>):
 */
 
 import React, { useMemo, useRef, useLayoutEffect, useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import ReactFlow, { Background, Controls, useReactFlow } from 'reactflow';
 import 'reactflow/dist/style.css';
 import useScriptStore from '../store/useScriptStore.js';
@@ -51,7 +52,10 @@ const REQUIRED_VERTICAL_GAP = 43; // px, the desired edge-to-edge gap
  * Zooming and horizontal panning are disabled to maintain a focused vertical layout.
  * This version dynamically adjusts node Y positions to ensure a consistent vertical gap
  * based on the actual rendered height of each TurnNode.
+ * It also now centers each node horizontally based on its actual width and the canvas width.
  *
+ * @param {object} props - The component's props.
+ * @param {number} [props.canvasWidth=0] - The width of the canvas area, passed from CanvasWrapper.
  * @example
  * // Used within ScriptView, wrapped by CanvasWrapper and ReactFlowProvider
  * <ReactFlowProvider>
@@ -60,7 +64,7 @@ const REQUIRED_VERTICAL_GAP = 43; // px, the desired edge-to-edge gap
  *   </CanvasWrapper>
  * </ReactFlowProvider>
  */
-function TurnCanvas() {
+function TurnCanvas({ canvasWidth = 0 }) {
   const turnCanvasWrapperRef = useRef(null); // Ref for the main div
   const { setNodes, getNodes } = useReactFlow(); // Get setNodes and getNodes from useReactFlow
 
@@ -80,6 +84,7 @@ function TurnCanvas() {
   }, [turns]);
 
   const [nodeHeights, setNodeHeights] = useState({});
+  const [nodeWidths, setNodeWidths] = useState({}); // ADDED: State for node widths
 
   /**
    * Callback for TurnNode instances to report their rendered height.
@@ -95,113 +100,135 @@ function TurnCanvas() {
     });
   }, []);
 
+  /**
+   * Callback for TurnNode instances to report their rendered width.
+   * @param {string} nodeId - The ID of the node reporting its width.
+   * @param {number} width - The rendered offsetWidth of the node.
+   */
+  const handleNodeWidthReport = useCallback((nodeId, width) => {
+    console.log(`[TurnCanvas] Received width for ${nodeId}: ${width}`);
+    setNodeWidths(prev => {
+      if (prev[nodeId] === width) return prev;
+      console.log('[TurnCanvas] Updating nodeWidths for', nodeId, 'to', width);
+      return { ...prev, [nodeId]: width };
+    });
+  }, []);
+
   // Initial calculation of nodes and edges from the utility function
+  // This initial call does not have canvasWidth or nodeWidths, so X positions will be default (e.g., 0)
+  // The main useEffect will recalculate once those are available.
   const initialLayout = useMemo(() => {
     console.log('[TurnCanvas] Calculating initialLayout, visibleTurns count:', visibleTurns.length);
-    return calculateNodesAndEdges(visibleTurns);
+    // Pass undefined or default values for canvasWidth and nodeWidths for the initial pass
+    // as they are not yet available. X positions will be updated by the main useEffect.
+    return calculateNodesAndEdges(visibleTurns, undefined, undefined);
   }, [visibleTurns]);
 
-  // Augment initial nodes with the onHeightReport callback
+  // Augment initial nodes with the onHeightReport and onWidthReport callbacks
   // This is passed to ReactFlow for the first render.
-  const nodesWithCallback = useMemo(() => {
+  const nodesWithCallbacks = useMemo(() => { // Renamed from nodesWithCallback
     console.log('[TurnCanvas] Augmenting initial nodes. initialLayout.nodes count:', initialLayout.nodes.length);
     const augmented = initialLayout.nodes.map(node => ({
       ...node,
       data: {
         ...node.data,
-        onHeightReport: handleNodeHeightReport
+        onHeightReport: handleNodeHeightReport,
+        onWidthReport: handleNodeWidthReport // ADDED: Pass width reporting callback
       }
     }));
-    console.log('[TurnCanvas] nodesWithCallback created:', augmented.map(n => n.id));
+    console.log('[TurnCanvas] nodesWithCallbacks created:', augmented.map(n => n.id));
     return augmented;
-  }, [initialLayout.nodes, handleNodeHeightReport]);
+  }, [initialLayout.nodes, handleNodeHeightReport, handleNodeWidthReport]); // ADDED: handleNodeWidthReport dependency
 
   // Effect to set initial nodes once they are calculated and augmented
   useEffect(() => {
-    console.log('[TurnCanvas] useEffect setting initial nodes. nodesWithCallback count:', nodesWithCallback.length);
-    if (nodesWithCallback.length > 0) {
-      setNodes(nodesWithCallback);
-      setDisplayNodes(nodesWithCallback);
+    console.log('[TurnCanvas] useEffect setting initial nodes. nodesWithCallbacks count:', nodesWithCallbacks.length);
+    if (nodesWithCallbacks.length > 0) {
+      setNodes(nodesWithCallbacks);
+      setDisplayNodes(nodesWithCallbacks);
       setDisplayEdges(initialLayout.edges); // ADDED: Set initial displayEdges
     } else {
-      console.log('[TurnCanvas] No nodesWithCallback, setting empty array to ReactFlow and displayNodes/Edges');
+      console.log('[TurnCanvas] No nodesWithCallbacks, setting empty array to ReactFlow and displayNodes/Edges');
       setNodes([]);
       setDisplayNodes([]);
       setDisplayEdges([]); // ADDED: Clear displayEdges
     }
     // Ensure initialLayout.edges is a dependency if used directly here
-  }, [nodesWithCallback, setNodes, initialLayout.edges]);
+  }, [nodesWithCallbacks, setNodes, initialLayout.edges]); // Renamed nodesWithCallback
 
-  // Effect to adjust Y positions once all node heights are known
+  // Effect to adjust Y and X positions once all node heights, widths, and canvasWidth are known
   useEffect(() => {
-    console.log('[TurnCanvas] Y-ADJUSTMENT useEffect triggered. Visible turns:', visibleTurns.length, 'Heights known:', Object.keys(nodeHeights).length);
-    // console.log('[TurnCanvas] Y-ADJUSTMENT: current displayNodes before adjustment:', displayNodes.map(n=>n.id)); // Keep this for detailed debugging if needed
+    console.log(`[TurnCanvas] X/Y-ADJUSTMENT useEffect triggered. Visible turns: ${visibleTurns.length}, Heights known: ${Object.keys(nodeHeights).length}, Widths known: ${Object.keys(nodeWidths).length}, CanvasWidth: ${canvasWidth}`);
 
-    if (visibleTurns.length > 0 && Object.keys(nodeHeights).length === visibleTurns.length) {
-      console.log('[TurnCanvas] Y-ADJUSTMENT: All node heights potentially reported.');
-      const allHeightsReported = visibleTurns.every(turn => {
-        const reported = nodeHeights[String(turn.id)] !== undefined && nodeHeights[String(turn.id)] > 0;
-        if (!reported) console.log(`[TurnCanvas] Y-ADJUSTMENT: Height not reported or zero for ${String(turn.id)}: ${nodeHeights[String(turn.id)]}`);
-        return reported;
+    if (
+      visibleTurns.length > 0 &&
+      Object.keys(nodeHeights).length === visibleTurns.length &&
+      Object.keys(nodeWidths).length === visibleTurns.length && // ADDED: Check for all widths reported
+      canvasWidth > 0 // ADDED: Check for valid canvasWidth
+    ) {
+      console.log('[TurnCanvas] X/Y-ADJUSTMENT: All node dimensions and canvasWidth potentially reported.');
+      const allDimensionsReported = visibleTurns.every(turn => {
+        const nodeIdStr = String(turn.id);
+        const heightReported = nodeHeights[nodeIdStr] !== undefined && nodeHeights[nodeIdStr] > 0;
+        const widthReported = nodeWidths[nodeIdStr] !== undefined && nodeWidths[nodeIdStr] > 0; // ADDED: Check width
+        if (!heightReported) console.log(`[TurnCanvas] X/Y-ADJUSTMENT: Height not reported or zero for ${nodeIdStr}: ${nodeHeights[nodeIdStr]}`);
+        if (!widthReported) console.log(`[TurnCanvas] X/Y-ADJUSTMENT: Width not reported or zero for ${nodeIdStr}: ${nodeWidths[nodeIdStr]}`); // ADDED: Log width issue
+        return heightReported && widthReported;
       });
       
-      if (!allHeightsReported) {
-        console.log('[TurnCanvas] Y-ADJUSTMENT: Not all heights reported adequately, skipping Y adjustment.');
+      if (!allDimensionsReported) {
+        console.log('[TurnCanvas] X/Y-ADJUSTMENT: Not all dimensions reported adequately, skipping adjustment.');
         return;
       }
 
       if (displayNodes.length === 0 && visibleTurns.length > 0) {
-        console.log('[TurnCanvas] Y-ADJUSTMENT: displayNodes is empty but visibleTurns exist. Bailing out. Should be populated by initial useEffect.');
+        console.log('[TurnCanvas] X/Y-ADJUSTMENT: displayNodes is empty but visibleTurns exist. Bailing out. Should be populated by initial useEffect.');
         return;
       }
       
-      const currentNodesMap = new Map(displayNodes.map(n => [n.id, n]));
-      const newCalculatedNodes = [];
-      let accumulatedY = FIRST_NODE_OFFSET_Y;
+      // Recalculate nodes and edges with all available information
+      console.log('[TurnCanvas] X/Y-ADJUSTMENT: Recalculating nodes and edges with actual dimensions and canvasWidth.');
+      const { nodes: recalculatedNodes, edges: recalculatedEdges } = calculateNodesAndEdges(
+        visibleTurns,
+        canvasWidth, // Pass actual canvasWidth
+        nodeWidths,  // Pass actual nodeWidths
+        nodeHeights  // Pass actual nodeHeights (for Y calculation if utils needs it directly, though it uses it for edges too)
+      );
 
-      for (let i = 0; i < visibleTurns.length; i++) {
-        const turn = visibleTurns[i];
-        const nodeId = String(turn.id);
-        const currentNode = currentNodesMap.get(nodeId);
-        const height = nodeHeights[nodeId];
-
-        if (!currentNode) {
-          console.warn(`[TurnCanvas] Y-ADJUSTMENT: Node with ID ${nodeId} not found in current displayNodes. Skipping.`);
-          continue;
+      // Augment recalculated nodes with callbacks again, as calculateNodesAndEdges returns raw data
+      const finalNodesWithCallbacks = recalculatedNodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          onHeightReport: handleNodeHeightReport,
+          onWidthReport: handleNodeWidthReport
         }
-        if (height === undefined || height === 0) {
-          console.warn(`[TurnCanvas] Y-ADJUSTMENT: Height for node ${nodeId} is ${height}. Critical error, should have been caught by allHeightsReported. Bailing.`);
-          return;
-        }
-
-        newCalculatedNodes.push({
-          ...currentNode,
-          position: {
-            ...currentNode.position,
-            y: accumulatedY
-          },
-          data: {
-            ...currentNode.data,
-            onHeightReport: handleNodeHeightReport
-          }
-        });
-        accumulatedY += height + REQUIRED_VERTICAL_GAP;
-      }
+      }));
 
       // Conditional update to prevent re-render loops
       let changed = false;
-      if (newCalculatedNodes.length !== displayNodes.length) {
+      if (finalNodesWithCallbacks.length !== displayNodes.length) {
         changed = true;
       } else {
-        for (let i = 0; i < newCalculatedNodes.length; i++) {
-          // More robust check: find corresponding node in displayNodes by ID, as order might not be guaranteed if displayNodes was manipulated elsewhere (though unlikely here)
-          const originalNode = displayNodes.find(dn => dn.id === newCalculatedNodes[i].id);
-          if (!originalNode || originalNode.position.y !== newCalculatedNodes[i].position.y) {
-            // Also check if the number of data properties changed, or onHeightReport got lost (should not happen with spread)
-            if (!originalNode || Object.keys(originalNode.data).length !== Object.keys(newCalculatedNodes[i].data).length) {
-                changed = true;
-                break;
-            }
+        for (let i = 0; i < finalNodesWithCallbacks.length; i++) {
+          const originalNode = displayNodes.find(dn => dn.id === finalNodesWithCallbacks[i].id);
+          if (!originalNode || 
+              originalNode.position.y !== finalNodesWithCallbacks[i].position.y ||
+              originalNode.position.x !== finalNodesWithCallbacks[i].position.x || // ADDED: Check X position
+              Object.keys(originalNode.data).length !== Object.keys(finalNodesWithCallbacks[i].data).length) {
+            changed = true;
+            break;
+          }
+        }
+      }
+      // Also check if edges changed
+      if (!changed && recalculatedEdges.length !== displayEdges.length) {
+        changed = true;
+      } else if (!changed) {
+        // Basic check if edge IDs or source/target changed, more complex checks might be needed if edge objects are complex
+        for (let i = 0; i < recalculatedEdges.length; i++) {
+          const originalEdge = displayEdges.find(de => de.id === recalculatedEdges[i].id);
+          if (!originalEdge || originalEdge.source !== recalculatedEdges[i].source || originalEdge.target !== recalculatedEdges[i].target) {
             changed = true;
             break;
           }
@@ -209,22 +236,19 @@ function TurnCanvas() {
       }
 
       if (changed) {
-        console.log('[TurnCanvas] Y-ADJUSTMENT: Node positions or count changed. Updating React Flow and displayNodes/Edges.', newCalculatedNodes.map(n => ({id: n.id, y: n.position.y}) ));
-        setNodes(newCalculatedNodes);
-        setDisplayNodes(newCalculatedNodes);
-        // When nodes are re-positioned, edges might need to be re-evaluated or at least re-passed if their internal linkage depends on node instances.
-        // For now, re-pass the same edge data structure. If calculateNodesAndEdges were cheap, we could recall it.
-        // Or, if edge structure depends on node positions (e.g. custom edge paths), it would need recalculation here.
-        // Since our edges are simple (source/target ID), re-passing the existing structure should be fine.
-        setDisplayEdges(initialLayout.edges); // Re-set displayEdges to ensure ReactFlow gets a potentially fresh reference if it matters for its diffing with new nodes.
+        console.log('[TurnCanvas] X/Y-ADJUSTMENT: Node positions/count or edges changed. Updating React Flow and display states.');
+        console.log('New Nodes:', finalNodesWithCallbacks.map(n => ({id: n.id, x:n.position.x, y: n.position.y}) ));
+        console.log('New Edges:', recalculatedEdges.map(e => e.id));
+        setNodes(finalNodesWithCallbacks);
+        setDisplayNodes(finalNodesWithCallbacks);
+        setDisplayEdges(recalculatedEdges);
       } else {
-        console.log('[TurnCanvas] Y-ADJUSTMENT: No actual change in node positions/count, skipping displayNodes update to prevent loop.');
+        console.log('[TurnCanvas] X/Y-ADJUSTMENT: No actual change in node positions/count or edges, skipping display update.');
       }
     } else {
-      console.log('[TurnCanvas] Y-ADJUSTMENT: Conditions not met (not enough visible turns or not all heights reported).');
+      console.log('[TurnCanvas] X/Y-ADJUSTMENT: Conditions not met (not enough turns/dimensions reported or canvasWidth missing).');
     }
-    // Make sure initialLayout.edges is in dependency array if used like this for setDisplayEdges
-  }, [visibleTurns, nodeHeights, displayNodes, setNodes, handleNodeHeightReport, initialLayout.edges]);
+  }, [visibleTurns, nodeHeights, nodeWidths, canvasWidth, displayNodes, displayEdges, setNodes, handleNodeHeightReport, handleNodeWidthReport]); // ADDED: nodeWidths, canvasWidth, handleNodeWidthReport, displayEdges
 
   // Edges are taken directly from the initial calculation, 
   // const { edges } = initialLayout; // No longer directly used for ReactFlow prop
@@ -278,5 +302,14 @@ function TurnCanvas() {
     </div>
   );
 }
+
+// ADDED: PropTypes for TurnCanvas
+TurnCanvas.propTypes = {
+  canvasWidth: PropTypes.number
+};
+
+TurnCanvas.defaultProps = {
+  canvasWidth: 0
+};
 
 export default TurnCanvas; 

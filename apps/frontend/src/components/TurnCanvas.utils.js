@@ -42,47 +42,76 @@ const { nodes, edges } = calculateNodesAndEdges(turns);
 import { measureTextWidth } from '../lib/textMeasurer.js';
 
 export const FIRST_NODE_OFFSET_Y = 44; // px
-export const VERTICAL_GAP = 143; // px (≈ 100 bubble + 43 connector)
+// export const VERTICAL_GAP = 143; // px (≈ 100 bubble + 43 connector) - This is replaced by dynamic height + fixed gap
+const REQUIRED_VERTICAL_GAP_BETWEEN_NODES = 43; // px, the desired edge-to-edge gap
+const MAX_NODE_WIDTH_FALLBACK = 724; // Fallback width if not reported
 
 /**
  * calculateNodesAndEdges – deterministic layout builder.
  *
  * This function calculates the positions for script turn nodes and the edges connecting them.
- * Node X positions are set to a common baseline (0), as horizontal centering of the entire
- * group of nodes is handled by the parent CanvasWrapper component using React Flow's fitView.
- * Vertical positioning is based on a defined starting offset and a consistent gap between turns.
- * The actual width of each node is calculated and included in the node data, which can be
- * used by the TurnNode component for its rendering.
+ * Node X positions are calculated to center each node horizontally based on its actual width and the provided canvasWidth.
+ * Node Y positions are calculated based on the actual reported height of the preceding node and a fixed vertical gap.
+ * If actual dimensions (width/height) or canvasWidth are not provided, it may use fallbacks or default positioning.
  *
  * @param {Array<Object>} turns - Array of visible turn objects (root excluded).
+ * @param {number} [canvasWidth] - The width of the canvas area. Used for horizontal centering.
+ * @param {Object.<string, number>} [nodeWidths] - A map of nodeId to its actual rendered width.
+ * @param {Object.<string, number>} [nodeHeights] - A map of nodeId to its actual rendered height.
  * @returns {{nodes: Array<Object>, edges: Array<Object>}} Object containing arrays of nodes and edges for React Flow.
  * @throws {TypeError} If the `turns` argument is not an array.
  */
-export function calculateNodesAndEdges(turns) {
+export function calculateNodesAndEdges(turns, canvasWidth, nodeWidths, nodeHeights) {
   if (!Array.isArray(turns)) throw new TypeError('turns must be an array');
 
-  const MAX_W = 724; // Maximum width for a turn node
-  const PADDING_X = 28; // Horizontal padding within a turn node (14px each side)
-  const FONT = '500 26px Inter'; // Font used for text measurement
+  const nodes = [];
+  let accumulatedY = FIRST_NODE_OFFSET_Y;
 
-  // Pre-measure every bubble to determine its intrinsic width.
-  // This width is passed to the TurnNode and can be used for its styling.
-  const bubbleWidths = turns.map((t) =>
-    Math.min(MAX_W, measureTextWidth(t.text || '', FONT, PADDING_X))
-  );
+  for (let i = 0; i < turns.length; i++) {
+    const turn = turns[i];
+    const nodeIdStr = String(turn.id);
 
-  const nodes = turns.map((turn, idx) => {
-    const width = bubbleWidths[idx];
-    return {
-      id: String(turn.id),
-      type: 'turnNode', // Specifies the custom node component to use
-      data: { turn, width }, // Data passed to the TurnNode component
+    let currentTurnWidth = MAX_NODE_WIDTH_FALLBACK; // Default/fallback width
+    if (nodeWidths && nodeWidths[nodeIdStr] !== undefined && nodeWidths[nodeIdStr] > 0) {
+      currentTurnWidth = nodeWidths[nodeIdStr];
+    } else {
+      // Fallback: Could use measureTextWidth here if desired for an initial estimate before actuals are reported
+      // For now, using MAX_NODE_WIDTH_FALLBACK ensures it doesn't break if widths aren't ready
+      console.warn(`[calculateNodesAndEdges] Width for node ${nodeIdStr} not available or invalid, using fallback ${MAX_NODE_WIDTH_FALLBACK}px.`);
+    }
+
+    let xPosition = 0; // Default X if canvasWidth is not available
+    if (canvasWidth && canvasWidth > 0) {
+      xPosition = (canvasWidth - currentTurnWidth) / 2;
+    } else {
+      console.warn(`[calculateNodesAndEdges] canvasWidth not available or invalid (${canvasWidth}), defaulting xPosition to 0 for node ${nodeIdStr}.`);
+    }
+    
+    // The data.width property is still useful for TurnNode if it wants to use it for internal styling or checks
+    // It should reflect the width used for positioning or the best known width.
+    const nodeDataWidth = currentTurnWidth; 
+
+    nodes.push({
+      id: nodeIdStr,
+      type: 'turnNode', 
+      data: { turn, width: nodeDataWidth }, // Pass turn and the determined width
       position: {
-        x: 0, // X position is now 0; CanvasWrapper handles group centering via fitView.
-        y: FIRST_NODE_OFFSET_Y + idx * VERTICAL_GAP // Vertical stacking logic remains
+        x: xPosition,
+        y: accumulatedY 
       }
-    };
-  });
+    });
+
+    // Update accumulatedY for the next node
+    // Use reported height if available, otherwise a fallback (though this can lead to overlaps/gaps)
+    let currentTurnHeight = 100; // Arbitrary fallback height if not reported
+    if (nodeHeights && nodeHeights[nodeIdStr] !== undefined && nodeHeights[nodeIdStr] > 0) {
+      currentTurnHeight = nodeHeights[nodeIdStr];
+    } else {
+      // This case should ideally be avoided by ensuring nodeHeights are reported before this recalculation for final layout
+      console.warn(`[calculateNodesAndEdges] Height for node ${nodeIdStr} not available or invalid, using fallback ${currentTurnHeight}px for Y progression.`);
+    }
+    accumulatedY += currentTurnHeight + REQUIRED_VERTICAL_GAP_BETWEEN_NODES;
+  }
 
   const edges = turns.slice(1).map((turn, idx) => ({
     id: `e${turns[idx].id}-${turn.id}`,
