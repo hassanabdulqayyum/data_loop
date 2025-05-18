@@ -106,7 +106,7 @@ function ThreePaneLayout({ nav, canvas, panel }: ThreePaneLayoutProps) {
         <aside
           style={{
             borderLeft: '3px solid #D1D1D1',
-            background: '#ffffff',
+            background: 'lightcoral',
             overflowY: 'auto'
           }}
         >
