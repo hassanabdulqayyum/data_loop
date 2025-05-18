@@ -131,6 +131,7 @@ function TurnCanvas() {
         style={{
           width: '100%',
           flex: '1 1 0%', // Grow and shrink to fill TurnCanvas wrapper div
+          overflowY: 'visible', // ATTEMPT: Override React Flow's internal overflow:hidden
           // ReactFlow should determine its own height based on content, constrained by this flex item.
         }}
       >
