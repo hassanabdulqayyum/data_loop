@@ -26,41 +26,44 @@ runs another `fitView()`.  Pass `nodes.length` or a version counter so
 the graph recentres after nodes change.
 */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { useReactFlow } from 'reactflow';
+import { useReactFlow, useNodesInitialized } from 'reactflow';
 
 function CanvasWrapper({ children, deps = [] }) {
   const reactFlowInstance = useReactFlow();
+  const nodesInitialized = useNodesInitialized();
 
   // Helper that (re)centres the viewport using React-Flow's native API.
-  const centre = () => {
+  const centre = useCallback(() => {
+    if (!nodesInitialized || reactFlowInstance.getNodes().length === 0) {
+      return;
+    }
+
     try {
-      // Only call when there is at least one node; otherwise fitView throws.
-      if (reactFlowInstance.getNodes().length > 0) {
-        reactFlowInstance.fitView({ padding: 0.1 });
-        // After fitView, adjust the viewport for the 43px top offset
-        const viewport = reactFlowInstance.getViewport();
-        const desiredTopOffset = 43; // The visual offset we want from the top
-        // The viewport.y is the amount the graph's (0,0) point is shifted down from the viewport's (0,0) point.
-        // To make the graph's (0,0) appear at desiredTopOffset (visual), viewport.y should be desiredTopOffset / zoom.
-        reactFlowInstance.setViewport({
-          x: viewport.x,
-          y: desiredTopOffset / viewport.zoom, // Ensure 43px visual offset regardless of zoom
-          zoom: viewport.zoom
-        });
-      }
+      reactFlowInstance.fitView({ padding: 0.1 });
+      // After fitView, adjust the viewport for the 43px top offset
+      const viewport = reactFlowInstance.getViewport();
+      const desiredTopOffset = 43; // The visual offset we want from the top
+      reactFlowInstance.setViewport({
+        x: viewport.x,
+        y: desiredTopOffset / viewport.zoom, // Ensure 43px visual offset regardless of zoom
+        zoom: viewport.zoom
+      });
     } catch (err) {
       // Swallow in production – better a slightly off-centre graph than a
       // crashed UI.  Still useful to log during development.
       if (process.env.NODE_ENV !== 'test') console.warn('CanvasWrapper.fitView failed', err);
     }
-  };
+  }, [reactFlowInstance, nodesInitialized]);
 
-  // 1) First mount + deps change.
-  useEffect(centre, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  // 1) First mount + deps change (passed from parent) + when centre callback itself changes.
+  useEffect(() => {
+    centre();
+  }, [centre, ...deps]);
 
   // 2) Window resize → debounce to avoid thrashing.
+  // This effect also depends on the 'centre' callback.
   useEffect(() => {
     let timeoutId = null;
     const onResize = () => {

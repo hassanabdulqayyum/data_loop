@@ -97,6 +97,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-19* | • **LoadView (Task #3 debugging)**: Refactored prop passing from `LoadView` to `HierarchyGraph` to use a single `selectedIds` object, resolving a `JSON.parse(undefined)` error in debug logs and clarifying component contracts. Added debug logs to `HierarchyGraph` to trace topic display. |
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Adjusted `HierarchyGraph` to apply a 43px top offset to the Program node, ensuring correct initial vertical positioning below the nav bar. |
 | *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Revised Program node positioning. Reverted direct Y-offset in `HierarchyGraph`. Modified `CanvasWrapper` to adjust viewport after `fitView`, aiming for a consistent 43px visual top offset for the graph content. |
+| *2025-05-19* | • **LoadView (Task #3 visual refinement)**: Enhanced `CanvasWrapper` to use `useNodesInitialized` and `useCallback` to ensure its centering and 43px top offset logic only runs after React Flow nodes are fully initialized, preventing initial layout jumps. |
 
 ---
 
