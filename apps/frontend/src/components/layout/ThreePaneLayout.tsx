@@ -110,7 +110,9 @@ function ThreePaneLayout({ nav, canvas, panel }: ThreePaneLayoutProps) {
           style={{
             borderLeft: '3px solid #D1D1D1',
             background: '#ffffff',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {panel}

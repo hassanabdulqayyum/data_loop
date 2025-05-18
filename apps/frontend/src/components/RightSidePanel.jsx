@@ -105,8 +105,7 @@ function RSPIdle({ onExport }) {
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        gap: 20,
-        height: '100%'
+        gap: 20
       }}
     >
       {/* Helper text */}
@@ -114,7 +113,7 @@ function RSPIdle({ onExport }) {
         style={{
           margin: 0,
           fontFamily: '"Inter", sans-serif',
-          fontSize: 20,
+          fontSize: '28px',
           fontWeight: 500,
           letterSpacing: '-0.05em',
           color: '#000'
@@ -233,7 +232,17 @@ function RightSidePanel() {
   }
 
   return (
-    <div style={{ padding: 16, minHeight: '100%' }}>
+    <div 
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100%',
+        padding: 16,
+        boxSizing: 'border-box'
+      }}
+    >
       <Content />
     </div>
   );
