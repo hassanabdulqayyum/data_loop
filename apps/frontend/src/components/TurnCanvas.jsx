@@ -59,20 +59,21 @@ function TurnCanvas() {
 
   // Log turns from the store
   const turns = useScriptStore((s) => {
-    console.log('[TurnCanvas] Turns from store:', s.turns);
+    // Commenting out repetitive logs for clarity during scroll debugging
+    // console.log('[TurnCanvas] Turns from store:', s.turns);
     return s.turns;
   });
   const visibleTurns = useMemo(() => {
     const filtered = turns.filter((t) => t.role !== 'root');
-    console.log('[TurnCanvas] Visible turns:', filtered);
+    // console.log('[TurnCanvas] Visible turns:', filtered);
     return filtered;
   }, [turns]);
 
   // Log calculated nodes and edges
   const { nodes, edges } = useMemo(() => {
     const calculated = calculateNodesAndEdges(visibleTurns);
-    console.log('[TurnCanvas] Calculated nodes:', calculated.nodes);
-    console.log('[TurnCanvas] Calculated edges:', calculated.edges);
+    // console.log('[TurnCanvas] Calculated nodes:', calculated.nodes);
+    // console.log('[TurnCanvas] Calculated edges:', calculated.edges);
     return calculated;
   }, [visibleTurns]);
 
@@ -82,7 +83,6 @@ function TurnCanvas() {
   useEffect(() => {
     if (turnCanvasWrapperRef.current) {
       const rect = turnCanvasWrapperRef.current.getBoundingClientRect();
-      // Expand the log to show the full rect object
       console.log('[TurnCanvas] Wrapper div getBoundingClientRect():', rect);
       console.log('[TurnCanvas] Wrapper div scrollHeight:', turnCanvasWrapperRef.current.scrollHeight);
       console.log('[TurnCanvas] Wrapper div clientHeight:', turnCanvasWrapperRef.current.clientHeight);
@@ -91,47 +91,51 @@ function TurnCanvas() {
       const reactFlowElement = turnCanvasWrapperRef.current.querySelector('.react-flow');
       if (reactFlowElement) {
         const rfRect = reactFlowElement.getBoundingClientRect();
-        // Expand the log to show the full rect object for ReactFlow
         console.log('[TurnCanvas] ReactFlow component getBoundingClientRect():', rfRect);
+        // Add scrollHeight and clientHeight for ReactFlow element itself
+        console.log('[TurnCanvas] ReactFlow component scrollHeight:', reactFlowElement.scrollHeight);
+        console.log('[TurnCanvas] ReactFlow component clientHeight:', reactFlowElement.clientHeight);
       } else {
         console.log('[TurnCanvas] ReactFlow component NOT FOUND in DOM query.');
       }
     }
-  }, [nodes]); // Re-log if nodes change, might indicate re-render
+  }, [nodes, visibleTurns]); // Re-log if nodes or visibleTurns change
 
-  console.log('[TurnCanvas] Rendering with nodes count:', nodes.length);
+  // console.log('[TurnCanvas] Rendering with nodes count:', nodes.length);
 
   return (
     <div
       ref={turnCanvasWrapperRef} // Added ref
       data-testid="turn-canvas-wrapper"
       style={{
-        flex: '1 1 0%', // This (specifically flex-grow: 1) should make it expand to fill CanvasWrapper (which is display:flex)
-        width: '100%',
-        // REMOVED height: '100%'. Relying on flex-grow to fill the parent flex container.
-        display: 'flex', // Make this a flex container for ReactFlow child
-        flexDirection: 'column', // Stack children vertically
-        overflowX: 'hidden',
-        background: 'rgb(250, 250, 250)'
+        // REMOVED: flex: '1 1 0%',
+        width: '100%', // Keep width 100%
+        // REMOVED: display: 'flex',
+        // REMOVED: flexDirection: 'column',
+        // No explicit height or min-height, should size to content.
+        // overflowY: 'auto', // REMOVED: Scrolling is handled by ThreePaneLayout's canvas slot
+        overflowX: 'hidden', // Keep horizontal overflow hidden
+        background: 'rgb(250, 250, 250)' // Keep background for visual debugging
       }}
     >
       <ReactFlow
-        // key={containerW} // No longer needed
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        // defaultViewport, minZoom, maxZoom, zoomOnScroll, zoomOnPinch, zoomOnDoubleClick,
-        // panOnScroll, preventScrolling are managed by CanvasWrapper or set to fixed values here.
-        // CanvasWrapper will call fitView, so defaultViewport is not necessary.
-        minZoom={1} // Keep zoom locked
-        maxZoom={1} // Keep zoom locked
+        minZoom={1}
+        maxZoom={1}
         zoomOnScroll={false}
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
         panOnScroll={false}
-        panOnDrag={false} // Keep horizontal panning disabled
-        preventScrolling={false} // Allow wheel events for the div's overflowY scroll
-        style={{ width: '100%', flexGrow: 1, height: '5000px' }} // Let ReactFlow grow, TEMP: force large height
+        panOnDrag={false}
+        preventScrolling={false}
+        style={{
+          width: '100%',
+          // REMOVED: flexGrow: 1
+          // REMOVED: height: '5000px' (or any explicit height)
+          // ReactFlow should determine its own height based on content.
+        }}
       >
         <Background gap={16} size={0.5} />
         <Controls showInteractive={false} />
