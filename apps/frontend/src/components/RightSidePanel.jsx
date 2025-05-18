@@ -105,7 +105,8 @@ function RSPIdle({ onExport }) {
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        gap: 20
+        gap: 20,
+        height: '100%'
       }}
     >
       {/* Helper text */}
@@ -126,7 +127,7 @@ function RSPIdle({ onExport }) {
       <button
         type="button"
         onClick={onExport}
-        style={{ ...buttonStyle, borderRadius: '12px !important' }}
+        style={{ borderRadius: '12px', border: '2px solid #000000', fontFamily: '"Inter", sans-serif', fontWeight: 500, fontSize: '24px', letterSpacing: '-0.05em', color: '#000000', padding: '8px', cursor: 'pointer', backgroundColor: '#FFFFFF', textDecoration: 'none' }}
       >
         Export
       </button>
@@ -186,10 +187,18 @@ function RSPSelected({ onExport, onEdit }) {
           gap: 14
         }}
       >
-        <button type="button" onClick={onEdit} style={{ ...buttonStyle, borderRadius: '12px !important' }}>
+        <button 
+          type="button" 
+          onClick={onEdit} 
+          style={{ borderRadius: '12px', border: '2px solid #000000', fontFamily: '"Inter", sans-serif', fontWeight: 500, fontSize: '24px', letterSpacing: '-0.05em', color: '#000000', padding: '8px', cursor: 'pointer', backgroundColor: '#FFFFFF', textDecoration: 'none' }}
+        >
           Edit
         </button>
-        <button type="button" onClick={onExport} style={{ ...buttonStyle, borderRadius: '12px !important' }}>
+        <button 
+          type="button" 
+          onClick={onExport} 
+          style={{ borderRadius: '12px', border: '2px solid #000000', fontFamily: '"Inter", sans-serif', fontWeight: 500, fontSize: '24px', letterSpacing: '-0.05em', color: '#000000', padding: '8px', cursor: 'pointer', backgroundColor: '#FFFFFF', textDecoration: 'none' }}
+        >
           Export
         </button>
       </div>
