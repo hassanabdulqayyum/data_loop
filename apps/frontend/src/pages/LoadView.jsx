@@ -50,6 +50,7 @@ import useHierarchyStore from '../store/useHierarchyStore.js';
 import ThreePaneLayout from '../components/layout/ThreePaneLayout.tsx';
 import CanvasWrapper from '../components/layout/CanvasWrapper.jsx';
 import TopNavBar from '../components/TopNavBar/TopNavBar.jsx';
+import { buttonStyle } from '../styles/commonStyles.js';
 
 function LoadView() {
   /* ------------------------------------------------------------------
@@ -69,23 +70,6 @@ function LoadView() {
   const { token } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-
-  /* ------------------------------------------------------------------
-   * Style for the Load and Export buttons in the RSP
-   * ---------------------------------------------------------------- */
-  const buttonStyle = {
-    fontFamily: '"Inter", sans-serif', // Ensure Inter is in quotes
-    fontWeight: 500, // Medium weight for Inter
-    fontSize: '24px',
-    letterSpacing: '-0.05em', // -5% letter spacing
-    color: '#000000',
-    border: '2px solid #000000',
-    padding: '8px', // 8px padding as per figma
-    borderRadius: '12px', 
-    cursor: 'pointer',
-    backgroundColor: '#FFFFFF', // Assuming a white background, can be transparent
-    textDecoration: 'none', // For the export button if it's an <a> tag
-  };
 
   /* ------------------------------------------------------------------
    * Fetch the hierarchy exactly once when the component appears.
