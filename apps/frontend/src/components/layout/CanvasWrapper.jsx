@@ -144,10 +144,16 @@ function CanvasWrapper({ children, deps = [], useFitView = true }) {
     };
   }, [manageViewport, useFitView]); // Removed direct dependency on centre (now manageViewport)
 
+  const wrapperStyle = {
+    width: '100%',
+    ...(useFitView ? { height: '100%' } : { minHeight: '100%' }),
+  };
+
   return (
-    <div ref={wrapperRef} style={{ width: '100%', minHeight: '100%' }}>
-      {/* Changed height to minHeight to allow the wrapper to grow with its content,
-          which is necessary for the parent scroll container in ThreePaneLayout to work correctly. */}
+    <div ref={wrapperRef} style={wrapperStyle}>
+      {/* Changed height to minHeight conditionally based on useFitView.
+          - For useFitView=true (e.g., LoadView), height: '100%' provides a stable area for fitView.
+          - For useFitView=false (e.g., ScriptView), minHeight: '100%' allows content to overflow for scrolling. */}
       {children}
     </div>
   );
