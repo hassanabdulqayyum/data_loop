@@ -28,25 +28,13 @@ import toast from 'react-hot-toast';
 import useScriptStore from '../store/useScriptStore.js';
 import useAuthStore from '../store/useAuthStore.js';
 import { apiFetch } from '../lib/api.js';
+import { buttonStyle } from '../styles/commonStyles.js';
 
 /* ------------------------------------------------------------------
  * Shared styling – copied 1-for-1 from <LoadView /> so the Edit and Export
  * buttons look absolutely identical across the entire application.  This will
  * eventually live in a central CSS module but inline is fine for now.
  * ---------------------------------------------------------------- */
-const buttonStyle = {
-  fontFamily: '"Inter", sans-serif',
-  fontWeight: 500,
-  fontSize: '24px',
-  letterSpacing: '-0.05em',
-  color: '#000000',
-  border: '2px solid #000000',
-  padding: '8px',
-  borderRadius: '6px',
-  cursor: 'pointer',
-  backgroundColor: '#FFFFFF',
-  textDecoration: 'none'
-};
 
 /* ------------------------------------------------------------------
  * Helper – exports the *entire* script (gold path) regardless of which node
@@ -124,6 +112,7 @@ function RSPIdle({ onExport }) {
       <p
         style={{
           margin: 0,
+          fontFamily: '"Inter", sans-serif',
           fontSize: 20,
           fontWeight: 500,
           letterSpacing: '-0.05em',
