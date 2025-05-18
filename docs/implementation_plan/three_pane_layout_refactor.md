@@ -106,6 +106,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *YYYY-MM-DD* | • **ScriptView (Task #5 Debugging)**: Resolved React Flow context error ("[React Flow]: Seems like you have not used zustand provider as an ancestor") by wrapping the `<CanvasWrapper><TurnCanvas /></CanvasWrapper>` composition with `<ReactFlowProvider>` in `ScriptView.jsx`. This ensures `CanvasWrapper`'s hooks (`useReactFlow`, `useNodesInitialized`) have access to the required React Flow context. |
 | *YYYY-MM-DD* | • **ScriptView (Task #5 Debugging)**: Enabled vertical scrolling for long scripts in `ScriptView` by removing `overflow: 'hidden'` from the canvas slot `div` within `ThreePaneLayout.tsx`. This allows `TurnCanvas.jsx`'s `overflowY: 'auto'` style to take effect. |
 | *2025-05-21* | • **ScriptView (Task #5 Scrolling)**: Resolved issue where the whole page section scrolled instead of just turn nodes. Made `ThreePaneLayout.tsx`'s canvas slot the definitive vertical scroller (`height: '100%', overflowY: 'auto'`). Removed `height: '100%'` and `overflowY: 'auto'` from `TurnCanvas.jsx` to prevent conflicting scroll handlers and allow it to expand to content height. |
+| *2025-05-21* | • **ScriptView (Task #5 Visibility)**: Fixed issue where turn nodes disappeared after scrolling fix. Restored `height: '100%'` to `TurnCanvas.jsx` main `div` and added `style={{ height: '100%', width: '100%' }}` to the `ReactFlow` component to ensure it has dimensions to render. Scrolling remains managed by `ThreePaneLayout.tsx`. |
 
 ---
 

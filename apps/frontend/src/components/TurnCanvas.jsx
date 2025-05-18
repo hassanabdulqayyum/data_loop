@@ -83,7 +83,7 @@ function TurnCanvas() {
         // Scrolling is handled by its parent in ThreePaneLayout.tsx.
         flex: '1 1 0%', // Flex properties might be redundant if CanvasWrapper's child is block
         width: '100%', // Ensure it takes full width from CanvasWrapper
-        // height: '100%', // REMOVED: Allow height to be determined by content
+        height: '100%', // RESTORED: Allow this div to fill the parent's height
         // overflowY: 'auto', // REMOVED: Scrolling handled by parent
         overflowX: 'hidden',
         background: '#fafafa'
@@ -105,6 +105,7 @@ function TurnCanvas() {
         panOnScroll={false}
         panOnDrag={false} // Keep horizontal panning disabled
         preventScrolling={false} // Allow wheel events for the div's overflowY scroll
+        style={{ height: '100%', width: '100%' }} // ADDED: Ensure ReactFlow fills its parent
       >
         <Background gap={16} size={0.5} />
         <Controls showInteractive={false} />
