@@ -156,14 +156,15 @@ function CanvasWrapper({ children, deps = [], useFitView = true }) {
 
   const wrapperStyle = {
     width: '100%',
-    ...(useFitView ? { height: '100%' } : { minHeight: '100%' }),
+    ...(useFitView ? { height: '100%' } : { minHeight: '100%', display: 'flex' }),
   };
 
   return (
     <div ref={wrapperRef} style={wrapperStyle}>
       {/* Changed height to minHeight conditionally based on useFitView.
           - For useFitView=true (e.g., LoadView), height: '100%' provides a stable area for fitView.
-          - For useFitView=false (e.g., ScriptView), minHeight: '100%' allows content to overflow for scrolling. */}
+          - For useFitView=false (e.g., ScriptView), minHeight: '100%' allows content to overflow for scrolling.
+            Added display: 'flex' in this case to ensure child (TurnCanvas) can correctly use flex-grow (via height:100% or flex:1). */}
       {children}
     </div>
   );

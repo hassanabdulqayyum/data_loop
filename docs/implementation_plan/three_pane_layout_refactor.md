@@ -118,6 +118,7 @@ Each custom node gets a `borderWidth` prop (0 / 1 / 3 px). It subtracts *half* t
 | *2025-05-22* | • **ScriptView (Task #5 Node Visibility)**: Turn nodes not visible in `ScriptView`. `LoadView` OK. Reverted `TurnCanvas.jsx` main wrapper from `min-height: '100%'` back to `height: '100%'`. `CanvasWrapper` remains conditional (`min-height` for `ScriptView`). This provides `ReactFlow` with a concrete initial height from `TurnCanvas`, aiming to restore node visibility and enable scrolling. |
 | *2025-05-22* | • **ScriptView (Task #5 Debugging)**: Turn nodes still not visible. Added extensive console logging to `TurnCanvas.jsx` to inspect turns data, calculated nodes/edges, and div dimensions to diagnose the issue. |
 | *2025-05-22* | • **ScriptView (Task #5 Debugging)**: Expanded console logs in `TurnCanvas.jsx` to show full `getBoundingClientRect()` for wrapper and ReactFlow elements. Added logs to `CanvasWrapper.jsx` to show its dimensions when `useFitView` is false (ScriptView case). |
+| *2025-05-22* | • **ScriptView (Task #5 Node Visibility/Layout)**: Logs showed `TurnCanvas` wrapper had `height:0` despite `style.height='100%'`. Changed `CanvasWrapper` to `display:flex` when `useFitView` is false. `TurnCanvas` (with `flex:1 1 0%` and `height:100%`) should now correctly expand to fill `CanvasWrapper`, giving `ReactFlow` a valid render height. |
 
 ---
 
