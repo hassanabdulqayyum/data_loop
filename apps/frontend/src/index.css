@@ -17,17 +17,26 @@ body,
   height: 100% !important; 
 } */ /* Commenting out as viewport will handle scrolling now */
 
-/* For ScriptView, allow React Flow's main wrapper to be visible, not the primary scroller. */
-/* It should expand via flex, and its viewport child will handle internal scrolling. */
+/* For ScriptView, make React Flow's main wrapper scrollable. */
 [data-testid="turn-canvas-wrapper"] .react-flow {
-  overflow: visible !important; /* Changed from overflow-y: auto */
-  /* height: auto !important; */ /* Let flexbox and parent define height */
+  overflow-y: auto !important; /* REVERTED: Make .react-flow div the scroller again */
+  /* overflow: visible !important; */ /* REMOVED */
+  /* height: auto !important; */ 
 }
 
 /* Make the React Flow viewport the actual scrolling container for nodes */
-[data-testid="turn-canvas-wrapper"] .react-flow__viewport {
+/* [data-testid="turn-canvas-wrapper"] .react-flow__viewport {
   overflow-y: auto !important;
-  height: 100% !important; /* Ensure it has a defined height to scroll its own content within */
+  height: 100% !important; 
+} */ /* REVERTED: Viewport no longer the primary scroller to avoid lag */
+
+/* Hide React Flow controls and attribution panel in ScriptView */
+[data-testid="turn-canvas-wrapper"] .react-flow__controls {
+  display: none !important;
+}
+
+[data-testid="turn-canvas-wrapper"] .react-flow__attribution {
+  display: none !important;
 }
 
 /* Override React Flow's default overflow:hidden on its main wrapper */
