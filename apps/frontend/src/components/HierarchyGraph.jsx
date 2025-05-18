@@ -107,10 +107,12 @@ const nodeTypes = {
 
 function HierarchyGraph({ programs, selectedIds, onSelect }) {
   const { nodes, edges } = useMemo(() => {
+    console.log('[HG_DEBUG] useMemo triggered. selectedIds:', JSON.parse(JSON.stringify(selectedIds))); // Deep copy for logging
     const n = [];
     const e = [];
 
     if (!programs || programs.length === 0) {
+      console.log('[HG_DEBUG] No programs or programs array empty.');
       return { nodes: n, edges: e };
     }
 
@@ -142,6 +144,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
     let programY = 0; // Anchor Program tier at y=0; viewport will later nudge it to the desired 43-px offset.
 
     programs.forEach((program) => {
+      console.log('[HG_DEBUG] Processing program:', program.id);
       /* --------------------------------------------------------------
        * 1. PROGRAM (root) – always a single chip centred at x=0
        * ------------------------------------------------------------*/
@@ -240,12 +243,19 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
          discard that ROW_GAP and replace it with the design-spec whiteGap of
          74 px.  No extra CHIP_HEIGHT is needed here. */
       const dayTierStartY = moduleRowY - ROW_GAP + whiteGap;
+      console.log('[HG_DEBUG] dayTierStartY:', dayTierStartY);
 
       /* --------------------------------------------------------------
        * 3. DAY (topic) tier – only rendered if a module is selected.
        * ------------------------------------------------------------*/
+      console.log('[HG_DEBUG] Looking for activeModule with selectedIds.moduleId:', selectedIds?.moduleId, 'in program.modules:', program.modules.map(m => m.id));
       const activeModule = program.modules.find((m) => m.id === selectedIds?.moduleId);
-      if (!activeModule) return; // Skip entire day tier when none selected.
+
+      if (!activeModule) {
+        console.log('[HG_DEBUG] activeModule NOT FOUND for moduleId:', selectedIds?.moduleId);
+        return; // Skip entire day tier when none selected.
+      }
+      console.log('[HG_DEBUG] activeModule FOUND:', activeModule.id, 'Its days:', JSON.parse(JSON.stringify(activeModule.days || [])));
 
       const filteredDays = activeModule.days.filter((day, idx) => {
         // Visibility logic for days
@@ -256,21 +266,25 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
         // Otherwise (no specific topic is selected for this active module), show all topics of this module.
         return true;
       });
+      console.log('[HG_DEBUG] filteredDays:', JSON.parse(JSON.stringify(filteredDays)));
 
       const measuredDays = filteredDays.map((day) => ({
         id: day.id,
         width: measureChipWidth(day.id),
         ref: day,
       }));
+      console.log('[HG_DEBUG] measuredDays (showing count):', measuredDays.length, 'First item if exists:', measuredDays[0]);
 
       // Use the same fallback width strategy for days
       const dayRows = packIntoRows(measuredDays, CHIP_GAP, availableWidth);
+      console.log('[HG_DEBUG] dayRows (showing count):', dayRows.length, 'First row if exists:', dayRows[0]);
       let dayRowY = dayTierStartY;
       const dayPos = {};
 
       dayRows.forEach((rowObj) => {
         const rowStartX = -rowObj.width / 2; // Centre around x=0
         let chipX = rowStartX;
+        console.log('[HG_DEBUG] Processing dayRow:', rowObj);
 
         rowObj.chips.forEach((chip) => {
           const day = chip.ref;
@@ -298,6 +312,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
             position: { x: chipX - effectiveBorderWidth, y: dayRowY },
             selectable: true,
           });
+          console.log('[HG_DEBUG] Pushed dayNode:', day.id, 'at y:', dayRowY);
           dayPos[day.id] = { x: chipX, y: dayRowY };
           if (modulePos[activeModule.id]) {
             e.push({ id: `${activeModule.id}-${day.id}`, source: activeModule.id, target: day.id, type: 'straight' });
@@ -308,9 +323,14 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
       });
 
       const personaTierStartY = dayRowY - ROW_GAP + whiteGap;
+      console.log('[HG_DEBUG] personaTierStartY:', personaTierStartY);
 
       const activeDay = activeModule.days.find((d) => d.id === selectedIds?.topicId);
-      if (!activeDay || !activeDay.personas) return; // Skip persona tier
+      if (!activeDay || !activeDay.personas) {
+        console.log('[HG_DEBUG] activeDay NOT FOUND or no personas for topicId:', selectedIds?.topicId);
+        return; // Skip persona tier
+      }
+      console.log('[HG_DEBUG] activeDay FOUND:', activeDay.id, 'Its personas:', JSON.parse(JSON.stringify(activeDay.personas || [])));
 
       const measuredPersonas = activeDay.personas.map((p) => ({
         id: p.id,
@@ -349,6 +369,7 @@ function HierarchyGraph({ programs, selectedIds, onSelect }) {
         personaRowY += CHIP_HEIGHT + ROW_GAP;
       });
     });
+    console.log('[HG_DEBUG] Final nodes count:', n.length, 'Final edges count:', e.length);
     return { nodes: n, edges: e };
   }, [programs, selectedIds]);
 

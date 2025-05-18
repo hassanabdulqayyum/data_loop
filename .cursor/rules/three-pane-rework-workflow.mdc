@@ -1,0 +1,13 @@
+---
+description: 
+globs: three_pane_layout_refactor.md
+alwaysApply: false
+---
+This rule applies to the [three_pane_layout_refactor.md](mdc:docs/implementation_plan/three_pane_layout_refactor.md) work we are doing which is about fixing past mistakes of making custom views for different pages when some components like the navtopbar, the RSP panel and the canvas panel are global, reusable components. Please always use layman's language and follow these for each code change we do at a time:
+
+1. First, tell me in plain english and layman's language why the current issue may be happening after looking at the description I provide and by reading through the codebase. Here, you will also provide a possible solution briefly.
+2. Once I ask to go ahead, please first make a detailed plan of what code changes you'll make, what those changes will exactly be and in what files will you make those changes.
+3. Then, once I approve of the plan, implement the plan.
+4. After making the code changes, add the current changes you made to process log in [three_pane_layout_refactor.md](mdc:docs/implementation_plan/three_pane_layout_refactor.md) so we keep a running log of the changes we are making so we can retrace our steps and keep making effective changes until we complete this refactor successfully.
+5. Automatically push to git dev branch remotely so I can check the changes on vercel frontend.
+6. Finally, tell me changes to check on vercel that would help you check if the changes were successful or not and to plan the next code change.
