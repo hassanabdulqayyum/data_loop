@@ -117,6 +117,7 @@ router.patch('/:turnId', async (req, res, next) => {
         commit_message: $commitMessage
       })
       CREATE (new)-[:AUTHORED_BY]->(author) // Link new Turn to its Author
+      SET parent.accepted = false // Archive the parent turn from the gold path
     `;
 
     // Run the creation statement. If the MATCH fails we surface 404.
