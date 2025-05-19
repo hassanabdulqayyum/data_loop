@@ -36,6 +36,7 @@ import useAuthStore from '../store/useAuthStore';
 import { apiFetch } from '../lib/api';
 import { buttonStyle } from '../styles/commonStyles';
 import RSPMetadataDisplay from './RSPMetadataDisplay';
+import EditTurnForm from './EditTurnForm';
 
 /* ------------------------------------------------------------------
  * Helper – exports the *entire* script (gold path) regardless of which node
@@ -186,6 +187,7 @@ RSPSelected.propTypes = {
    */
   selectedNodeData: PropTypes.shape({
     id: PropTypes.string.isRequired,
+    text: PropTypes.string, // text is needed for editing
     version: PropTypes.string,       // e.g., "Version 4" (from backend)
     createdAt: PropTypes.string,     // ISO date string (from backend)
     author: PropTypes.shape({ name: PropTypes.string }), // Optional structure for author
@@ -202,18 +204,57 @@ RSPSelected.propTypes = {
 /**
  * RSPEditing component.
  * Represents the content of the Right Side Panel when the user is in node editing mode.
- * This is currently a placeholder and will be implemented in future tasks.
+ * Displays metadata at the top and the editing form below.
+ *
+ * @param {object} props - The component props.
+ * @param {object} props.selectedNodeData - Data object for the selected node being edited.
+ * @param {Function} props.onSave - Handler function for saving the edit.
+ * @param {Function} props.onCancel - Handler function for cancelling the edit.
  * @returns {JSX.Element}
  */
-const RSPEditing = () => (
-  // TODO: Implement the full editing interface as per future requirements.
-  // This will likely involve text areas, commit message input, save/cancel buttons,
-  // and interaction with `useScriptStore.saveEdit()` and `useScriptStore.cancelEdit()`.
-  <div style={{ padding: '20px', textAlign: 'center' }}>
-    <h3>Editing Mode</h3>
-    <p>Editing form will appear here.</p>
-  </div>
-);
+const RSPEditing = ({ selectedNodeData, onSave, onCancel }) => {
+  // Prepare metadata for display, similar to RSPSelected
+  const metadataForDisplay = {
+    version: selectedNodeData?.version || "Version N/A",
+    createdDate: selectedNodeData?.createdAt,
+    authorName: selectedNodeData?.author?.name || selectedNodeData?.authorName || "N/A",
+    changeSummary: selectedNodeData?.commit_message || "No summary available.", // This might not be relevant while editing new summary
+  };
+
+  // Ensure turnData for EditTurnForm has at least id and text
+  const turnDataForForm = {
+    id: selectedNodeData?.id || '', // Provide a fallback for id
+    text: selectedNodeData?.text || '', // Provide a fallback for text
+  };
+
+
+  return (
+    <div style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      <RSPMetadataDisplay metadata={metadataForDisplay} />
+      <div style={{ marginTop: '20px', flexGrow: 1 /* Allows form to take available space */ }}>
+        <EditTurnForm
+          turnData={turnDataForForm}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      </div>
+    </div>
+  );
+};
+
+RSPEditing.propTypes = {
+  selectedNodeData: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    text: PropTypes.string.isRequired,
+    version: PropTypes.string,
+    createdAt: PropTypes.string,
+    author: PropTypes.shape({ name: PropTypes.string }),
+    authorName: PropTypes.string,
+    commit_message: PropTypes.string,
+  }).isRequired,
+  onSave: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+};
 
 /**
  * RightSidePanel component.
@@ -238,6 +279,9 @@ const RightSidePanel = () => {
   const turns = useScriptStore((s) => s.turns); // The array of all turns for the current script.
   const isEditing = useScriptStore((s) => s.isEditing);
   const startEdit = useScriptStore((s) => s.startEdit); // Action to initiate editing mode.
+  const stopEdit = useScriptStore((s) => s.stopEdit); // Action to stop editing mode.
+  const fetchScript = useScriptStore((s) => s.fetchScript); // Thunk to refresh script data.
+  const token = useAuthStore((s) => s.token); // For API calls
 
   // Initialize the export handler for the current script.
   const handleExport = useExportHandler(personaId);
@@ -251,36 +295,55 @@ const RightSidePanel = () => {
     boxSizing: 'border-box',
   };
 
+  // Find the full data object for the selected turn.
+  const selectedNodeData = selectedTurnId ? turns.find(t => t.id === selectedTurnId) : null;
+
+  // Define handlers for edit save and cancel
+  const handleSaveEdit = async (updatedText, commitMsg) => {
+    if (!selectedTurnId || !selectedNodeData) {
+      toast.error("No turn selected to save.");
+      return;
+    }
+    if (!personaId) {
+      toast.error("Persona context not found, cannot save.");
+      return;
+    }
+
+    const payload = { text: updatedText, commit_message: commitMsg };
+
+    try {
+      // Note: apiFetch will throw for non-ok responses, caught by catch block.
+      await apiFetch(`/turn/${encodeURIComponent(selectedTurnId)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      toast.success('Turn updated successfully!');
+      await fetchScript(personaId); // Refresh script data from the store
+      if (stopEdit) stopEdit(); // Exit editing mode
+
+    } catch (error) {
+      console.error("Failed to save turn:", error);
+      toast.error(`Failed to save turn: ${error.message || 'Unknown error'}`);
+      // Optionally, decide if you want to keep the user in editing mode or not
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (stopEdit) stopEdit(); // Simply exit editing mode
+  };
+
   let content; // Variable to hold the JSX for the current state.
 
-  if (isEditing) {
-    // If in editing mode, show the RSPEditing component.
-    // Future: May need to pass data of the turn being edited to RSPEditing.
-    // const turnToEdit = turns.find(t => t.id === selectedTurnId);
-    content = <RSPEditing /* turnData={turnToEdit} */ />;
-  } else if (selectedTurnId) {
-    // If a turn is selected (and not editing), find its data from the store.
-    const selectedNodeData = turns.find(t => t.id === selectedTurnId);
-
-    if (selectedNodeData) {
-      // If data is found, show RSPSelected with the node's data and action handlers.
-      // `onEdit` uses the `startEdit` action from the store.
-      // `onExport` uses the `handleExport` hook defined above.
-      content = (
-        <RSPSelected
-          selectedNodeData={selectedNodeData} // Pass the full turn object.
-          onEdit={() => startEdit(selectedTurnId)}
-          onExport={handleExport}
-        />
-      );
-    } else {
-      // Fallback: If selectedTurnId is set but the turn data isn't found in the store
-      // (e.g., data inconsistency or loading issue), show the idle state.
-      // This situation should be rare in a stable application.
-      content = <RSPIdle />;
-    }
+  if (isEditing && selectedNodeData) {
+    content = <RSPEditing selectedNodeData={selectedNodeData} onSave={handleSaveEdit} onCancel={handleCancelEdit} />;
+  } else if (selectedNodeData) {
+    content = <RSPSelected selectedNodeData={selectedNodeData} onEdit={() => startEdit(selectedTurnId)} onExport={handleExport} />;
   } else {
-    // If no turn is selected and not editing, show the idle state.
     content = <RSPIdle />;
   }
 

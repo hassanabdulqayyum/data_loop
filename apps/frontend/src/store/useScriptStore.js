@@ -107,8 +107,9 @@ const useScriptStore = create((set, get) => ({
 
   /* -------------------------------------------------------------
    * Action: cancelEdit – user aborted editing, go back to view state
+   * Renamed to stopEdit for more general use (e.g., after successful save too)
    * ----------------------------------------------------------- */
-  cancelEdit() {
+  stopEdit() {
     set({ isEditing: false });
   },
 
