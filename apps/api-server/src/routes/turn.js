@@ -80,6 +80,20 @@ router.patch('/:turnId', async (req, res, next) => {
     // 2. Check user role.
     ensureCanEdit(req.user);
 
+    // Extract user information for authorship.
+    // Assuming req.user.id is the unique identifier for the User node
+    // and req.user.name is the display name. Fallback to email if name is not present.
+    const userId = req.user.id || req.user.email; // Prefer specific ID, fallback to email if ID isn't there
+    const userName = req.user.name || req.user.email; // User's display name, fallback to email
+
+    if (!userId) {
+      // This should ideally not happen if user is authenticated and req.user is populated.
+      console.error('User ID not found in req.user for authorship tracking.');
+      const err = new Error('User identifier not found for authorship.');
+      err.status = 500; // Internal server error or configuration issue
+      throw err;
+    }
+
     const parentId = /^[0-9]+$/.test(req.params.turnId)
       ? Number(req.params.turnId)
       : req.params.turnId;
@@ -89,6 +103,9 @@ router.patch('/:turnId', async (req, res, next) => {
     // 3. Create the Turn in Neo4j inside one session.
     const createCypher = `
       MATCH (parent:Turn {id: $parentId})
+      MERGE (author:User {id: $userId})
+        ON CREATE SET author.name = $userName, author.createdAt = timestamp() // Set name & creation time if User node is new
+        ON MATCH SET author.name = $userName // Update name if User node already exists (name might change)
       CREATE (parent)<-[:CHILD_OF]-(new:Turn {
         id: $newTurnId,
         role: parent.role,
@@ -99,6 +116,7 @@ router.patch('/:turnId', async (req, res, next) => {
         ts: timestamp(),
         commit_message: $commitMessage
       })
+      CREATE (new)-[:AUTHORED_BY]->(author) // Link new Turn to its Author
     `;
 
     // Run the creation statement. If the MATCH fails we surface 404.
@@ -107,7 +125,9 @@ router.patch('/:turnId', async (req, res, next) => {
         parentId,
         newTurnId,
         text,
-        commitMessage: commit_message ?? null
+        commitMessage: commit_message ?? null,
+        userId,     // Pass userId for User node MERGE
+        userName    // Pass userName for User node SET
       });
       if (result.summary.counters.updates().nodesCreated === 0) {
         const err = new Error('Parent turn not found');

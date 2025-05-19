@@ -28,6 +28,8 @@ const router = express.Router(); // creates a mini express app for routing
 
 // Hard-coded demo account – enough for first milestone tests & local dev.
 const DEMO_USER = {
+  id: 'demo-user-id-001',
+  name: 'Demo User',
   email: 'demo@acme.test',
   password: 'pass123',
   role: 'editor'
@@ -65,7 +67,12 @@ router.post('/login', (req, res) => {
   }
 
   // Create a payload – include user info (never include password!)
-  const payload = { email, role: DEMO_USER.role };
+  const payload = {
+    id: DEMO_USER.id,
+    name: DEMO_USER.name,
+    email,
+    role: DEMO_USER.role
+  };
 
   // Sign token (12 h expiry baked into helper)
   const token = sign_jwt(payload);

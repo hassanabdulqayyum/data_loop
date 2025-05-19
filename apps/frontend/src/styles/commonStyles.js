@@ -50,4 +50,101 @@ export const buttonStyle = {
 
 // Add other common styles here as needed, for example:
 // export const commonCardStyle = { ... };
-// export const commonInputStyle = { ... }; 
+// export const commonInputStyle = { ... };
+
+/**
+ * @constant metadataHeaderStyle
+ * @description Style for the main version header in the RSP metadata display (e.g., "Version 4").
+ * @type {object}
+ * @property {string} fontFamily - Font: Inter.
+ * @property {number} fontWeight - Weight: Medium (500).
+ * @property {string} fontSize - Size: 24px.
+ * @property {string} letterSpacing - Spacing: -5% (-0.05em).
+ * @property {string} color - Color: Black (#000000).
+ * @property {string} margin - Reset default paragraph margins.
+ * @property {string} marginBottom - Space below this header before the next metadata block.
+ */
+export const metadataHeaderStyle = {
+  fontFamily: '"Inter", sans-serif',
+  fontWeight: 500, // Medium
+  fontSize: '24px',
+  letterSpacing: '-0.05em', // -5%
+  color: '#000000', // Black
+  margin: 0, // Reset default margins
+  marginBottom: '20px', // Space below the version header
+};
+
+/**
+ * @constant metadataLabelStyle
+ * @description Style for labels in the RSP metadata display (e.g., "Created", "Author", "What changed?").
+ * @type {object}
+ * @property {string} fontFamily - Font: Inter.
+ * @property {number} fontWeight - Weight: Medium (500).
+ * @property {string} fontSize - Size: 24px.
+ * @property {string} letterSpacing - Spacing: -5% (-0.05em).
+ * @property {string} color - Color: Black (#000000).
+ * @property {string} margin - Reset default paragraph margins.
+ * @property {string} marginBottom - Space below the label, before its corresponding value.
+ */
+export const metadataLabelStyle = {
+  fontFamily: '"Inter", sans-serif',
+  fontWeight: 500, // Medium
+  fontSize: '24px',
+  letterSpacing: '-0.05em',
+  color: '#000000', // Black
+  margin: 0, // Reset default margins
+  marginBottom: '4px', // Space below the label (e.g., "Created")
+};
+
+/**
+ * @constant metadataValueStyle
+ * @description Style for the values associated with labels in the RSP metadata display (e.g., the actual date for "Created", the author's name for "Author").
+ * @type {object}
+ * @property {string} fontFamily - Font: Inter.
+ * @property {number} fontWeight - Weight: Medium (500).
+ * @property {string} fontSize - Size: 24px.
+ * @property {string} letterSpacing - Spacing: -5% (-0.05em).
+ * @property {string} color - Color: Black (#000000).
+ * @property {string} margin - Reset default paragraph margins.
+ */
+export const metadataValueStyle = {
+  fontFamily: '"Inter", sans-serif',
+  fontWeight: 500, // Medium
+  fontSize: '24px',
+  letterSpacing: '-0.05em',
+  color: '#000000', // Black
+  margin: 0, // Reset default margins
+};
+
+/**
+ * @constant metadataChangeSummaryTextStyle
+ * @description Style specifically for the "What changed?" commit summary text in the RSP metadata display.
+ * @type {object}
+ * @property {string} fontFamily - Font: Inter.
+ * @property {number} fontWeight - Weight: Medium (500).
+ * @property {string} fontSize - Size: 17px.
+ * @property {string} letterSpacing - Spacing: -5% (-0.05em).
+ * @property {string} color - Color: #373639.
+ * @property {string} margin - Reset default paragraph margins.
+ * @property {string} lineHeight - Adjust line height for better readability of potentially multi-line summary.
+ */
+export const metadataChangeSummaryTextStyle = {
+  fontFamily: '"Inter", sans-serif',
+  fontWeight: 500, // Medium
+  fontSize: '17px',
+  letterSpacing: '-0.05em',
+  color: '#373639',
+  margin: 0, // Reset default margins
+  lineHeight: '1.4', // Adjust for readability
+};
+
+/**
+ * @constant metadataBlockStyle
+ * @description Style for the div wrapping each metadata block (e.g., the "Created" block, "Author" block).
+ *              Provides consistent spacing between these blocks.
+ * @type {object}
+ * @property {string} marginBottom - Space below each metadata block, separating it from the next.
+ */
+export const metadataBlockStyle = {
+  marginBottom: '20px', // Space between metadata sections (e.g., between Author block and What Changed? block)
+}; 
