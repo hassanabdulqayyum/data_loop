@@ -280,7 +280,7 @@ const RightSidePanel = () => {
   const isEditing = useScriptStore((s) => s.isEditing);
   const startEdit = useScriptStore((s) => s.startEdit); // Action to initiate editing mode.
   const stopEdit = useScriptStore((s) => s.stopEdit); // Action to stop editing mode.
-  const fetchScript = useScriptStore((s) => s.fetchScript); // Thunk to refresh script data.
+  const loadScript = useScriptStore((s) => s.loadScript); // CORRECTED: Use loadScript from the store
   const token = useAuthStore((s) => s.token); // For API calls
 
   // Initialize the export handler for the current script.
@@ -308,6 +308,10 @@ const RightSidePanel = () => {
       toast.error("Persona context not found, cannot save.");
       return;
     }
+    if (!token) { // Add a check for the token
+      toast.error("Authentication token not found. Please log in again.");
+      return;
+    }
 
     const payload = { text: updatedText, commit_message: commitMsg };
 
@@ -323,7 +327,10 @@ const RightSidePanel = () => {
       });
       
       toast.success('Turn updated successfully!');
-      await fetchScript(personaId); // Refresh script data from the store
+      // CORRECTED: Call loadScript with personaId and token
+      if (loadScript) await loadScript(personaId, token); 
+      else toast.error('Could not refresh script data.'); // Fallback if loadScript is somehow not found
+      
       if (stopEdit) stopEdit(); // Exit editing mode
 
     } catch (error) {
