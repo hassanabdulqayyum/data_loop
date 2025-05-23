@@ -21,3 +21,8 @@ You're articulating a strong and coherent design philosophy here, and I agree th
 *   **Cleanliness:** Keeps the primary data visualization (the canvas) uncluttered.
 
 Your intuition about these interactions aligning with "human psyche" is well-founded in established UX principles. The key will be in the execution: ensuring the visual feedback is clear, the panel transitions are smooth, and the content within each contextual view in the panel is logically organized and highly relevant to the user's current task.
+
+
+docker compose exec neo4j cypher-shell -u $NEO4J_USER -p $NEO4J_PASSWORD -d neo4j "MATCH (n) DETACH DELETE n"
+
+cat docs/scripts/neo4j/004_demo_catalog.cypher | docker compose exec -T neo4j cypher-shell -u $NEO4J_USER -p $NEO4J_PASSWORD

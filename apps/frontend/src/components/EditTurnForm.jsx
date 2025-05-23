@@ -92,6 +92,8 @@ function EditTurnForm({ turnData, onSave, onCancel }) {
   return (
     <div style={styles.formContainer}>
       <textarea
+        id="editedText"
+        name="editedText"
         style={styles.textArea}
         value={editedText}
         onChange={handleTextChange}
@@ -99,6 +101,8 @@ function EditTurnForm({ turnData, onSave, onCancel }) {
       />
       <input
         type="text"
+        id="commitMessage"
+        name="commitMessage"
         style={styles.input}
         value={commitMessage}
         onChange={handleCommitMessageChange}

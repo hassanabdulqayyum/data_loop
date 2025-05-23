@@ -102,63 +102,92 @@ router.patch('/:turnId', async (req, res, next) => {
 
     // 3. Create the Turn in Neo4j inside one session.
     const createCypher = `
-      // Find the turn being edited and its parent (if any)
+      // 1. Find the turn being edited. This is a hard requirement.
+      // If originalTurnToEdit is not found, the query will halt and the transaction will not commit,
+      // leading to the session.run result not containing the expected updates,
+      // which should be caught by the check on result.summary.counters.
       MATCH (originalTurnToEdit:Turn {id: $parentId})
+
+      // 2. Bring it into context and find its parent (if any)
+      // originalTurnToEdit properties are accessed from here onwards, so it must exist.
+      WITH originalTurnToEdit
       OPTIONAL MATCH (parentOfOriginal:Turn)-[:CHILD_OF]->(originalTurnToEdit)
 
-      // Merge the author
+      // 3. Merge the author
       MERGE (author:User {id: $userId})
         ON CREATE SET author.name = $userName, author.createdAt = timestamp()
         ON MATCH SET author.name = $userName
 
-      // Create the new version of the turn
+      // 4. Create the new version of the turn
       CREATE (newVersion:Turn {
         id: $newTurnId,
-        role: originalTurnToEdit.role, // Inherit role from the original turn
+        role: originalTurnToEdit.role, // Inherit role
         text: $text,
         accepted: true,
-        // parent_id will be the ID of parentOfOriginal, or null if originalTurnToEdit was a root
         parent_id: CASE WHEN parentOfOriginal IS NOT NULL THEN parentOfOriginal.id ELSE null END,
-        // depth is parent's depth + 1, or 0 if it's a root node (no parentOfOriginal)
         depth: CASE WHEN parentOfOriginal IS NOT NULL THEN coalesce(parentOfOriginal.depth, 0) + 1 ELSE 0 END,
-        ts: originalTurnToEdit.ts, // Inherit timestamp from the original turn to maintain sequence
+        ts: originalTurnToEdit.ts, // Inherit timestamp
         commit_message: $commitMessage
       })
 
-      // Link the new version to the author
+      // 5. Link the new version to the author
       CREATE (newVersion)-[:AUTHORED_BY]->(author)
 
-      // Archive the original turn
+      // 6. Archive the original turn
       SET originalTurnToEdit.accepted = false
 
-      // Conditionally create CHILD_OF relationship from parentOfOriginal to newVersion
-      // This is done separately to handle the case where originalTurnToEdit was a root node
-      WITH newVersion, parentOfOriginal
+      // 7. Conditionally create CHILD_OF relationship from parentOfOriginal to newVersion
+      // The WITH clause brings newVersion and parentOfOriginal into the APOC subquery's context.
+      // It's crucial to pass them as parameters to the apoc.do.when call.
+      // Inside the APOC Cypher strings, we must explicitly pass these variables again if needed,
+      // or re-MATCH nodes using their IDs for safety if direct variable access is tricky across APOC scopes.
+      WITH newVersion, parentOfOriginal, originalTurnToEdit // Ensure all needed variables are carried forward
       CALL apoc.do.when(
         parentOfOriginal IS NOT NULL,
-        'CREATE (parentOfOriginal)-[:CHILD_OF]->(newVersion) RETURN newVersion',
-        'RETURN newVersion',
-        {parentOfOriginal: parentOfOriginal, newVersion: newVersion}
+        // If parentOfOriginal exists, create the relationship.
+        // Re-match nodes by ID inside APOC for safety, using the passed parameters.
+        'MATCH (po:Turn {id: $parentOfOriginalId}) MATCH (nv:Turn {id: $newVersionId}) CREATE (po)-[:CHILD_OF]->(nv) RETURN nv AS node',
+        // Else (if originalTurnToEdit was a root node), just return the newVersion.
+        'MATCH (nv:Turn {id: $newVersionId}) RETURN nv AS node',
+        // Parameters for the APOC subqueries. Pass IDs for re-matching.
+        { parentOfOriginalId: parentOfOriginal.id, newVersionId: newVersion.id, newVersion: newVersion, parentOfOriginal: parentOfOriginal }
       ) YIELD value
 
-      RETURN value.newVersion AS newTurnNode
+      // 8. Return the newly created turn node (or its ID).
+      // The 'value' map from apoc.do.when contains the 'node' we returned from its subqueries.
+      RETURN value.node.id AS newId, value.node.role AS newRole, value.node.ts AS newTs
     `;
 
-    // Run the creation statement. If the MATCH fails we surface 404.
+    // Run the creation statement.
     await withSession(async (session) => {
       const result = await session.run(createCypher, {
         parentId,
         newTurnId,
         text,
         commitMessage: commit_message ?? null,
-        userId,     // Pass userId for User node MERGE
-        userName    // Pass userName for User node SET
+        userId,
+        userName
       });
-      if (result.summary.counters.updates().nodesCreated === 0) {
-        const err = new Error('Parent turn not found');
-        err.status = 404;
+
+      // Check if the new node was created and the original was updated.
+      // Specifically, we expect one node created (newVersion) and one node property set (originalTurnToEdit.accepted).
+      // The RETURN value.node.id should also give us what we need.
+      // If originalTurnToEdit was not found by the initial MATCH, the query effectively stops,
+      // and result.records will be empty or won't contain the expected newId.
+      if (!result.records || result.records.length === 0 || !result.records[0].get('newId')) {
+        // This condition handles cases where the initial MATCH for originalTurnToEdit failed,
+        // or something else went wrong preventing the new node from being properly returned.
+        const err = new Error('Parent turn not found or new turn creation failed.');
+        err.status = 404; // Or 500 if it's an unexpected failure beyond not finding parent
         throw err;
       }
+      // If we want to be very specific about counters:
+      // const counters = result.summary.counters.updates();
+      // if (counters.nodesCreated() < 1 || counters.propertiesSet() < 1) {
+      //   const err = new Error('Failed to create new turn version or update original turn.');
+      //   err.status = 500;
+      //   throw err;
+      // }
     });
 
     // Best-effort lookup for personaId (used only for the Redis payload).
