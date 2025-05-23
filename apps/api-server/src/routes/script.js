@@ -48,20 +48,24 @@ router.get('/:personaId', async (req, res, next) => {
                 // Use CALL subquery to find the single, accepted gold path
                 CALL {
                     WITH root
-                    MATCH goldPathSubquery = (root)-[:CHILD_OF*0..]->(leaf:Turn) // Renamed to avoid conflict
-                    WHERE (root.accepted IS NULL OR root.accepted = true) // Root might not have 'accepted' or it's true
-                      AND ALL(n IN nodes(goldPathSubquery) WHERE n = root OR n.accepted = true) // All nodes in path are accepted (or root)
-                      AND NOT (leaf)-[:CHILD_OF]->(:Turn {accepted: true}) // Leaf is the last accepted turn in this sequence
-                    RETURN goldPathSubquery // Return the path itself
-                    ORDER BY length(goldPathSubquery) DESC // If multiple such paths, take the longest
-                    LIMIT 1 // Ensure we only process one gold path
+                    // The root node itself must be acceptable to start a gold path
+                    WHERE root.accepted IS NULL OR root.accepted = true // Pre-filter root
+                    
+                    MATCH currentGoldPath = (root)-[:CHILD_OF*0..]->(leaf:Turn)
+                    // Ensure all nodes in this path are either the root itself or are accepted
+                    WHERE ALL(n IN nodes(currentGoldPath) WHERE n = root OR n.accepted = true)
+                      // And ensure 'leaf' is the last accepted turn in this sequence
+                      AND NOT EXISTS((leaf)-[:CHILD_OF]->(:Turn {accepted: true}))
+                    RETURN currentGoldPath
+                    ORDER BY length(currentGoldPath) DESC
+                    LIMIT 1
                 }
-                // goldPathSubquery is now the path returned from the CALL
+                // currentGoldPath is now the path returned from the CALL, or null if no such path found
 
-                // Unwind the nodes of this goldPathSubquery to process them in order
+                // Unwind the nodes of this currentGoldPath to process them in order
                 // Also, keep the path_nodes accessible for the lineageVersion calculation
-                UNWIND nodes(goldPathSubquery) AS t_on_path
-                WITH t_on_path, nodes(goldPathSubquery) AS path_nodes_for_version // Make path_nodes available here
+                UNWIND nodes(currentGoldPath) AS t_on_path
+                WITH t_on_path, nodes(currentGoldPath) AS path_nodes_for_version // Make path_nodes available here
 
                 // OPTIONAL MATCH for author, as before
                 OPTIONAL MATCH (t_on_path)-[:AUTHORED_BY]->(author:User)
@@ -94,7 +98,7 @@ router.get('/:personaId', async (req, res, next) => {
                        t_on_path.commit_message    AS commit_message,
                        author.name                 AS authorName,
                        lineageVersion              AS version
-                // The ORDER BY clause is implicitly handled by UNWIND nodes(goldPathSubquery).
+                // The ORDER BY clause is implicitly handled by UNWIND nodes(currentGoldPath).
                 // No explicit ORDER BY depth ASC, original_ts ASC needed here.
                 // If client-side sorting by ts within a former "depth level" is desired,
                 // the client can do that, but the primary order comes from the path.
