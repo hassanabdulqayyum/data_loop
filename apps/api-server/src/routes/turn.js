@@ -102,22 +102,46 @@ router.patch('/:turnId', async (req, res, next) => {
 
     // 3. Create the Turn in Neo4j inside one session.
     const createCypher = `
-      MATCH (parent:Turn {id: $parentId})
+      // Find the turn being edited and its parent (if any)
+      MATCH (originalTurnToEdit:Turn {id: $parentId})
+      OPTIONAL MATCH (parentOfOriginal:Turn)-[:CHILD_OF]->(originalTurnToEdit)
+
+      // Merge the author
       MERGE (author:User {id: $userId})
-        ON CREATE SET author.name = $userName, author.createdAt = timestamp() // Set name & creation time if User node is new
-        ON MATCH SET author.name = $userName // Update name if User node already exists (name might change)
-      CREATE (parent)<-[:CHILD_OF]-(new:Turn {
+        ON CREATE SET author.name = $userName, author.createdAt = timestamp()
+        ON MATCH SET author.name = $userName
+
+      // Create the new version of the turn
+      CREATE (newVersion:Turn {
         id: $newTurnId,
-        role: parent.role,
+        role: originalTurnToEdit.role, // Inherit role from the original turn
         text: $text,
         accepted: true,
-        parent_id: $parentId,
-        depth: coalesce(parent.depth, 0) + 1,
-        ts: timestamp(),
+        // parent_id will be the ID of parentOfOriginal, or null if originalTurnToEdit was a root
+        parent_id: CASE WHEN parentOfOriginal IS NOT NULL THEN parentOfOriginal.id ELSE null END,
+        // depth is parent's depth + 1, or 0 if it's a root node (no parentOfOriginal)
+        depth: CASE WHEN parentOfOriginal IS NOT NULL THEN coalesce(parentOfOriginal.depth, 0) + 1 ELSE 0 END,
+        ts: originalTurnToEdit.ts, // Inherit timestamp from the original turn to maintain sequence
         commit_message: $commitMessage
       })
-      CREATE (new)-[:AUTHORED_BY]->(author) // Link new Turn to its Author
-      SET parent.accepted = false // Archive the parent turn from the gold path
+
+      // Link the new version to the author
+      CREATE (newVersion)-[:AUTHORED_BY]->(author)
+
+      // Archive the original turn
+      SET originalTurnToEdit.accepted = false
+
+      // Conditionally create CHILD_OF relationship from parentOfOriginal to newVersion
+      // This is done separately to handle the case where originalTurnToEdit was a root node
+      WITH newVersion, parentOfOriginal
+      CALL apoc.do.when(
+        parentOfOriginal IS NOT NULL,
+        'CREATE (parentOfOriginal)-[:CHILD_OF]->(newVersion) RETURN newVersion',
+        'RETURN newVersion',
+        {parentOfOriginal: parentOfOriginal, newVersion: newVersion}
+      ) YIELD value
+
+      RETURN value.newVersion AS newTurnNode
     `;
 
     // Run the creation statement. If the MATCH fails we surface 404.
