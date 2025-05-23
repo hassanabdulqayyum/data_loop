@@ -47,13 +47,12 @@ router.get('/:personaId', async (req, res, next) => {
 
                 // Use CALL subquery to find the single, accepted gold path
                 CALL {
-                    WITH root
-                    // The root node itself must be acceptable to start a gold path
-                    WHERE root.accepted IS NULL OR root.accepted = true // Pre-filter root
-                    
+                    WITH root // Import root into the subquery scope
+
+                    // Match paths starting from the imported root, only if the root itself is acceptable
                     MATCH currentGoldPath = (root)-[:CHILD_OF*0..]->(leaf:Turn)
-                    // Ensure all nodes in this path are either the root itself or are accepted
-                    WHERE ALL(n IN nodes(currentGoldPath) WHERE n = root OR n.accepted = true)
+                    WHERE (root.accepted IS NULL OR root.accepted = true) // Condition on root applies here
+                      AND ALL(n IN nodes(currentGoldPath) WHERE n = root OR n.accepted = true) // All other nodes must be accepted (or be the root)
                       // And ensure 'leaf' is the last accepted turn in this sequence
                       AND NOT EXISTS((leaf)-[:CHILD_OF]->(:Turn {accepted: true}))
                     RETURN currentGoldPath
