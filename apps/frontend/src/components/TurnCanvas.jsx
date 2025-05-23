@@ -78,8 +78,10 @@ function TurnCanvas({ canvasWidth = 0 }) {
     return s.turns;
   });
   const visibleTurns = useMemo(() => {
-    const filtered = turns.filter((t) => t.role !== 'root');
-    console.log('[TurnCanvas] visibleTurns updated:', filtered);
+    // Filter out the root node AND any turns that are not accepted (i.e., archived).
+    // The backend ensures that for any conceptual turn, only one version has accepted: true.
+    const filtered = turns.filter((t) => t.role !== 'root' && t.accepted === true);
+    console.log('[TurnCanvas] visibleTurns updated (filtered by role!=root and accepted=true):', filtered.map(t => ({id: t.id, text: t.text, accepted: t.accepted })));
     return filtered;
   }, [turns]);
 
