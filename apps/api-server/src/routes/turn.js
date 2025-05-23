@@ -100,101 +100,111 @@ router.patch('/:turnId', async (req, res, next) => {
     const newTurnId = randomUUID(); // v4 UUID – globally unique
     const now = Date.now(); // Unix millis – used for Redis ts field
 
-    // 3. Create the Turn in Neo4j inside one session.
-    const createCypher = `
-      // 1. Find the turn being edited. This is a hard requirement.
-      // If originalTurnToEdit is not found, the query will halt and the transaction will not commit,
-      // leading to the session.run result not containing the expected updates,
-      // which should be caught by the check on result.summary.counters.
-      MATCH (originalTurnToEdit:Turn {id: $parentId})
-
-      // 2. Bring it into context and find its parent (if any)
-      // originalTurnToEdit properties are accessed from here onwards, so it must exist.
-      WITH originalTurnToEdit
-      OPTIONAL MATCH (parentOfOriginal:Turn)-[:CHILD_OF]->(originalTurnToEdit)
-
-      // 3. Merge the author
-      MERGE (author:User {id: $userId})
-        ON CREATE SET author.name = $userName, author.createdAt = timestamp()
-        ON MATCH SET author.name = $userName
-
-      // 4. Create the new version of the turn
-      CREATE (newVersion:Turn {
-        id: $newTurnId,
-        role: originalTurnToEdit.role, // Inherit role
-        text: $text,
-        accepted: true,
-        parent_id: CASE WHEN parentOfOriginal IS NOT NULL THEN parentOfOriginal.id ELSE null END,
-        depth: CASE WHEN parentOfOriginal IS NOT NULL THEN coalesce(parentOfOriginal.depth, 0) + 1 ELSE 0 END,
-        ts: originalTurnToEdit.ts, // Inherit timestamp
-        commit_message: $commitMessage
-      })
-
-      // 5. Link the new version to the author
-      CREATE (newVersion)-[:AUTHORED_BY]->(author)
-
-      // 6. Archive the original turn
-      SET originalTurnToEdit.accepted = false
-
-      // 7. Conditionally create CHILD_OF relationship from parentOfOriginal to newVersion
-      // The WITH clause brings newVersion and parentOfOriginal into the APOC subquery's context.
-      // It's crucial to pass them as parameters to the apoc.do.when call.
-      // Inside the APOC Cypher strings, we must explicitly pass these variables again if needed,
-      // or re-MATCH nodes using their IDs for safety if direct variable access is tricky across APOC scopes.
-      WITH newVersion, parentOfOriginal, originalTurnToEdit // Ensure all needed variables are carried forward
-      CALL apoc.do.when(
-        parentOfOriginal IS NOT NULL,
-        // If parentOfOriginal exists (i.e., originalTurnToEdit was not a root node)
-        // Re-establish parentOfOriginal using originalTurnToEdit.id to be absolutely safe.
-        'MATCH (extParent:Turn)-[:CHILD_OF]->(:Turn {id: $oteIdParam}) ' + // Find parent of original turn
-        'MATCH (nv:Turn {id: $nvIdParam}) ' +                             // Find the new version
-        'CREATE (extParent)-[:CHILD_OF]->(nv) ' +                         // Create new CHILD_OF link
-        'RETURN nv AS node',
-        // Else (if originalTurnToEdit was a root node), just return the newVersion.
-        'MATCH (nv:Turn {id: $nvIdParam}) RETURN nv AS node',             // Just return the new version
-        // Parameters for the APOC subqueries.
-        // Pass IDs for re-matching. originalTurnToEdit.id is guaranteed to exist.
-        {
-          oteIdParam: originalTurnToEdit.id, // ID of the original turn (guaranteed to exist)
-          nvIdParam: newVersion.id           // ID of the new turn version
-        }
-      ) YIELD value
-
-      // 8. Return the newly created turn node (or its ID).
-      // The 'value' map from apoc.do.when contains the 'node' we returned from its subqueries.
-      RETURN value.node.id AS newId, value.node.role AS newRole, value.node.ts AS newTs
-    `;
-
-    // Run the creation statement.
+    // 3. Perform the turn update in a transaction
     await withSession(async (session) => {
-      const result = await session.run(createCypher, {
-        parentId,
-        newTurnId,
-        text,
-        commitMessage: commit_message ?? null,
-        userId,
-        userName
-      });
+      // Step 1: Fetch original turn details and its actual parent (if any)
+      const fetchOriginalQuery = `
+        MATCH (originalTurnToEdit:Turn {id: $parentIdParam})
+        OPTIONAL MATCH (actualParent:Turn)-[:CHILD_OF]->(originalTurnToEdit)
+        RETURN 
+          originalTurnToEdit.id AS oteId, 
+          originalTurnToEdit.role AS oteRole, 
+          originalTurnToEdit.ts AS oteTs,
+          coalesce(originalTurnToEdit.depth, 0) AS oteDepth, // Default to 0 if depth is null
+          actualParent.id AS actualParentId,
+          actualParent.depth AS actualParentDepth // This will be null if no actualParent
+      `;
+      const fetchResult = await session.run(fetchOriginalQuery, { parentIdParam: parentId });
 
-      // Check if the new node was created and the original was updated.
-      // Specifically, we expect one node created (newVersion) and one node property set (originalTurnToEdit.accepted).
-      // The RETURN value.node.id should also give us what we need.
-      // If originalTurnToEdit was not found by the initial MATCH, the query effectively stops,
-      // and result.records will be empty or won't contain the expected newId.
-      if (!result.records || result.records.length === 0 || !result.records[0].get('newId')) {
-        // This condition handles cases where the initial MATCH for originalTurnToEdit failed,
-        // or something else went wrong preventing the new node from being properly returned.
-        const err = new Error('Parent turn not found or new turn creation failed.');
-        err.status = 404; // Or 500 if it's an unexpected failure beyond not finding parent
+      if (!fetchResult.records || fetchResult.records.length === 0) {
+        const err = new Error('Original turn to edit not found.');
+        err.status = 404;
         throw err;
       }
-      // If we want to be very specific about counters:
-      // const counters = result.summary.counters.updates();
-      // if (counters.nodesCreated() < 1 || counters.propertiesSet() < 1) {
-      //   const err = new Error('Failed to create new turn version or update original turn.');
-      //   err.status = 500;
-      //   throw err;
-      // }
+
+      const { oteId, oteRole, oteTs, oteDepth, actualParentId, actualParentDepth } = fetchResult.records[0].toObject();
+
+      // Step 2: Determine new depth and parent_id for the new version
+      let newVersionDepth;
+      let newVersionParentIdString = null; // For the parent_id property of the newVersion
+
+      if (actualParentId) {
+        newVersionDepth = (actualParentDepth !== null && actualParentDepth !== undefined) ? actualParentDepth + 1 : 1; // If parent has depth, increment; else, new child depth is 1
+        newVersionParentIdString = actualParentId;
+      } else {
+        // It's a root turn or its parent was deleted.
+        // If it was a root, its depth is 0. If its parent was deleted, it retains its old depth as it's now effectively a new root in its own lineage.
+        // For a new version of an existing root, depth should remain 0.
+        // If originalTurnToEdit.depth was > 0 and it had no parent, it implies a broken link.
+        // Safest is to set depth to 0 if no actual parent.
+        newVersionDepth = 0;
+      }
+      
+      // Step 3: Construct and run the write query
+      let createNewVersionQuery = `
+        // Merge the author
+        MERGE (author:User {id: $userIdParam})
+          ON CREATE SET author.name = $userNameParam, author.createdAt = timestamp()
+          ON MATCH SET author.name = $userNameParam
+
+        // Create the new version of the turn
+        CREATE (newVersion:Turn {
+          id: $newTurnIdParam,
+          role: $oteRoleParam,
+          text: $textParam,
+          accepted: true,
+          parent_id: $newVersionParentIdStringParam, // This will be actualParentId or null
+          depth: $newVersionDepthParam,
+          ts: $oteTsParam, // Inherit timestamp from the original turn
+          commit_message: $commitMessageParam
+        })
+
+        // Link the new version to its author
+        CREATE (newVersion)-[:AUTHORED_BY]->(author)
+
+        // Archive the original turn (the one being edited)
+        WITH newVersion, author // Pass newVersion and author for further operations
+        MATCH (originalTurnToEditToArchive:Turn {id: $oteIdParam})
+        SET originalTurnToEditToArchive.accepted = false
+      `;
+
+      const queryParams = {
+        userIdParam: userId,
+        userNameParam: userName,
+        newTurnIdParam: newTurnId,
+        oteRoleParam: oteRole,
+        textParam: text,
+        newVersionParentIdStringParam: newVersionParentIdString,
+        newVersionDepthParam: newVersionDepth,
+        oteTsParam: oteTs,
+        commitMessageParam: commit_message ?? null,
+        oteIdParam: oteId // ID of the original turn to archive
+      };
+
+      if (actualParentId) {
+        // If there was an actual parent, link newVersion to it
+        createNewVersionQuery += `
+          // Link newVersion to its actual parent
+          WITH newVersion // newVersion is already in scope from previous part
+          MATCH (theActualParent:Turn {id: $actualParentIdParam})
+          CREATE (theActualParent)-[:CHILD_OF]->(newVersion)
+        `;
+        queryParams.actualParentIdParam = actualParentId;
+      }
+
+      createNewVersionQuery += `
+        RETURN newVersion.id AS newId
+      `;
+      
+      const creationResult = await session.run(createNewVersionQuery, queryParams);
+
+      if (!creationResult.records || creationResult.records.length === 0 || !creationResult.records[0].get('newId')) {
+        const err = new Error('Failed to create new turn version or update original turn.');
+        // This could be a 500 if the query failed for unexpected reasons,
+        // or 404 if somehow oteId became invalid between read and write (highly unlikely in a transaction).
+        err.status = 500; 
+        throw err;
+      }
     });
 
     // Best-effort lookup for personaId (used only for the Redis payload).
