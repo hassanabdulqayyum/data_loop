@@ -49,12 +49,21 @@ router.get('/:personaId', async (req, res, next) => {
                 CALL {
                     WITH root // Import root into the subquery scope
 
-                    // Match paths starting from the imported root, only if the root itself is acceptable
+                    // Root itself must be acceptable
+                    WHERE root.accepted IS NULL OR root.accepted = true
+
                     MATCH currentGoldPath = (root)-[:CHILD_OF*0..]->(leaf:Turn)
-                    WHERE (root.accepted IS NULL OR root.accepted = true) // Condition on root applies here
-                      AND ALL(n IN nodes(currentGoldPath) WHERE n = root OR n.accepted = true) // All other nodes must be accepted (or be the root)
-                      // And ensure 'leaf' is the last accepted turn in this sequence
-                      AND NOT EXISTS((leaf)-[:CHILD_OF]->(:Turn {accepted: true}))
+                    WHERE 
+                        // All nodes in the path must be either the root or accepted:true
+                        ALL(n IN nodes(currentGoldPath) WHERE n = root OR n.accepted = true)
+                        // AND the leaf node must be the end of an accepted sequence
+                        AND NOT EXISTS((leaf)-[:CHILD_OF]->(:Turn {accepted: true}))
+                        // AND if the path is ONLY the root, then the root must not have any accepted children.
+                        // This ensures we don't stop at root if an accepted path continues.
+                        AND (
+                            leaf <> root OR // If leaf is not root, the path is longer, previous conditions are enough
+                            (leaf = root AND NOT EXISTS((root)-[:CHILD_OF]->(:Turn {accepted: true}))) // If path is just root, ensure no accepted child exists
+                        )
                     RETURN currentGoldPath
                     ORDER BY length(currentGoldPath) DESC
                     LIMIT 1
