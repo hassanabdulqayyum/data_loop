@@ -144,13 +144,20 @@ router.patch('/:turnId', async (req, res, next) => {
       WITH newVersion, parentOfOriginal, originalTurnToEdit // Ensure all needed variables are carried forward
       CALL apoc.do.when(
         parentOfOriginal IS NOT NULL,
-        // If parentOfOriginal exists, create the relationship.
-        // Re-match nodes by ID inside APOC for safety, using the passed parameters.
-        'MATCH (po:Turn {id: $parentOfOriginalId}) MATCH (nv:Turn {id: $newVersionId}) CREATE (po)-[:CHILD_OF]->(nv) RETURN nv AS node',
+        // If parentOfOriginal exists (i.e., originalTurnToEdit was not a root node)
+        // Re-establish parentOfOriginal using originalTurnToEdit.id to be absolutely safe.
+        'MATCH (extParent:Turn)-[:CHILD_OF]->(:Turn {id: $oteIdParam}) ' + // Find parent of original turn
+        'MATCH (nv:Turn {id: $nvIdParam}) ' +                             // Find the new version
+        'CREATE (extParent)-[:CHILD_OF]->(nv) ' +                         // Create new CHILD_OF link
+        'RETURN nv AS node',
         // Else (if originalTurnToEdit was a root node), just return the newVersion.
-        'MATCH (nv:Turn {id: $newVersionId}) RETURN nv AS node',
-        // Parameters for the APOC subqueries. Pass IDs for re-matching.
-        { parentOfOriginalId: parentOfOriginal.id, newVersionId: newVersion.id, newVersion: newVersion, parentOfOriginal: parentOfOriginal }
+        'MATCH (nv:Turn {id: $nvIdParam}) RETURN nv AS node',             // Just return the new version
+        // Parameters for the APOC subqueries.
+        // Pass IDs for re-matching. originalTurnToEdit.id is guaranteed to exist.
+        {
+          oteIdParam: originalTurnToEdit.id, // ID of the original turn (guaranteed to exist)
+          nvIdParam: newVersion.id           // ID of the new turn version
+        }
       ) YIELD value
 
       // 8. Return the newly created turn node (or its ID).
