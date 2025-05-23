@@ -225,13 +225,13 @@ router.patch('/:turnId', async (req, res, next) => {
     // 4. Publish the Redis Stream event. We wrap in try/catch so a Redis hiccup does not break the API request.
     try {
       await redisClient.xAdd('script.turn.updated', '*', {
-        id: newTurnId,
-        parent_id: parentId,
-        persona_id: personaId,
-        editor: req.user.email ?? 'unknown',
-        ts: now,
-        text,
-        commit_message: commit_message ?? ''
+        id: String(newTurnId), // Ensure string
+        parent_id: String(parentId), // Ensure string (original turn ID that was edited)
+        persona_id: String(personaId ?? ''), // Ensure string, use empty if null
+        editor: String(req.user.email ?? 'unknown'), // Ensure string
+        ts: String(now), // Ensure string for Redis timestamp
+        text: String(text), // Ensure string
+        commit_message: String(commit_message ?? '') // Ensure string, use empty if null
       });
     } catch (redisErr) {
       // Log but do not fail the HTTP response – eventual consistency is fine for v1.
