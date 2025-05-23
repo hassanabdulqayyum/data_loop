@@ -102,17 +102,14 @@ router.patch('/:turnId', async (req, res, next) => {
 
     // 3. Perform the turn update in a transaction
     await withSession(async (session) => {
-      // Step 1: Fetch original turn details and its actual parent (if any)
+      // Step 1: Fetch minimal original turn details (role needed for new version)
+      // We no longer need to fetch depth or parent details here; the main query handles relationships.
       const fetchOriginalQuery = `
         MATCH (originalTurnToEdit:Turn {id: $parentIdParam})
-        OPTIONAL MATCH (actualParent:Turn)-[:CHILD_OF]->(originalTurnToEdit)
         RETURN 
           originalTurnToEdit.id AS oteId, 
-          originalTurnToEdit.role AS oteRole, 
-          originalTurnToEdit.ts AS oteTs,
-          coalesce(originalTurnToEdit.depth, 0) AS oteDepth, // Default to 0 if depth is null
-          actualParent.id AS actualParentId,
-          actualParent.depth AS actualParentDepth // This will be null if no actualParent
+          originalTurnToEdit.role AS oteRole
+          // oteTs is no longer needed here as newVersion will get a new timestamp from 'now'
       `;
       const fetchResult = await session.run(fetchOriginalQuery, { parentIdParam: parentId });
 
@@ -122,27 +119,17 @@ router.patch('/:turnId', async (req, res, next) => {
         throw err;
       }
 
-      const { oteId, oteRole, oteTs, oteDepth, actualParentId, actualParentDepth } = fetchResult.records[0].toObject();
-
-      // Step 2: Determine new depth and parent_id for the new version
-      let newVersionDepth;
-      let newVersionParentIdString = null; // For the parent_id property of the newVersion
-
-      if (actualParentId) {
-        newVersionDepth = (actualParentDepth !== null && actualParentDepth !== undefined) ? actualParentDepth + 1 : 1; // If parent has depth, increment; else, new child depth is 1
-        newVersionParentIdString = actualParentId;
-      } else {
-        // It's a root turn or its parent was deleted.
-        // If it was a root, its depth is 0. If its parent was deleted, it retains its old depth as it's now effectively a new root in its own lineage.
-        // For a new version of an existing root, depth should remain 0.
-        // If originalTurnToEdit.depth was > 0 and it had no parent, it implies a broken link.
-        // Safest is to set depth to 0 if no actual parent.
-        newVersionDepth = 0;
-      }
+      // Only need oteId and oteRole from the original turn for the new version.
+      const { oteId, oteRole } = fetchResult.records[0].toObject();
       
-      // Step 3: Construct and run the write query
-      let createNewVersionQuery = `
-        // Merge the author
+      // Step 2: Construct and run the write query
+      // This query creates the new turn, archives the old one,
+      // and correctly sets up :CHILD_OF or :HAS_ROOT_TURN relationships.
+      const createNewVersionQuery = `
+        // Match the original turn being edited
+        MATCH (originalTurnToEdit:Turn {id: $oteIdParam})
+
+        // Merge the author for the new turn
         MERGE (author:User {id: $userIdParam})
           ON CREATE SET author.name = $userNameParam, author.createdAt = timestamp()
           ON MATCH SET author.name = $userNameParam
@@ -150,96 +137,110 @@ router.patch('/:turnId', async (req, res, next) => {
         // Create the new version of the turn
         CREATE (newVersion:Turn {
           id: $newTurnIdParam,
-          role: $oteRoleParam,
+          role: $oteRoleParam,             // Inherit role from original
           text: $textParam,
-          accepted: true,
-          parent_id: $newVersionParentIdStringParam, // This will be actualParentId or null
-          depth: $newVersionDepthParam,
-          ts: $oteTsParam, // Inherit timestamp from the original turn
-          commit_message: $commitMessageParam
+          accepted: true,                  // New versions are accepted by default
+          ts: $nowParam,                   // Use current timestamp for the new version
+          commit_message: $commitMessageParam // Commit message for the new version
+          // 'depth' and 'parent_id' properties are removed
         })
 
         // Link the new version to its author
         CREATE (newVersion)-[:AUTHORED_BY]->(author)
 
-        // Archive the original turn (the one being edited)
-        WITH newVersion, author // Pass newVersion and author for further operations
-        MATCH (originalTurnToEditToArchive:Turn {id: $oteIdParam})
-        SET originalTurnToEditToArchive.accepted = false
+        // Archive the original turn by setting its 'accepted' flag to false
+        SET originalTurnToEdit.accepted = false
+
+        // Handle relationships for the newVersion based on the originalTurnToEdit's context
+        WITH newVersion, author, originalTurnToEdit
+
+        // Attempt to find the parent of the originalTurnToEdit
+        OPTIONAL MATCH (actualParentOfOriginal:Turn)-[:CHILD_OF]->(originalTurnToEdit)
+
+        // If originalTurnToEdit had an actual parent, link newVersion to that same parent
+        FOREACH (_ IN CASE WHEN actualParentOfOriginal IS NOT NULL THEN [1] ELSE [] END |
+          CREATE (actualParentOfOriginal)-[:CHILD_OF]->(newVersion)
+        )
+
+        // If originalTurnToEdit had NO actual parent (it was a root or orphaned):
+        // Check if it was a root turn for any persona.
+        WITH newVersion, author, originalTurnToEdit, actualParentOfOriginal // Carry over variables
+        WHERE actualParentOfOriginal IS NULL // Proceed only if originalTurnToEdit had no actual parent relationship
+
+        // Find Persona if originalTurnToEdit was its root
+        OPTIONAL MATCH (p:Persona)-[r:HAS_ROOT_TURN]->(originalTurnToEdit)
+
+        // If Persona link exists, delete old :HAS_ROOT_TURN link and create new one to newVersion
+        FOREACH (ignore IN CASE WHEN p IS NOT NULL AND r IS NOT NULL THEN [1] ELSE [] END |
+          DELETE r
+          CREATE (p)-[:HAS_ROOT_TURN]->(newVersion)
+        )
+
+        RETURN newVersion.id AS newId // Return the ID of the newly created turn
       `;
 
       const queryParams = {
         userIdParam: userId,
         userNameParam: userName,
         newTurnIdParam: newTurnId,
-        oteRoleParam: oteRole,
+        oteRoleParam: oteRole, // Role from the original turn
         textParam: text,
-        newVersionParentIdStringParam: newVersionParentIdString,
-        newVersionDepthParam: newVersionDepth,
-        oteTsParam: oteTs,
+        nowParam: now, // Current timestamp for the new turn
         commitMessageParam: commit_message ?? null,
-        oteIdParam: oteId // ID of the original turn to archive
+        oteIdParam: oteId // ID of the original turn to find and archive
+        // Parameters for depth, parent_id, and actualParentId are removed
       };
-
-      if (actualParentId) {
-        // If there was an actual parent, link newVersion to it
-        createNewVersionQuery += `
-          // Link newVersion to its actual parent
-          WITH newVersion // newVersion is already in scope from previous part
-          MATCH (theActualParent:Turn {id: $actualParentIdParam})
-          CREATE (theActualParent)-[:CHILD_OF]->(newVersion)
-        `;
-        queryParams.actualParentIdParam = actualParentId;
-      }
-
-      createNewVersionQuery += `
-        RETURN newVersion.id AS newId
-      `;
       
       const creationResult = await session.run(createNewVersionQuery, queryParams);
 
-      if (!creationResult.records || creationResult.records.length === 0 || !creationResult.records[0].get('newId')) {
-        const err = new Error('Failed to create new turn version or update original turn.');
-        // This could be a 500 if the query failed for unexpected reasons,
-        // or 404 if somehow oteId became invalid between read and write (highly unlikely in a transaction).
-        err.status = 500; 
+      // Check if the new turn was successfully created
+      if (!creationResult.records || creationResult.records.length === 0) {
+        // This case should ideally not be reached if the Cypher query is correct
+        // and doesn't conditionally prevent the RETURN statement.
+        const err = new Error('Failed to create new turn version or retrieve its ID.');
+        err.status = 500;
         throw err;
       }
+      
+      const newId = creationResult.records[0].get('newId');
+
+      // 4. Emit an event (optional, but good for real-time updates elsewhere)
+      if (redisClient.isOpen) {
+        // Best-effort lookup for personaId (used only for the Redis payload).
+        let personaId = null;
+        try {
+          personaId = await withSession(async (session) => {
+            const res2 = await session.run(
+              `MATCH (per:Persona)-[:ROOTS]->(:Turn {role:'root'})<-[:CHILD_OF*0..]-(t:Turn {id: $parentId})
+               RETURN per.id AS id LIMIT 1`,
+              { parentId }
+            );
+            return res2.records.length ? res2.records[0].get('id') : null;
+          });
+        } catch (_) {
+          /* ignore – personaId stays null */
+        }
+
+        // 4. Publish the Redis Stream event. We wrap in try/catch so a Redis hiccup does not break the API request.
+        try {
+          await redisClient.xAdd('script.turn.updated', '*', {
+            id: String(newTurnId), // Ensure string
+            parent_id: String(parentId), // Ensure string (original turn ID that was edited)
+            persona_id: String(personaId ?? ''), // Ensure string, use empty if null
+            editor: String(req.user.email ?? 'unknown'), // Ensure string
+            ts: String(now), // Ensure string for Redis timestamp
+            text: String(text), // Ensure string
+            commit_message: String(commit_message ?? '') // Ensure string, use empty if null
+          });
+        } catch (redisErr) {
+          // Log but do not fail the HTTP response – eventual consistency is fine for v1.
+          console.error('Redis publish failed:', redisErr);
+        }
+      }
+
+      // 5. Respond to the client.
+      res.status(201).json({ data: { id: newId } });
     });
-
-    // Best-effort lookup for personaId (used only for the Redis payload).
-    let personaId = null;
-    try {
-      personaId = await withSession(async (session) => {
-        const res2 = await session.run(
-          `MATCH (per:Persona)-[:ROOTS]->(:Turn {role:'root'})<-[:CHILD_OF*0..]-(t:Turn {id: $parentId})
-           RETURN per.id AS id LIMIT 1`,
-          { parentId }
-        );
-        return res2.records.length ? res2.records[0].get('id') : null;
-      });
-    } catch (_) {
-      /* ignore – personaId stays null */
-    }
-
-    // 4. Publish the Redis Stream event. We wrap in try/catch so a Redis hiccup does not break the API request.
-    try {
-      await redisClient.xAdd('script.turn.updated', '*', {
-        id: String(newTurnId), // Ensure string
-        parent_id: String(parentId), // Ensure string (original turn ID that was edited)
-        persona_id: String(personaId ?? ''), // Ensure string, use empty if null
-        editor: String(req.user.email ?? 'unknown'), // Ensure string
-        ts: String(now), // Ensure string for Redis timestamp
-        text: String(text), // Ensure string
-        commit_message: String(commit_message ?? '') // Ensure string, use empty if null
-      });
-    } catch (redisErr) {
-      // Log but do not fail the HTTP response – eventual consistency is fine for v1.
-      console.error('Redis publish failed:', redisErr);
-    }
-
-    // 5. Respond to the client.
-    res.status(201).json({ data: { id: newTurnId } });
   } catch (err) {
     next(err);
   }

@@ -31,50 +31,71 @@ router.get('/:personaId', async (req, res, next) => {
     // Use withSession to open a Neo4j session and run our Cypher query
     const result = await withSession(async (session) => {
       // We avoid APOC so the query works on a vanilla Neo4j instance (like CI).
-      // 1. Start at the Persona's ROOTS relationship to its root Turn.
-      // 2. Follow zero-or-more incoming CHILD_OF relationships from t to root.
-      //    This means (child)-[:CHILD_OF]->(parent).
-      // 3. Filter to only those turns t that are part of the gold path (t.accepted = true or t is root).
-      // 4. Optionally match the author of the turn t.
-      // 5. Calculate version: 
-      //    - If t is root, version is 1.
-      //    - Else, find parent of t. Count t and its siblings (other children of the same parent)
-      //      that were created up to or at the same time as t.
-      //    - Fallback to 1 if t is not root but no parent is found (data consistency issue).
+      // 1. Start at the Persona's HAS_ROOT_TURN relationship to its root Turn.
+      // 2. Use a CALL subquery to find the single, accepted gold path.
+      //    - Match paths downwards from root where all nodes are accepted (or root).
+      //    - Ensure the path ends at the last accepted turn in that sequence.
+      //    - If multiple such paths, take the longest.
+      // 3. Unwind nodes from this gold path to get them in order.
+      // 4. Optionally match the author and parent of each turn on the path.
+      // 5. Calculate lineageVersion:
+      //    - If turn is the start of the gold path, version is 1.
+      //    - Else, count accepted siblings (children of the same parent) created up to this turn.
       const query = `
-                MATCH (per:Persona {id: $personaId})-[:ROOTS]->(root:Turn)
-                MATCH path=(root)<-[:CHILD_OF*0..]-(t:Turn) // Establishes (child)-[:CHILD_OF]->(parent)
-                WHERE t = root OR t.accepted = true // Gold path turns
-                WITH t, root, length(path) AS depth // Keep root for t = root check
+                // Find the persona and its root turn
+                MATCH (persona:Persona {id: $personaId})-[:HAS_ROOT_TURN]->(root:Turn)
 
-                OPTIONAL MATCH (t)-[:AUTHORED_BY]->(author:User)
-                WITH t, root, depth, author // Carry root and author forward
+                // Use CALL subquery to find the single, accepted gold path
+                CALL {
+                    WITH root
+                    MATCH goldPath = (root)-[:CHILD_OF*0..]->(leaf:Turn)
+                    WHERE (root.accepted IS NULL OR root.accepted = true) // Root might not have 'accepted' or it's true
+                      AND ALL(n IN nodes(goldPath) WHERE n = root OR n.accepted = true) // All nodes in path are accepted (or root)
+                      AND NOT (leaf)-[:CHILD_OF]->(:Turn {accepted: true}) // Leaf is the last accepted turn in this sequence
+                    RETURN goldPath
+                    ORDER BY length(goldPath) DESC // If multiple such paths, take the longest
+                    LIMIT 1 // Ensure we only process one gold path
+                }
+                // goldPath is now the single, definitive accepted path
 
-                // Correctly find the parent of t. 'actualParentOfT' will be null if t is the root.
-                OPTIONAL MATCH (t)-[:CHILD_OF]->(actualParentOfT:Turn)
-                WITH t, root, depth, author, actualParentOfT // Carry all necessary vars forward
+                // Unwind the nodes of this goldPath to process them in order
+                UNWIND nodes(goldPath) AS t_on_path
+
+                // OPTIONAL MATCH for author, as before
+                OPTIONAL MATCH (t_on_path)-[:AUTHORED_BY]->(author:User)
+
+                // OPTIONAL MATCH for the actual parent of t_on_path, for lineageVersion calculation
+                // This specifically finds the parent via CHILD_OF, ensuring it's the direct parent in the graph structure.
+                OPTIONAL MATCH (t_on_path)<-[:CHILD_OF]-(actualParentOfT:Turn)
+
 
                 // Calculate lineageVersion
-                WITH t, root, depth, author, actualParentOfT, // Make sure all are available for CASE
+                WITH t_on_path, author, actualParentOfT, nodes(goldPath) AS path_nodes,
                      CASE
-                       WHEN t = root THEN 1 // If t is the root turn, its version is 1.
-                       WHEN actualParentOfT IS NOT NULL THEN // If t has a parent
-                         // Count all children of 'actualParentOfT' (these are siblings of t, or t itself)
-                         // whose timestamp is less than or equal to t's timestamp.
-                         SIZE([(sibling:Turn)-[:CHILD_OF]->(actualParentOfT) WHERE sibling.ts <= t.ts | sibling])
-                       ELSE 1 // Fallback: t is not root, but no parent was found. Version is 1.
+                       // If t_on_path is the root of the *identified* goldPath (i.e., the first node in the path_nodes array)
+                       WHEN t_on_path = path_nodes[0] THEN 1
+                       // If t_on_path has an actual parent from the CHILD_OF relationship
+                       WHEN actualParentOfT IS NOT NULL THEN
+                         // Count this turn and its *accepted* siblings that came at or before it.
+                         // A sibling is another turn that also has actualParentOfT as its parent.
+                         SIZE([(sibling:Turn)-[:CHILD_OF]->(actualParentOfT) 
+                               WHERE sibling.ts <= t_on_path.ts AND (sibling.accepted = true OR sibling = t_on_path) | sibling])
+                       ELSE 1 // Fallback (e.g., orphaned accepted turn, though unlikely with path logic)
                      END AS lineageVersion
                      
-                RETURN t.id                AS id,
-                       t.role              AS role,
-                       depth               AS depth, // This is gold-path depth from root
-                       t.text              AS text,
-                       t.ts                AS original_ts, // Keep original ts for sorting, rename for output
-                       t.accepted          AS accepted,
-                       t.commit_message    AS commit_message,
-                       author.name         AS authorName,
-                       lineageVersion      AS version       // Use the calculated lineageVersion
-                ORDER BY depth ASC, original_ts ASC // Order by gold-path depth, then ts for stability
+                RETURN t_on_path.id                AS id,
+                       t_on_path.role              AS role,
+                       // depth is removed
+                       t_on_path.text              AS text,
+                       t_on_path.ts                AS original_ts, // Keep original ts for client-side sorting if needed, or for date formatting
+                       t_on_path.accepted          AS accepted,
+                       t_on_path.commit_message    AS commit_message,
+                       author.name                 AS authorName,
+                       lineageVersion              AS version
+                // The ORDER BY clause is implicitly handled by UNWIND nodes(goldPath).
+                // No explicit ORDER BY depth ASC, original_ts ASC needed here.
+                // If client-side sorting by ts within a former "depth level" is desired,
+                // the client can do that, but the primary order comes from the path.
             `;
       return await session.run(query, { personaId });
     });
@@ -115,7 +136,7 @@ router.get('/:personaId', async (req, res, next) => {
       return {
         id: record.get('id'),
         role: record.get('role'),
-        depth: record.get('depth').toNumber ? record.get('depth').toNumber() : record.get('depth'),
+        // depth: record.get('depth').toNumber ? record.get('depth').toNumber() : record.get('depth'), // Depth is removed
         text: record.get('text'),
         createdAt: createdAtIso, // Formatted ISO string
         accepted: record.get('accepted'),
