@@ -32,44 +32,49 @@ router.get('/:personaId', async (req, res, next) => {
     const result = await withSession(async (session) => {
       // We avoid APOC so the query works on a vanilla Neo4j instance (like CI).
       // 1. Start at the Persona's ROOTS relationship to its root Turn.
-      // 2. Follow zero-or-more incoming CHILD_OF edges to reach every descendant Turn.
-      // 3. Filter to only those turns that are part of the gold path (accepted = true or is the root).
-      // 4. Optionally match the author of the turn via [:AUTHORED_BY] relationship.
-      // 5. Calculate version: For each turn, find its parent. Count siblings (children of the same parent)
-      //    created up to or at the same time as the current turn. Root turn is version 1.
+      // 2. Follow zero-or-more incoming CHILD_OF relationships from t to root.
+      //    This means (child)-[:CHILD_OF]->(parent).
+      // 3. Filter to only those turns t that are part of the gold path (t.accepted = true or t is root).
+      // 4. Optionally match the author of the turn t.
+      // 5. Calculate version: 
+      //    - If t is root, version is 1.
+      //    - Else, find parent of t. Count t and its siblings (other children of the same parent)
+      //      that were created up to or at the same time as t.
+      //    - Fallback to 1 if t is not root but no parent is found (data consistency issue).
       const query = `
                 MATCH (per:Persona {id: $personaId})-[:ROOTS]->(root:Turn)
-                MATCH path=(root)<-[:CHILD_OF*0..]-(t:Turn)
+                MATCH path=(root)<-[:CHILD_OF*0..]-(t:Turn) // Establishes (child)-[:CHILD_OF]->(parent)
                 WHERE t = root OR t.accepted = true // Gold path turns
-                WITH t, root, length(path) AS depth
+                WITH t, root, length(path) AS depth // Keep root for t = root check
 
                 OPTIONAL MATCH (t)-[:AUTHORED_BY]->(author:User)
+                WITH t, root, depth, author // Carry root and author forward
 
-                // Get the parent of t. If t is the root, parentTurn will be null.
-                // We need to handle the case where t IS the root and has no incoming CHILD_OF.
-                OPTIONAL MATCH (parentTurn)-[:CHILD_OF]->(t)
+                // Correctly find the parent of t. 'actualParentOfT' will be null if t is the root.
+                OPTIONAL MATCH (t)-[:CHILD_OF]->(actualParentOfT:Turn)
+                WITH t, root, depth, author, actualParentOfT // Carry all necessary vars forward
 
-                // Calculate the version:
-                // Count all turns (siblings) that are children of the same parentTurn
-                // and were created at or before the current turn t.
-                // If t is the root (parentTurn is null, or t=root), its version is 1.
-                WITH t, depth, author, parentTurn, root,
+                // Calculate lineageVersion
+                WITH t, root, depth, author, actualParentOfT, // Make sure all are available for CASE
                      CASE
-                       WHEN t = root THEN 1 // Explicitly handle root
-                       WHEN parentTurn IS NULL AND t <> root THEN 1 // Should not happen if data is consistent, but as a fallback
-                       ELSE SIZE([(parentTurn)-[:CHILD_OF]->(sibling:Turn) WHERE sibling.ts <= t.ts | sibling])
+                       WHEN t = root THEN 1 // If t is the root turn, its version is 1.
+                       WHEN actualParentOfT IS NOT NULL THEN // If t has a parent
+                         // Count all children of 'actualParentOfT' (these are siblings of t, or t itself)
+                         // whose timestamp is less than or equal to t's timestamp.
+                         SIZE([(sibling:Turn)-[:CHILD_OF]->(actualParentOfT) WHERE sibling.ts <= t.ts | sibling])
+                       ELSE 1 // Fallback: t is not root, but no parent was found. Version is 1.
                      END AS lineageVersion
                      
                 RETURN t.id                AS id,
                        t.role              AS role,
-                       depth               AS depth,
+                       depth               AS depth, // This is gold-path depth from root
                        t.text              AS text,
                        t.ts                AS original_ts, // Keep original ts for sorting, rename for output
                        t.accepted          AS accepted,
                        t.commit_message    AS commit_message,
                        author.name         AS authorName,
                        lineageVersion      AS version       // Use the calculated lineageVersion
-                ORDER BY depth ASC, original_ts ASC
+                ORDER BY depth ASC, original_ts ASC // Order by gold-path depth, then ts for stability
             `;
       return await session.run(query, { personaId });
     });
