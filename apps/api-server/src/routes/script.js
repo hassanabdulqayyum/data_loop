@@ -43,7 +43,7 @@ router.get('/:personaId', async (req, res, next) => {
       //    - Else, count accepted siblings (children of the same parent) created up to this turn.
       const query = `
                 // Find the persona and its root turn
-                MATCH (persona:Persona {id: $personaId})-[:HAS_ROOT_TURN]->(root:Turn)
+                MATCH (persona:Persona {id: $personaId})-[:ROOTS]->(root:Turn)
 
                 // Use CALL subquery to find the single, accepted gold path
                 CALL {

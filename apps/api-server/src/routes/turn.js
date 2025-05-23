@@ -168,12 +168,12 @@ router.patch('/:turnId', async (req, res, next) => {
         WHERE actualParentOfOriginal IS NULL // Proceed only if originalTurnToEdit had no actual parent relationship
 
         // Find Persona if originalTurnToEdit was its root
-        OPTIONAL MATCH (p:Persona)-[r:HAS_ROOT_TURN]->(originalTurnToEdit)
+        OPTIONAL MATCH (p:Persona)-[r:ROOTS]->(originalTurnToEdit)
 
-        // If Persona link exists, delete old :HAS_ROOT_TURN link and create new one to newVersion
+        // If Persona link exists, delete old :ROOTS link and create new one to newVersion
         FOREACH (ignore IN CASE WHEN p IS NOT NULL AND r IS NOT NULL THEN [1] ELSE [] END |
           DELETE r
-          CREATE (p)-[:HAS_ROOT_TURN]->(newVersion)
+          CREATE (p)-[:ROOTS]->(newVersion)
         )
 
         RETURN newVersion.id AS newId // Return the ID of the newly created turn
