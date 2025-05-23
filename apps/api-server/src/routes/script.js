@@ -33,14 +33,33 @@ router.get('/:personaId', async (req, res, next) => {
       // We avoid APOC so the query works on a vanilla Neo4j instance (like CI).
       // 1. Start at the Persona's ROOTS relationship to its root Turn.
       // 2. Follow zero-or-more incoming CHILD_OF edges to reach every descendant Turn.
-      // 3. Filter to only those turns that are part of the gold path (accepted = true).
+      // 3. Filter to only those turns that are part of the gold path (accepted = true or is the root).
       // 4. Optionally match the author of the turn via [:AUTHORED_BY] relationship.
+      // 5. Calculate version: For each turn, find its parent. Count siblings (children of the same parent)
+      //    created up to or at the same time as the current turn. Root turn is version 1.
       const query = `
                 MATCH (per:Persona {id: $personaId})-[:ROOTS]->(root:Turn)
                 MATCH path=(root)<-[:CHILD_OF*0..]-(t:Turn)
-                WHERE t = root OR t.accepted = true
-                WITH t, length(path) AS depth
+                WHERE t = root OR t.accepted = true // Gold path turns
+                WITH t, root, length(path) AS depth
+
                 OPTIONAL MATCH (t)-[:AUTHORED_BY]->(author:User)
+
+                // Get the parent of t. If t is the root, parentTurn will be null.
+                // We need to handle the case where t IS the root and has no incoming CHILD_OF.
+                OPTIONAL MATCH (parentTurn)-[:CHILD_OF]->(t)
+
+                // Calculate the version:
+                // Count all turns (siblings) that are children of the same parentTurn
+                // and were created at or before the current turn t.
+                // If t is the root (parentTurn is null, or t=root), its version is 1.
+                WITH t, depth, author, parentTurn, root,
+                     CASE
+                       WHEN t = root THEN 1 // Explicitly handle root
+                       WHEN parentTurn IS NULL AND t <> root THEN 1 // Should not happen if data is consistent, but as a fallback
+                       ELSE SIZE([(parentTurn)-[:CHILD_OF]->(sibling:Turn) WHERE sibling.ts <= t.ts | sibling])
+                     END AS lineageVersion
+                     
                 RETURN t.id                AS id,
                        t.role              AS role,
                        depth               AS depth,
@@ -48,8 +67,9 @@ router.get('/:personaId', async (req, res, next) => {
                        t.ts                AS original_ts, // Keep original ts for sorting, rename for output
                        t.accepted          AS accepted,
                        t.commit_message    AS commit_message,
-                       author.name         AS authorName
-                ORDER BY depth ASC, original_ts ASC // Sort by original_ts
+                       author.name         AS authorName,
+                       lineageVersion      AS version       // Use the calculated lineageVersion
+                ORDER BY depth ASC, original_ts ASC
             `;
       return await session.run(query, { personaId });
     });
@@ -96,10 +116,7 @@ router.get('/:personaId', async (req, res, next) => {
         accepted: record.get('accepted'),
         commit_message: record.get('commit_message'), // This will be used as changeSummary by frontend
         authorName: record.get('authorName') || null, // Author's name, null if not found
-        // The array is already sorted by depth and timestamp so we can
-        // derive a simple running version number by array position.
-        // v1 is the *first* element, v2 the second, and so on.
-        version: idx + 1 // "Version X of the gold path"
+        version: record.get('version').toNumber ? record.get('version').toNumber() : record.get('version') // Use the lineageVersion from Cypher
       };
     });
     // Respond with the gold path turns as JSON
