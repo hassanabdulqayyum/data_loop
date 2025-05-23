@@ -49,20 +49,16 @@ router.get('/:personaId', async (req, res, next) => {
                 CALL {
                     WITH root // Import root into the subquery scope
 
-                    // Root itself must be acceptable
-                    WHERE root.accepted IS NULL OR root.accepted = true
-
+                    // Match paths starting from the imported root.
+                    // The conditions on 'root' and the path are applied in the WHERE clause of this MATCH.
                     MATCH currentGoldPath = (root)-[:CHILD_OF*0..]->(leaf:Turn)
                     WHERE 
-                        // All nodes in the path must be either the root or accepted:true
-                        ALL(n IN nodes(currentGoldPath) WHERE n = root OR n.accepted = true)
-                        // AND the leaf node must be the end of an accepted sequence
-                        AND NOT EXISTS((leaf)-[:CHILD_OF]->(:Turn {accepted: true}))
-                        // AND if the path is ONLY the root, then the root must not have any accepted children.
-                        // This ensures we don't stop at root if an accepted path continues.
+                        (root.accepted IS NULL OR root.accepted = true) // Condition on the imported 'root'
+                        AND ALL(n IN nodes(currentGoldPath) WHERE n = root OR n.accepted = true) // All nodes in path are accepted (or root)
+                        AND NOT EXISTS((leaf)-[:CHILD_OF]->(:Turn {accepted: true})) // leaf is the last accepted turn
                         AND (
-                            leaf <> root OR // If leaf is not root, the path is longer, previous conditions are enough
-                            (leaf = root AND NOT EXISTS((root)-[:CHILD_OF]->(:Turn {accepted: true}))) // If path is just root, ensure no accepted child exists
+                            leaf <> root OR // If leaf is not root, the path is longer
+                            (leaf = root AND NOT EXISTS((root)-[:CHILD_OF]->(:Turn {accepted: true}))) // If path is just root, ensure no accepted child from root
                         )
                     RETURN currentGoldPath
                     ORDER BY length(currentGoldPath) DESC
